@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import ReservationsTab from './components/ReservationsTab'
 import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
+import FatturaTab from './components/FatturaTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -23,13 +24,13 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
               <img src="/DR7logo.png" alt="DR7 Empire" className="h-10" />
-              <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
+              <h1 className="text-2xl font-bold text-white">Pannello Admin</h1>
             </div>
             <button
               onClick={handleSignOut}
               className="text-gray-400 hover:text-white transition-colors"
             >
-              Sign Out
+              Esci
             </button>
           </div>
         </div>
@@ -47,7 +48,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                Reservations
+                Prenotazioni
               </button>
               <button
                 onClick={() => setActiveTab('customers')}
@@ -57,7 +58,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                Customers
+                Clienti
               </button>
               <button
                 onClick={() => setActiveTab('vehicles')}
@@ -67,7 +68,17 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                Vehicles
+                Veicoli
+              </button>
+              <button
+                onClick={() => setActiveTab('fattura')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'fattura'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                Fatture
               </button>
             </nav>
           </div>
@@ -77,6 +88,7 @@ export default function AdminDashboard() {
           {activeTab === 'reservations' && <ReservationsTab />}
           {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'vehicles' && <VehiclesTab />}
+          {activeTab === 'fattura' && <FatturaTab />}
         </div>
       </main>
     </div>

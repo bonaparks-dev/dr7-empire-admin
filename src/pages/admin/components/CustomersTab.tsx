@@ -79,7 +79,7 @@ export default function CustomersTab() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this customer?')) return
+    if (!confirm('Sei sicuro di voler eliminare questo cliente?')) return
 
     try {
       const { error } = await supabase
@@ -91,7 +91,7 @@ export default function CustomersTab() {
       loadCustomers()
     } catch (error) {
       console.error('Failed to delete customer:', error)
-      alert('Failed to delete customer')
+      alert('Impossibile eliminare il cliente')
     }
   }
 
@@ -118,26 +118,26 @@ export default function CustomersTab() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-400">Loading...</div>
+    return <div className="text-center py-8 text-gray-400">Caricamento...</div>
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Customers</h2>
+        <h2 className="text-2xl font-bold text-white">Clienti</h2>
         <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
-          + New Customer
+          + Nuovo Cliente
         </Button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-gray-900 p-6 rounded-lg mb-6 border border-gray-700">
           <h3 className="text-xl font-semibold text-white mb-4">
-            {editingId ? 'Edit Customer' : 'New Customer'}
+            {editingId ? 'Modifica Cliente' : 'Nuovo Cliente'}
           </h3>
           <div className="space-y-4">
             <Input
-              label="Full Name"
+              label="Nome Completo"
               required
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -149,26 +149,26 @@ export default function CustomersTab() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
             <Input
-              label="Phone"
+              label="Telefono"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
             <Input
-              label="Driver License Number"
+              label="Numero Patente"
               value={formData.driver_license_number}
               onChange={(e) => setFormData({ ...formData, driver_license_number: e.target.value })}
             />
             <TextArea
-              label="Notes"
+              label="Note"
               rows={3}
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
           </div>
           <div className="flex gap-3 mt-4">
-            <Button type="submit">Save</Button>
+            <Button type="submit">Salva</Button>
             <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); resetForm() }}>
-              Cancel
+              Annulla
             </Button>
           </div>
         </form>
@@ -179,11 +179,11 @@ export default function CustomersTab() {
           <table className="w-full">
             <thead className="bg-black">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Name</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Phone</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">License</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Telefono</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Patente</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -200,14 +200,14 @@ export default function CustomersTab() {
                         variant="secondary"
                         className="text-xs py-1 px-3"
                       >
-                        Edit
+                        Modifica
                       </Button>
                       <Button
                         onClick={() => handleDelete(customer.id)}
                         variant="secondary"
                         className="text-xs py-1 px-3 bg-red-900 hover:bg-red-800"
                       >
-                        Delete
+                        Elimina
                       </Button>
                     </div>
                   </td>
@@ -216,7 +216,7 @@ export default function CustomersTab() {
               {customers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                    No customers found
+                    Nessun cliente trovato
                   </td>
                 </tr>
               )}

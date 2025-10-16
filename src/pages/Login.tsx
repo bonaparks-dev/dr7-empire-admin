@@ -40,7 +40,7 @@ export default function Login() {
             <img src="/DR7logo.png" alt="DR7 Empire" className="h-20" />
           </div>
           <h1 className="text-3xl font-bold text-white text-center mb-8">
-            Admin Panel
+            Pannello Admin
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -85,7 +85,7 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-white hover:bg-gray-200 text-black font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Accesso in corso...' : 'Accedi'}
             </button>
           </form>
         </div>
