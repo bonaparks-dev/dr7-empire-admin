@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '../../../supabaseClient'
 import Input from './Input'
 import TextArea from './TextArea'
 import Button from './Button'
@@ -13,9 +14,6 @@ interface Customer {
   created_at: string
   updated_at: string
 }
-
-const API_BASE = '/.netlify/functions/admin'
-const API_TOKEN = import.meta.env.VITE_ADMIN_UI_TOKEN
 
 export default function CustomersTab() {
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -38,11 +36,13 @@ export default function CustomersTab() {
   async function loadCustomers() {
     setLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/customers`, {
-        headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-      })
-      const data = await res.json()
-      setCustomers(data.data || [])
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setCustomers(data || [])
     } catch (error) {
       console.error('Failed to load customers:', error)
     } finally {
@@ -53,19 +53,20 @@ export default function CustomersTab() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      const method = editingId ? 'PATCH' : 'POST'
-      const body = editingId ? { id: editingId, ...formData } : formData
+      if (editingId) {
+        const { error } = await supabase
+          .from('customers')
+          .update(formData)
+          .eq('id', editingId)
 
-      const res = await fetch(`${API_BASE}/customers`, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${API_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      })
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('customers')
+          .insert([formData])
 
-      if (!res.ok) throw new Error('Failed to save customer')
+        if (error) throw error
+      }
 
       setShowForm(false)
       setEditingId(null)
@@ -74,6 +75,23 @@ export default function CustomersTab() {
     } catch (error) {
       console.error('Failed to save customer:', error)
       alert('Failed to save customer')
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Are you sure you want to delete this customer?')) return
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      loadCustomers()
+    } catch (error) {
+      console.error('Failed to delete customer:', error)
+      alert('Failed to delete customer')
     }
   }
 
