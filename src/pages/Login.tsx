@@ -36,8 +36,11 @@ export default function Login() {
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="bg-gray-900 rounded-lg shadow-xl p-8 border border-gray-700">
+          <div className="flex justify-center mb-6">
+            <img src="/DR7logo.png" alt="DR7 Empire" className="h-20" />
+          </div>
           <h1 className="text-3xl font-bold text-white text-center mb-8">
-            DR7 Empire Admin
+            Admin Panel
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">

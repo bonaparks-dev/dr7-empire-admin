@@ -124,15 +124,15 @@ export default function CustomersTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-dr7-gold">Customers</h2>
+        <h2 className="text-2xl font-bold text-white">Customers</h2>
         <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
           + New Customer
         </Button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-dr7-dark p-6 rounded-lg mb-6 border border-gray-800">
-          <h3 className="text-xl font-semibold text-dr7-gold mb-4">
+        <form onSubmit={handleSubmit} className="bg-gray-900 p-6 rounded-lg mb-6 border border-gray-700">
+          <h3 className="text-xl font-semibold text-white mb-4">
             {editingId ? 'Edit Customer' : 'New Customer'}
           </h3>
           <div className="space-y-4">
@@ -174,25 +174,25 @@ export default function CustomersTab() {
         </form>
       )}
 
-      <div className="bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
+      <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-dr7-darker">
+            <thead className="bg-black">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Name</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Phone</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">License</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Name</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Phone</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">License</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Actions</th>
               </tr>
             </thead>
             <tbody>
               {customers.map((customer) => (
-                <tr key={customer.id} className="border-t border-gray-800 hover:bg-dr7-darker/50">
-                  <td className="px-4 py-3 text-sm">{customer.full_name}</td>
-                  <td className="px-4 py-3 text-sm">{customer.email || '-'}</td>
-                  <td className="px-4 py-3 text-sm">{customer.phone || '-'}</td>
-                  <td className="px-4 py-3 text-sm">{customer.driver_license_number || '-'}</td>
+                <tr key={customer.id} className="border-t border-gray-700 hover:bg-gray-800">
+                  <td className="px-4 py-3 text-sm text-white">{customer.full_name}</td>
+                  <td className="px-4 py-3 text-sm text-white">{customer.email || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-white">{customer.phone || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-white">{customer.driver_license_number || '-'}</td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex gap-2">
                       <Button

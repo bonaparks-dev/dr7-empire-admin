@@ -17,11 +17,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-dr7-darker">
-      <header className="bg-dr7-dark border-b border-gray-800">
+    <div className="min-h-screen bg-black">
+      <header className="bg-gray-900 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-dr7-gold">DR7 Empire Admin</h1>
+            <div className="flex items-center gap-4">
+              <img src="/DR7logo.png" alt="DR7 Empire" className="h-10" />
+              <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
+            </div>
             <button
               onClick={handleSignOut}
               className="text-gray-400 hover:text-white transition-colors"
