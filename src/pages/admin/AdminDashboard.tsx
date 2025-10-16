@@ -43,8 +43,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('reservations')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'reservations'
-                    ? 'border-dr7-gold text-dr7-gold'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
                 Reservations
@@ -53,8 +53,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('customers')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'customers'
-                    ? 'border-dr7-gold text-dr7-gold'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
                 Customers
@@ -63,8 +63,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('vehicles')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'vehicles'
-                    ? 'border-dr7-gold text-dr7-gold'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
                 Vehicles
