@@ -194,13 +194,22 @@ export default function CustomersTab() {
                   <td className="px-4 py-3 text-sm">{customer.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm">{customer.driver_license_number || '-'}</td>
                   <td className="px-4 py-3 text-sm">
-                    <Button
-                      onClick={() => handleEdit(customer)}
-                      variant="secondary"
-                      className="text-xs py-1 px-3"
-                    >
-                      Edit
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleEdit(customer)}
+                        variant="secondary"
+                        className="text-xs py-1 px-3"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(customer.id)}
+                        variant="secondary"
+                        className="text-xs py-1 px-3 bg-red-900 hover:bg-red-800"
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
