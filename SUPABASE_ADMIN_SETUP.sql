@@ -42,7 +42,20 @@ CREATE TABLE IF NOT EXISTS public.reservations (
     updated_at timestamp with time zone DEFAULT now()
 );
 
--- 4. Create audit_log table for tracking changes
+-- 4. Create fatture (invoices) table
+CREATE TABLE IF NOT EXISTS public.fatture (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    numero_fattura text NOT NULL UNIQUE,
+    cliente_id uuid REFERENCES public.customers(id) ON DELETE CASCADE,
+    data_emissione date NOT NULL,
+    importo_totale numeric NOT NULL,
+    stato text DEFAULT 'bozza' CHECK (stato IN ('bozza', 'emessa', 'pagata', 'annullata')),
+    note text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+-- 5. Create audit_log table for tracking changes
 CREATE TABLE IF NOT EXISTS public.audit_log (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     actor_id uuid,
@@ -53,13 +66,14 @@ CREATE TABLE IF NOT EXISTS public.audit_log (
     created_at timestamp with time zone DEFAULT now()
 );
 
--- 5. Enable Row Level Security (RLS)
+-- 6. Enable Row Level Security (RLS)
 ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reservations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fatture ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 
--- 6. Create RLS Policies (Service Role bypass these, so admin functions will work)
+-- 7. Create RLS Policies (Service Role bypass these, so admin functions will work)
 -- Allow service role to do everything
 CREATE POLICY "Service role can do everything on customers"
 ON public.customers
@@ -82,6 +96,13 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
+CREATE POLICY "Service role can do everything on fatture"
+ON public.fatture
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
 CREATE POLICY "Service role can do everything on audit_log"
 ON public.audit_log
 FOR ALL
@@ -89,7 +110,33 @@ TO service_role
 USING (true)
 WITH CHECK (true);
 
--- 7. Create indexes for better performance
+-- Allow authenticated users to read their own invoices via Supabase client
+CREATE POLICY "Authenticated users can read fatture"
+ON public.fatture
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "Authenticated users can insert fatture"
+ON public.fatture
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can update fatture"
+ON public.fatture
+FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can delete fatture"
+ON public.fatture
+FOR DELETE
+TO authenticated
+USING (true);
+
+-- 8. Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_customers_email ON public.customers(email);
 CREATE INDEX IF NOT EXISTS idx_vehicles_status ON public.vehicles(status);
 CREATE INDEX IF NOT EXISTS idx_reservations_customer_id ON public.reservations(customer_id);
@@ -99,8 +146,11 @@ CREATE INDEX IF NOT EXISTS idx_reservations_end_at ON public.reservations(end_at
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON public.reservations(status);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity_type ON public.audit_log(entity_type);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity_id ON public.audit_log(entity_id);
+CREATE INDEX IF NOT EXISTS idx_fatture_cliente_id ON public.fatture(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_fatture_data_emissione ON public.fatture(data_emissione);
+CREATE INDEX IF NOT EXISTS idx_fatture_stato ON public.fatture(stato);
 
--- 8. Create a function to automatically update updated_at timestamp
+-- 9. Create a function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -109,7 +159,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 9. Create triggers to auto-update updated_at
+-- 10. Create triggers to auto-update updated_at
 DROP TRIGGER IF EXISTS update_customers_updated_at ON public.customers;
 CREATE TRIGGER update_customers_updated_at
     BEFORE UPDATE ON public.customers
@@ -128,7 +178,13 @@ CREATE TRIGGER update_reservations_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
 
--- 10. Insert sample data (optional - uncomment if you want test data)
+DROP TRIGGER IF EXISTS update_fatture_updated_at ON public.fatture;
+CREATE TRIGGER update_fatture_updated_at
+    BEFORE UPDATE ON public.fatture
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 11. Insert sample data (optional - uncomment if you want test data)
 /*
 -- Sample customer
 INSERT INTO public.customers (full_name, email, phone) VALUES

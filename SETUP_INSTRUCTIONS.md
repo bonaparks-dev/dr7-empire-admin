@@ -24,6 +24,7 @@ After running the script, you should see these new tables in the "Table Editor":
 - `customers` - Customer information
 - `vehicles` - Vehicle inventory
 - `reservations` - Booking/reservation records
+- `fatture` - Invoice management
 - `audit_log` - Change tracking for admin actions
 
 ### 4. Test the Admin Panel
