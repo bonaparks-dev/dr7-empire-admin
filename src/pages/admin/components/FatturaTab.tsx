@@ -177,14 +177,14 @@ export default function FatturaTab() {
               required
               value={formData.cliente_id}
               onChange={(e) => setFormData({ ...formData, cliente_id: e.target.value })}
-            >
-              <option value="">Seleziona un cliente</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.full_name} {customer.email && `(${customer.email})`}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: 'Seleziona un cliente' },
+                ...customers.map((customer) => ({
+                  value: customer.id,
+                  label: `${customer.full_name}${customer.email ? ` (${customer.email})` : ''}`
+                }))
+              ]}
+            />
             <Input
               label="Data Emissione"
               type="date"
@@ -205,12 +205,13 @@ export default function FatturaTab() {
               required
               value={formData.stato}
               onChange={(e) => setFormData({ ...formData, stato: e.target.value })}
-            >
-              <option value="bozza">Bozza</option>
-              <option value="emessa">Emessa</option>
-              <option value="pagata">Pagata</option>
-              <option value="annullata">Annullata</option>
-            </Select>
+              options={[
+                { value: 'bozza', label: 'Bozza' },
+                { value: 'emessa', label: 'Emessa' },
+                { value: 'pagata', label: 'Pagata' },
+                { value: 'annullata', label: 'Annullata' }
+              ]}
+            />
             <TextArea
               label="Note"
               rows={3}
