@@ -276,7 +276,8 @@ export default function ReservationsTab() {
           <table className="w-full">
             <thead className="bg-dr7-darker">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Customer</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Nome</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Telefono</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Vehicle</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Start</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">End</th>
@@ -289,6 +290,7 @@ export default function ReservationsTab() {
               {reservations.map((res) => (
                 <tr key={res.id} className="border-t border-gray-800 hover:bg-dr7-darker/50">
                   <td className="px-4 py-3 text-sm">{res.customers?.full_name || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm">{res.customers?.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm">{res.vehicles?.display_name || 'N/A'}</td>
                   <td className="px-4 py-3 text-sm">{new Date(res.start_at).toLocaleString()}</td>
                   <td className="px-4 py-3 text-sm">{new Date(res.end_at).toLocaleString()}</td>
@@ -316,7 +318,7 @@ export default function ReservationsTab() {
               ))}
               {reservations.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                     No reservations found
                   </td>
                 </tr>
