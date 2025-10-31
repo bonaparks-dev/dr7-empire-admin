@@ -10,6 +10,7 @@ interface Vehicle {
   plate: string | null
   status: 'available' | 'rented' | 'maintenance' | 'retired'
   daily_rate: number
+  category: 'performance' | 'urban' | null
   metadata: Record<string, any> | null
   created_at: string
   updated_at: string
@@ -20,12 +21,14 @@ export default function VehiclesTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [filterCategory, setFilterCategory] = useState<string>('all')
 
   const [formData, setFormData] = useState({
     display_name: '',
     plate: '',
     status: 'available',
-    daily_rate: '0'
+    daily_rate: '0',
+    category: 'performance'
   })
 
   useEffect(() => {
@@ -104,7 +107,8 @@ export default function VehiclesTab() {
       display_name: '',
       plate: '',
       status: 'available',
-      daily_rate: '0'
+      daily_rate: '0',
+      category: 'performance'
     })
   }
 
@@ -113,11 +117,20 @@ export default function VehiclesTab() {
       display_name: vehicle.display_name,
       plate: vehicle.plate || '',
       status: vehicle.status,
-      daily_rate: vehicle.daily_rate.toString()
+      daily_rate: vehicle.daily_rate.toString(),
+      category: vehicle.category || 'performance'
     })
     setEditingId(vehicle.id)
     setShowForm(true)
   }
+
+  // Filter vehicles by category
+  const filteredVehicles = filterCategory === 'all'
+    ? vehicles
+    : vehicles.filter(v => v.category === filterCategory)
+
+  const performanceCount = vehicles.filter(v => v.category === 'performance').length
+  const urbanCount = vehicles.filter(v => v.category === 'urban').length
 
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
@@ -126,7 +139,12 @@ export default function VehiclesTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Veicoli</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-white">Veicoli</h2>
+          <p className="text-sm text-gray-400 mt-1">
+            Performance: {performanceCount} | Urban: {urbanCount} | Totale: {vehicles.length}
+          </p>
+        </div>
         <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
           + Nuovo Veicolo
         </Button>
@@ -148,6 +166,16 @@ export default function VehiclesTab() {
               label="Targa"
               value={formData.plate}
               onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
+            />
+            <Select
+              label="Categoria"
+              required
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              options={[
+                { value: 'performance', label: 'Performance/Luxury' },
+                { value: 'urban', label: 'Urban' }
+              ]}
             />
             <Select
               label="Stato"
@@ -179,12 +207,47 @@ export default function VehiclesTab() {
         </form>
       )}
 
+      {/* Category Filter */}
+      <div className="mb-6 flex gap-2">
+        <button
+          onClick={() => setFilterCategory('all')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            filterCategory === 'all'
+              ? 'bg-white text-black'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Tutti ({vehicles.length})
+        </button>
+        <button
+          onClick={() => setFilterCategory('performance')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            filterCategory === 'performance'
+              ? 'bg-white text-black'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Performance/Luxury ({performanceCount})
+        </button>
+        <button
+          onClick={() => setFilterCategory('urban')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            filterCategory === 'urban'
+              ? 'bg-white text-black'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Urban ({urbanCount})
+        </button>
+      </div>
+
       <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-black">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Categoria</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Targa</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Stato</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tariffa</th>
@@ -192,9 +255,19 @@ export default function VehiclesTab() {
               </tr>
             </thead>
             <tbody>
-              {vehicles.map((vehicle) => (
+              {filteredVehicles.map((vehicle) => (
                 <tr key={vehicle.id} className="border-t border-gray-700 hover:bg-gray-800">
-                  <td className="px-4 py-3 text-sm text-white">{vehicle.display_name}</td>
+                  <td className="px-4 py-3 text-sm text-white font-semibold">{vehicle.display_name}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      vehicle.category === 'performance' ? 'bg-purple-900 text-purple-200' :
+                      vehicle.category === 'urban' ? 'bg-cyan-900 text-cyan-200' :
+                      'bg-gray-700 text-gray-200'
+                    }`}>
+                      {vehicle.category === 'performance' ? 'Performance' :
+                       vehicle.category === 'urban' ? 'Urban' : 'N/A'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-sm text-white">{vehicle.plate || '-'}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -229,10 +302,12 @@ export default function VehiclesTab() {
                   </td>
                 </tr>
               ))}
-              {vehicles.length === 0 && (
+              {filteredVehicles.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                    Nessun veicolo trovato
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                    {vehicles.length === 0
+                      ? 'Nessun veicolo trovato'
+                      : 'Nessun veicolo trovato con i filtri selezionati'}
                   </td>
                 </tr>
               )}

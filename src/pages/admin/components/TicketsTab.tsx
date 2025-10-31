@@ -2,125 +2,153 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
 import Button from './Button'
 
-interface BookingLineItem {
+interface GiftCard {
   id: string
-  booking_id: string
-  item_type: 'rental' | 'insurance' | 'extra' | 'service'
-  description: string
-  quantity: number
-  unit_price: number
-  total_price: number
+  code: string
+  initial_value: number
+  remaining_value: number
   currency: string
-  metadata: Record<string, any> | null
+  status: 'active' | 'redeemed' | 'expired' | 'cancelled'
+  issued_with_booking_id: string | null
+  issued_at: string
+  expires_at: string | null
+  redeemed_at: string | null
+  redeemed_in_booking_id: string | null
+  recipient_name: string | null
+  recipient_email: string | null
   created_at: string
+  updated_at: string
 }
 
-interface BookingWithLineItems {
+interface CommercialTicket {
   id: string
-  customer_name: string | null
-  customer_email: string | null
-  customer_phone: string | null
-  vehicle_name: string
-  status: string
-  payment_status: string
+  uuid: string
+  ticket_number: number
+  user_id: string | null
+  email: string
+  full_name: string
+  payment_intent_id: string
+  amount_paid: number
+  currency: string
+  purchase_date: string
+  quantity: number
   created_at: string
-  line_items: BookingLineItem[]
+  updated_at: string
 }
+
+type ViewMode = 'commercial' | 'gift_cards'
 
 export default function TicketsTab() {
-  const [tickets, setTickets] = useState<BookingLineItem[]>([])
-  const [bookingsWithTickets, setBookingsWithTickets] = useState<BookingWithLineItems[]>([])
+  const [giftCards, setGiftCards] = useState<GiftCard[]>([])
+  const [commercialTickets, setCommercialTickets] = useState<CommercialTicket[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'all' | 'grouped'>('all')
-  const [filterType, setFilterType] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('commercial')
 
   useEffect(() => {
-    loadTickets()
-  }, [])
+    loadData()
+  }, [viewMode])
 
-  async function loadTickets() {
+  async function loadData() {
     setLoading(true)
     try {
-      // Fetch all booking line items
-      const { data: lineItems, error: lineItemsError } = await supabase
-        .from('booking_line_items')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (lineItemsError) throw lineItemsError
-
-      setTickets(lineItems || [])
-
-      // Fetch bookings with their line items grouped
-      const bookingIds = [...new Set((lineItems || []).map(item => item.booking_id))]
-
-      if (bookingIds.length > 0) {
-        const { data: bookings, error: bookingsError } = await supabase
-          .from('bookings')
-          .select('id, customer_name, customer_email, customer_phone, vehicle_name, status, payment_status, created_at')
-          .in('id', bookingIds)
-
-        if (bookingsError) throw bookingsError
-
-        // Group line items by booking
-        const bookingsWithItems: BookingWithLineItems[] = (bookings || []).map(booking => ({
-          ...booking,
-          line_items: (lineItems || []).filter(item => item.booking_id === booking.id)
-        }))
-
-        setBookingsWithTickets(bookingsWithItems)
+      if (viewMode === 'commercial') {
+        await loadCommercialTickets()
+      } else {
+        await loadGiftCards()
       }
-    } catch (error) {
-      console.error('Failed to load tickets:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  function formatPrice(cents: number, currency: string = 'EUR'): string {
-    return `${currency} ${(cents / 100).toFixed(2)}`
-  }
+  async function loadCommercialTickets() {
+    try {
+      const { data, error } = await supabase
+        .from('commercial_operation_tickets')
+        .select('*')
+        .order('purchase_date', { ascending: false })
 
-  function getItemTypeLabel(type: string): string {
-    switch (type) {
-      case 'rental': return 'Noleggio'
-      case 'insurance': return 'Assicurazione'
-      case 'extra': return 'Extra'
-      case 'service': return 'Servizio'
-      default: return type
+      if (error) throw error
+      setCommercialTickets(data || [])
+    } catch (error) {
+      console.error('Failed to load commercial tickets:', error)
     }
   }
 
-  function getItemTypeColor(type: string): string {
-    switch (type) {
-      case 'rental': return 'bg-blue-900 text-blue-200'
-      case 'insurance': return 'bg-green-900 text-green-200'
-      case 'extra': return 'bg-purple-900 text-purple-200'
-      case 'service': return 'bg-yellow-900 text-yellow-200'
+  async function loadGiftCards() {
+    try {
+      const { data, error } = await supabase
+        .from('gift_cards')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setGiftCards(data || [])
+    } catch (error) {
+      console.error('Failed to load gift cards:', error)
+    }
+  }
+
+  function formatPrice(value: number, currency: string = 'EUR'): string {
+    return `${currency} ${value.toFixed(2)}`
+  }
+
+  function formatPriceCents(cents: number, currency: string = 'eur'): string {
+    const value = cents / 100
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: currency.toUpperCase()
+    }).format(value)
+  }
+
+  function getStatusLabel(status: string): string {
+    switch (status) {
+      case 'active': return 'Attivo'
+      case 'redeemed': return 'Riscattato'
+      case 'expired': return 'Scaduto'
+      case 'cancelled': return 'Annullato'
+      default: return status
+    }
+  }
+
+  function getStatusColor(status: string): string {
+    switch (status) {
+      case 'active': return 'bg-green-900 text-green-200'
+      case 'redeemed': return 'bg-blue-900 text-blue-200'
+      case 'expired': return 'bg-gray-700 text-gray-300'
+      case 'cancelled': return 'bg-red-900 text-red-200'
       default: return 'bg-gray-700 text-gray-200'
     }
   }
 
-  const filteredTickets = filterType === 'all'
-    ? tickets
-    : tickets.filter(t => t.item_type === filterType)
+  // Commercial tickets stats
+  const totalCommercialRevenue = commercialTickets.reduce((sum, ticket) => sum + ticket.amount_paid, 0)
+  const totalCommercialTickets = commercialTickets.length
+  const uniquePurchases = new Set(commercialTickets.map(t => t.payment_intent_id)).size
 
-  const totalRevenue = filteredTickets.reduce((sum, ticket) => sum + ticket.total_price, 0)
+  // Gift cards stats
+  const filteredCards = filterStatus === 'all'
+    ? giftCards
+    : giftCards.filter(c => c.status === filterStatus)
+  const totalValue = filteredCards.reduce((sum, card) => sum + card.initial_value, 0)
+  const totalRedeemed = filteredCards.filter(c => c.status === 'redeemed').length
+  const totalActive = filteredCards.filter(c => c.status === 'active').length
 
-  async function handleExport() {
+  async function handleExportCommercial() {
     try {
       const csvData = [
-        ['ID', 'Booking ID', 'Type', 'Description', 'Quantity', 'Unit Price', 'Total Price', 'Currency', 'Date'].join(','),
-        ...filteredTickets.map(ticket => [
-          ticket.id,
-          ticket.booking_id,
-          getItemTypeLabel(ticket.item_type),
-          `"${ticket.description}"`,
+        ['UUID', 'Numero Biglietto', 'Nome', 'Email', 'Importo', 'Valuta', 'Data Acquisto', 'Quantità', 'Payment Intent ID'].join(','),
+        ...commercialTickets.map(ticket => [
+          ticket.uuid,
+          ticket.ticket_number.toString().padStart(6, '0'),
+          ticket.full_name,
+          ticket.email,
+          (ticket.amount_paid / 100).toFixed(2),
+          ticket.currency.toUpperCase(),
+          new Date(ticket.purchase_date).toLocaleString('it-IT'),
           ticket.quantity,
-          (ticket.unit_price / 100).toFixed(2),
-          (ticket.total_price / 100).toFixed(2),
-          ticket.currency,
-          new Date(ticket.created_at).toLocaleString('it-IT')
+          ticket.payment_intent_id
         ].join(','))
       ].join('\n')
 
@@ -128,12 +156,43 @@ export default function TicketsTab() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `tickets-${new Date().toISOString().slice(0, 10)}.csv`
+      a.download = `biglietti-operazione-commerciale-${new Date().toISOString().slice(0, 10)}.csv`
       a.click()
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Export failed:', error)
       alert('Impossibile esportare i biglietti')
+    }
+  }
+
+  async function handleExportGiftCards() {
+    try {
+      const csvData = [
+        ['Codice', 'Valore Iniziale', 'Valore Rimanente', 'Valuta', 'Stato', 'Destinatario', 'Email', 'Emesso', 'Scadenza', 'Riscattato'].join(','),
+        ...filteredCards.map(card => [
+          card.code,
+          card.initial_value.toFixed(2),
+          card.remaining_value.toFixed(2),
+          card.currency,
+          getStatusLabel(card.status),
+          card.recipient_name || '',
+          card.recipient_email || '',
+          new Date(card.issued_at).toLocaleDateString('it-IT'),
+          card.expires_at ? new Date(card.expires_at).toLocaleDateString('it-IT') : '',
+          card.redeemed_at ? new Date(card.redeemed_at).toLocaleDateString('it-IT') : ''
+        ].join(','))
+      ].join('\n')
+
+      const blob = new Blob([csvData], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `gift-cards-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Impossibile esportare i buoni regalo')
     }
   }
 
@@ -143,177 +202,246 @@ export default function TicketsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Biglietti Venduti</h2>
-        <div className="flex gap-3">
-          <Button onClick={handleExport} variant="secondary">
-            Esporta CSV
-          </Button>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
-          <div className="text-sm text-gray-400">Totale Biglietti</div>
-          <div className="text-2xl font-bold text-white">{filteredTickets.length}</div>
-        </div>
-        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
-          <div className="text-sm text-gray-400">Fatturato Totale</div>
-          <div className="text-2xl font-bold text-white">{formatPrice(totalRevenue)}</div>
-        </div>
-        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
-          <div className="text-sm text-gray-400">Noleggi</div>
-          <div className="text-2xl font-bold text-white">
-            {tickets.filter(t => t.item_type === 'rental').length}
-          </div>
-        </div>
-        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
-          <div className="text-sm text-gray-400">Servizi/Extra</div>
-          <div className="text-2xl font-bold text-white">
-            {tickets.filter(t => t.item_type === 'extra' || t.item_type === 'service').length}
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-6 flex gap-4 items-center">
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setViewMode('all')}
-            variant={viewMode === 'all' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Vista Dettagliata
-          </Button>
-          <Button
-            onClick={() => setViewMode('grouped')}
-            variant={viewMode === 'grouped' ? 'primary' : 'secondary'}
-            className="text-sm"
-          >
-            Raggruppati per Prenotazione
-          </Button>
-        </div>
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="bg-gray-900 border border-gray-700 text-white rounded px-3 py-2 text-sm"
+      {/* View Mode Toggle */}
+      <div className="mb-6 flex gap-2">
+        <button
+          onClick={() => setViewMode('commercial')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === 'commercial'
+              ? 'bg-white text-black'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
         >
-          <option value="all">Tutti i tipi</option>
-          <option value="rental">Noleggi</option>
-          <option value="insurance">Assicurazioni</option>
-          <option value="extra">Extra</option>
-          <option value="service">Servizi</option>
-        </select>
+          Biglietti Operazione Commerciale
+        </button>
+        <button
+          onClick={() => setViewMode('gift_cards')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            viewMode === 'gift_cards'
+              ? 'bg-white text-black'
+              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Buoni Regalo Promozionali
+        </button>
       </div>
 
-      {/* All Tickets View */}
-      {viewMode === 'all' && (
-        <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-black">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tipo</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Descrizione</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Quantità</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Prezzo Unitario</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Totale</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Data</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTickets.map((ticket) => (
-                  <tr key={ticket.id} className="border-t border-gray-700 hover:bg-gray-800">
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getItemTypeColor(ticket.item_type)}`}>
-                        {getItemTypeLabel(ticket.item_type)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-white">{ticket.description}</td>
-                    <td className="px-4 py-3 text-sm text-white">{ticket.quantity}</td>
-                    <td className="px-4 py-3 text-sm text-white">{formatPrice(ticket.unit_price, ticket.currency)}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-white">{formatPrice(ticket.total_price, ticket.currency)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-400">{new Date(ticket.created_at).toLocaleDateString('it-IT')}</td>
-                  </tr>
-                ))}
-                {filteredTickets.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                      Nessun biglietto trovato
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+      {viewMode === 'commercial' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Biglietti Operazione Commerciale</h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Biglietti venduti per l'operazione "7 MILIONI DI EURO"
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={handleExportCommercial} variant="secondary">
+                Esporta CSV
+              </Button>
+            </div>
           </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Totale Biglietti Venduti</div>
+              <div className="text-2xl font-bold text-white">{totalCommercialTickets}</div>
+            </div>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Ricavo Totale</div>
+              <div className="text-2xl font-bold text-white">{formatPriceCents(totalCommercialRevenue)}</div>
+            </div>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Acquisti Unici</div>
+              <div className="text-2xl font-bold text-green-400">{uniquePurchases}</div>
+            </div>
+          </div>
+
+          {/* Commercial Tickets Table */}
+          <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-black">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Numero Biglietto</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Importo Pagato</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Data Acquisto</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Quantità</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">UUID</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commercialTickets.map((ticket) => (
+                    <tr key={ticket.id} className="border-t border-gray-700 hover:bg-gray-800">
+                      <td className="px-4 py-3 text-sm font-mono text-white font-bold">
+                        #{ticket.ticket_number.toString().padStart(6, '0')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-white">{ticket.full_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-400">{ticket.email}</td>
+                      <td className="px-4 py-3 text-sm text-white font-semibold">
+                        {formatPriceCents(ticket.amount_paid, ticket.currency)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-400">
+                        {new Date(ticket.purchase_date).toLocaleString('it-IT', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-white">{ticket.quantity}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-gray-500">
+                        {ticket.uuid.substring(0, 8)}...
+                      </td>
+                    </tr>
+                  ))}
+                  {commercialTickets.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                        Nessun biglietto venduto ancora
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {commercialTickets.length === 0 && (
+            <div className="mt-6 p-6 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                📝 Operazione Commerciale "7 MILIONI DI EURO"
+              </h3>
+              <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
+                <li>I biglietti vengono salvati automaticamente dopo ogni acquisto</li>
+                <li>Ogni biglietto ha un numero univoco da 1 a 350,000</li>
+                <li>L'estrazione si terrà il 24 Dicembre 2025</li>
+                <li>I biglietti appariranno qui dopo il primo acquisto</li>
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Grouped by Booking View */}
-      {viewMode === 'grouped' && (
-        <div className="space-y-4">
-          {bookingsWithTickets.map((booking) => {
-            const bookingTotal = booking.line_items.reduce((sum, item) => sum + item.total_price, 0)
-            return (
-              <div key={booking.id} className="bg-gray-900 rounded-lg border border-gray-700 p-4">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{booking.vehicle_name}</h3>
-                    <div className="text-sm text-gray-400 mt-1">
-                      Cliente: {booking.customer_name || booking.customer_email || 'N/A'}
-                    </div>
-                    {booking.customer_phone && (
-                      <div className="text-sm text-gray-400">Tel: {booking.customer_phone}</div>
-                    )}
-                    <div className="text-sm text-gray-400">
-                      Data: {new Date(booking.created_at).toLocaleDateString('it-IT')}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400">Totale Prenotazione</div>
-                    <div className="text-2xl font-bold text-white">{formatPrice(bookingTotal)}</div>
-                    <span className={`mt-2 inline-block px-2 py-1 rounded text-xs font-medium ${
-                      booking.payment_status === 'paid' ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'
-                    }`}>
-                      {booking.payment_status}
-                    </span>
-                  </div>
-                </div>
-                <div className="border-t border-gray-700 pt-3">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="text-xs text-gray-400">
-                        <th className="text-left py-2">Tipo</th>
-                        <th className="text-left py-2">Descrizione</th>
-                        <th className="text-right py-2">Qtà</th>
-                        <th className="text-right py-2">Prezzo</th>
-                        <th className="text-right py-2">Totale</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {booking.line_items.map((item) => (
-                        <tr key={item.id} className="text-sm text-white">
-                          <td className="py-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${getItemTypeColor(item.item_type)}`}>
-                              {getItemTypeLabel(item.item_type)}
-                            </span>
-                          </td>
-                          <td className="py-2">{item.description}</td>
-                          <td className="text-right py-2">{item.quantity}</td>
-                          <td className="text-right py-2">{formatPrice(item.unit_price, item.currency)}</td>
-                          <td className="text-right py-2 font-semibold">{formatPrice(item.total_price, item.currency)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )
-          })}
-          {bookingsWithTickets.length === 0 && (
-            <div className="bg-gray-900 rounded-lg border border-gray-700 p-8 text-center text-gray-500">
-              Nessuna prenotazione con biglietti trovata
+      {viewMode === 'gift_cards' && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Buoni Regalo Promozionali</h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Buoni da €25 con validità 24 mesi (non cumulabili)
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={handleExportGiftCards} variant="secondary">
+                Esporta CSV
+              </Button>
+            </div>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Totale Buoni</div>
+              <div className="text-2xl font-bold text-white">{filteredCards.length}</div>
+            </div>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Valore Totale</div>
+              <div className="text-2xl font-bold text-white">{formatPrice(totalValue)}</div>
+            </div>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Attivi</div>
+              <div className="text-2xl font-bold text-green-400">{totalActive}</div>
+            </div>
+            <div className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+              <div className="text-sm text-gray-400">Riscattati</div>
+              <div className="text-2xl font-bold text-blue-400">{totalRedeemed}</div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="mb-6 flex gap-4 items-center">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="bg-gray-900 border border-gray-700 text-white rounded px-3 py-2 text-sm"
+            >
+              <option value="all">Tutti gli stati</option>
+              <option value="active">Attivi</option>
+              <option value="redeemed">Riscattati</option>
+              <option value="expired">Scaduti</option>
+              <option value="cancelled">Annullati</option>
+            </select>
+          </div>
+
+          {/* Gift Cards Table */}
+          <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-black">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Codice</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Destinatario</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Email</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Valore</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Rimanente</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Stato</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Emesso</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Scadenza</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCards.map((card) => (
+                    <tr key={card.id} className="border-t border-gray-700 hover:bg-gray-800">
+                      <td className="px-4 py-3 text-sm font-mono text-white">{card.code}</td>
+                      <td className="px-4 py-3 text-sm text-white">{card.recipient_name || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-400">{card.recipient_email || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-white">{formatPrice(card.initial_value, card.currency)}</td>
+                      <td className="px-4 py-3 text-sm text-white">{formatPrice(card.remaining_value, card.currency)}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(card.status)}`}>
+                          {getStatusLabel(card.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-400">
+                        {new Date(card.issued_at).toLocaleDateString('it-IT')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-400">
+                        {card.expires_at ? new Date(card.expires_at).toLocaleDateString('it-IT') : 'N/A'}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredCards.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                        {giftCards.length === 0
+                          ? 'Nessun buono regalo emesso ancora'
+                          : 'Nessun buono trovato con i filtri selezionati'
+                        }
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {giftCards.length === 0 && (
+            <div className="mt-6 p-6 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+              <h3 className="text-lg font-semibold text-white mb-2">
+                📝 Come funzionano i Buoni Promozionali
+              </h3>
+              <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
+                <li>Valore: €25 per buono</li>
+                <li>Validità: 24 mesi dalla data di emissione</li>
+                <li>Non cumulabili tra loro</li>
+                <li>Emessi automaticamente con acquisti operazione commerciale</li>
+                <li>I buoni appariranno qui dopo la prima emissione</li>
+              </ul>
             </div>
           )}
         </div>
