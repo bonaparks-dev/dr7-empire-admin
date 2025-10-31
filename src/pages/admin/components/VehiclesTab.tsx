@@ -10,7 +10,7 @@ interface Vehicle {
   plate: string | null
   status: 'available' | 'rented' | 'maintenance' | 'retired'
   daily_rate: number
-  category: 'performance' | 'urban' | null
+  category: 'exotic' | 'urban' | null
   metadata: Record<string, any> | null
   created_at: string
   updated_at: string
@@ -28,7 +28,7 @@ export default function VehiclesTab() {
     plate: '',
     status: 'available',
     daily_rate: '0',
-    category: 'performance'
+    category: 'exotic'
   })
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function VehiclesTab() {
       plate: '',
       status: 'available',
       daily_rate: '0',
-      category: 'performance'
+      category: 'exotic'
     })
   }
 
@@ -118,7 +118,7 @@ export default function VehiclesTab() {
       plate: vehicle.plate || '',
       status: vehicle.status,
       daily_rate: vehicle.daily_rate.toString(),
-      category: vehicle.category || 'performance'
+      category: vehicle.category || 'exotic'
     })
     setEditingId(vehicle.id)
     setShowForm(true)
@@ -129,7 +129,7 @@ export default function VehiclesTab() {
     ? vehicles
     : vehicles.filter(v => v.category === filterCategory)
 
-  const performanceCount = vehicles.filter(v => v.category === 'performance').length
+  const exoticCount = vehicles.filter(v => v.category === 'exotic').length
   const urbanCount = vehicles.filter(v => v.category === 'urban').length
 
   if (loading) {
@@ -142,7 +142,7 @@ export default function VehiclesTab() {
         <div>
           <h2 className="text-2xl font-bold text-white">Veicoli</h2>
           <p className="text-sm text-gray-400 mt-1">
-            Performance: {performanceCount} | Urban: {urbanCount} | Totale: {vehicles.length}
+            Exotic Supercars: {exoticCount} | Urban: {urbanCount} | Totale: {vehicles.length}
           </p>
         </div>
         <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
@@ -173,7 +173,7 @@ export default function VehiclesTab() {
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               options={[
-                { value: 'performance', label: 'Performance/Luxury' },
+                { value: 'exotic', label: 'Exotic Supercars' },
                 { value: 'urban', label: 'Urban' }
               ]}
             />
@@ -220,14 +220,14 @@ export default function VehiclesTab() {
           Tutti ({vehicles.length})
         </button>
         <button
-          onClick={() => setFilterCategory('performance')}
+          onClick={() => setFilterCategory('exotic')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            filterCategory === 'performance'
+            filterCategory === 'exotic'
               ? 'bg-white text-black'
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
           }`}
         >
-          Performance/Luxury ({performanceCount})
+          Exotic Supercars ({exoticCount})
         </button>
         <button
           onClick={() => setFilterCategory('urban')}
@@ -260,11 +260,11 @@ export default function VehiclesTab() {
                   <td className="px-4 py-3 text-sm text-white font-semibold">{vehicle.display_name}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      vehicle.category === 'performance' ? 'bg-purple-900 text-purple-200' :
+                      vehicle.category === 'exotic' ? 'bg-purple-900 text-purple-200' :
                       vehicle.category === 'urban' ? 'bg-cyan-900 text-cyan-200' :
                       'bg-gray-700 text-gray-200'
                     }`}>
-                      {vehicle.category === 'performance' ? 'Performance' :
+                      {vehicle.category === 'exotic' ? 'Exotic' :
                        vehicle.category === 'urban' ? 'Urban' : 'N/A'}
                     </span>
                   </td>
