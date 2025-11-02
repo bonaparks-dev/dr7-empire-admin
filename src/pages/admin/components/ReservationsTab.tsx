@@ -174,21 +174,6 @@ export default function ReservationsTab() {
     })
   }
 
-  function handleEdit(reservation: Reservation) {
-    setFormData({
-      customer_id: reservation.customer_id,
-      vehicle_id: reservation.vehicle_id,
-      start_at: reservation.start_at.slice(0, 16),
-      end_at: reservation.end_at.slice(0, 16),
-      status: reservation.status,
-      source: reservation.source || 'admin',
-      total_amount: reservation.total_amount.toString(),
-      currency: reservation.currency
-    })
-    setEditingId(reservation.id)
-    setShowForm(true)
-  }
-
   async function handleExport() {
     try {
       const res = await fetch(`${API_BASE}/export/reservations.csv`, {
