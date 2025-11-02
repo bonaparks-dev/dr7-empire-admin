@@ -5,9 +5,21 @@
 INSERT INTO customers (id, full_name, email, phone, created_at, updated_at)
 SELECT DISTINCT
   user_id as id,
-  COALESCE(customer_name, customer_email, 'Unknown Customer') as full_name,
-  customer_email as email,
-  customer_phone as phone,
+  COALESCE(
+    booking_details->>'customer'->>'fullName',  -- Extract from JSON booking_details
+    booking_details->'customer'->>'fullName',   -- Alternative JSON path
+    customer_name,                               -- Fallback to direct column if exists
+    customer_email,                              -- Last resort: use email
+    'Unknown Customer'
+  ) as full_name,
+  COALESCE(
+    booking_details->'customer'->>'email',      -- Extract email from JSON
+    customer_email
+  ) as email,
+  COALESCE(
+    booking_details->'customer'->>'phone',      -- Extract phone from JSON
+    customer_phone
+  ) as phone,
   MIN(created_at) as created_at,
   MIN(created_at) as updated_at
 FROM bookings
@@ -15,7 +27,14 @@ WHERE user_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM customers WHERE customers.id = bookings.user_id
   )
-GROUP BY user_id, customer_name, customer_email, customer_phone
+GROUP BY
+  user_id,
+  booking_details->'customer'->>'fullName',
+  booking_details->'customer'->>'email',
+  booking_details->'customer'->>'phone',
+  customer_name,
+  customer_email,
+  customer_phone
 ON CONFLICT (id) DO NOTHING;
 
 -- Step 2: Find or create vehicle IDs based on vehicle_name
