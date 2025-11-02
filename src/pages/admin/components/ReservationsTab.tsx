@@ -319,8 +319,12 @@ export default function ReservationsTab() {
                   <td className="px-4 py-3 text-sm text-white">{booking.customer_email || '-'}</td>
                   <td className="px-4 py-3 text-sm text-white">{booking.customer_phone || '-'}</td>
                   <td className="px-4 py-3 text-sm text-white">{booking.vehicle_name}</td>
-                  <td className="px-4 py-3 text-sm text-white">{new Date(booking.pickup_date).toLocaleString('it-IT')}</td>
-                  <td className="px-4 py-3 text-sm text-white">{new Date(booking.dropoff_date).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm text-white">
+                    {booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT') : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-white">
+                    {booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT') : '-'}
+                  </td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
