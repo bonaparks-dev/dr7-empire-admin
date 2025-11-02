@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '../../../supabaseClient'
 import Input from './Input'
 import Select from './Select'
 import Button from './Button'
@@ -43,11 +44,35 @@ interface Reservation {
   vehicles?: Vehicle
 }
 
+interface Booking {
+  id: string
+  user_id: string | null
+  vehicle_name: string
+  vehicle_image_url: string | null
+  pickup_date: string
+  dropoff_date: string
+  pickup_location: string
+  dropoff_location: string
+  price_total: number
+  currency: string
+  status: string
+  payment_status: string
+  payment_method: string | null
+  customer_name: string | null
+  customer_email: string | null
+  customer_phone: string | null
+  booking_details: Record<string, any> | null
+  booked_at: string
+  created_at: string
+  updated_at: string
+}
+
 const API_BASE = '/.netlify/functions/admin'
 const API_TOKEN = import.meta.env.VITE_ADMIN_UI_TOKEN
 
 export default function ReservationsTab() {
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +97,19 @@ export default function ReservationsTab() {
   async function loadData() {
     setLoading(true)
     try {
+      // Fetch bookings directly from Supabase
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (bookingsError) {
+        console.error('Failed to load bookings:', bookingsError)
+      } else {
+        setBookings(bookingsData || [])
+      }
+
+      // Fetch reservations, customers, and vehicles from API
       const [resData, custData, vehData] = await Promise.all([
         fetch(`${API_BASE}/reservations`, {
           headers: { 'Authorization': `Bearer ${API_TOKEN}` }
@@ -179,13 +217,13 @@ export default function ReservationsTab() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-dr7-gold">Reservations</h2>
+        <h2 className="text-2xl font-bold text-dr7-gold">Prenotazioni</h2>
         <div className="flex gap-3">
           <Button onClick={handleExport} variant="secondary">
-            Export CSV
+            Esporta CSV
           </Button>
           <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
-            + New Reservation
+            + Nuova Prenotazione
           </Button>
         </div>
       </div>
@@ -277,23 +315,50 @@ export default function ReservationsTab() {
             <thead className="bg-dr7-darker">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Nome</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Telefono</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Vehicle</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Start</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">End</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Status</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Total</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Veicolo</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Inizio</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Fine</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Stato</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Totale</th>
               </tr>
             </thead>
             <tbody>
+              {/* Display bookings from bookings table */}
+              {bookings.map((booking) => (
+                <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
+                  <td className="px-4 py-3 text-sm">
+                    {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
+                  </td>
+                  <td className="px-4 py-3 text-sm">{booking.customer_email || '-'}</td>
+                  <td className="px-4 py-3 text-sm">{booking.customer_phone || '-'}</td>
+                  <td className="px-4 py-3 text-sm">{booking.vehicle_name}</td>
+                  <td className="px-4 py-3 text-sm">{new Date(booking.pickup_date).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm">{new Date(booking.dropoff_date).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
+                      booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
+                      booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
+                      'bg-gray-700 text-gray-300'
+                    }`}>
+                      {booking.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">€{(booking.price_total / 100).toFixed(2)}</td>
+                </tr>
+              ))}
+
+              {/* Display reservations from reservations table */}
               {reservations.map((res) => (
-                <tr key={res.id} className="border-t border-gray-800 hover:bg-dr7-darker/50">
+                <tr key={`reservation-${res.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
                   <td className="px-4 py-3 text-sm">{res.customers?.full_name || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm">{res.customers?.email || '-'}</td>
                   <td className="px-4 py-3 text-sm">{res.customers?.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm">{res.vehicles?.display_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm">{new Date(res.start_at).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-sm">{new Date(res.end_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-sm">{new Date(res.start_at).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm">{new Date(res.end_at).toLocaleString('it-IT')}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       res.status === 'active' ? 'bg-green-900 text-green-300' :
@@ -305,21 +370,13 @@ export default function ReservationsTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">{res.currency} {res.total_amount}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <Button
-                      onClick={() => handleEdit(res)}
-                      variant="secondary"
-                      className="text-xs py-1 px-3"
-                    >
-                      Edit
-                    </Button>
-                  </td>
                 </tr>
               ))}
-              {reservations.length === 0 && (
+
+              {bookings.length === 0 && reservations.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                    No reservations found
+                    Nessuna prenotazione trovata
                   </td>
                 </tr>
               )}
