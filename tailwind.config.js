@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        'dr7-gold': '#D4AF37',
+        'dr7-gold': '#C9A55B',  // Sophisticated champagne gold
         'dr7-dark': '#1a1a1a',
         'dr7-darker': '#0f0f0f'
       }

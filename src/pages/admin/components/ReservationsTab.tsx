@@ -334,63 +334,66 @@ export default function ReservationsTab() {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-dr7-gold">Prenotazioni</h2>
-        <div className="flex gap-3">
-          <Button onClick={handleExport} variant="secondary">
-            Esporta CSV
+    <div className="space-y-4">
+      {/* Mobile-optimized header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-dr7-gold">Prenotazioni</h2>
+        <div className="flex gap-2 sm:gap-3">
+          <Button onClick={handleExport} variant="secondary" className="flex-1 sm:flex-none text-sm sm:text-base">
+            <span className="hidden sm:inline">Esporta CSV</span>
+            <span className="sm:hidden">📥 CSV</span>
           </Button>
-          <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
-            + Nuova Prenotazione
+          <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }} className="flex-1 sm:flex-none text-sm sm:text-base">
+            <span className="hidden sm:inline">+ Nuova Prenotazione</span>
+            <span className="sm:hidden">+ Nuovo</span>
           </Button>
         </div>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-dr7-dark p-6 rounded-lg mb-6 border border-gray-800">
-          <h3 className="text-xl font-semibold text-dr7-gold mb-4">
-            {editingId ? 'Edit Reservation' : 'Nuova Prenotazione'}
+        <form onSubmit={handleSubmit} className="bg-dr7-dark p-4 sm:p-6 rounded-lg mb-6 border border-gray-800">
+          <h3 className="text-lg sm:text-xl font-semibold text-dr7-gold mb-4">
+            {editingId ? 'Modifica Prenotazione' : 'Nuova Prenotazione'}
           </h3>
 
-          {/* Booking Type Selection */}
-          <div className="mb-6 p-4 bg-dr7-darker rounded-lg border border-gray-700">
-            <div className="flex items-center gap-4 mb-4">
-              <label className="text-white font-semibold">Tipo Prenotazione:</label>
+          {/* Booking Type Selection - Mobile Optimized */}
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-dr7-darker rounded-lg border border-gray-700">
+            <label className="block text-white font-semibold mb-3 text-sm sm:text-base">Tipo Prenotazione:</label>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setBookingType('rental')}
-                className={`px-4 py-2 rounded ${bookingType === 'rental' ? 'bg-dr7-gold text-black' : 'bg-gray-700 text-white'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'rental' ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
-                Noleggio Auto
+                🚗 Noleggio
               </button>
               <button
                 type="button"
                 onClick={() => setBookingType('carwash')}
-                className={`px-4 py-2 rounded ${bookingType === 'carwash' ? 'bg-dr7-gold text-black' : 'bg-gray-700 text-white'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'carwash' ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
-                Autolavaggio
+                🚿 Lavaggio
               </button>
             </div>
           </div>
 
-          {/* Customer Selection or New Customer */}
-          <div className="mb-6 p-4 bg-dr7-darker rounded-lg border border-gray-700">
-            <div className="flex items-center gap-4 mb-4">
-              <label className="text-white font-semibold">Cliente:</label>
+          {/* Customer Selection - Mobile Optimized */}
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-dr7-darker rounded-lg border border-gray-700">
+            <label className="block text-white font-semibold mb-3 text-sm sm:text-base">Cliente:</label>
+            <div className="grid grid-cols-2 gap-2 mb-4">
               <button
                 type="button"
                 onClick={() => setNewCustomerMode(false)}
-                className={`px-4 py-2 rounded ${!newCustomerMode ? 'bg-dr7-gold text-black' : 'bg-gray-700 text-white'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${!newCustomerMode ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
-                Seleziona Esistente
+                Esistente
               </button>
               <button
                 type="button"
                 onClick={() => setNewCustomerMode(true)}
-                className={`px-4 py-2 rounded ${newCustomerMode ? 'bg-dr7-gold text-black' : 'bg-gray-700 text-white'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${newCustomerMode ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
-                Nuovo Cliente
+                Nuovo
               </button>
             </div>
 
@@ -561,7 +564,102 @@ export default function ReservationsTab() {
         </form>
       )}
 
-      <div className="bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {bookings.length === 0 && reservations.length === 0 && (
+          <div className="bg-dr7-dark rounded-lg border border-gray-800 p-8 text-center text-gray-500">
+            Nessuna prenotazione trovata
+          </div>
+        )}
+
+        {/* Display bookings as cards on mobile */}
+        {bookings.map((booking) => {
+          const isCarWash = booking.service_type === 'car_wash'
+          return (
+            <div key={`booking-card-${booking.id}`} className="bg-dr7-dark rounded-lg border border-gray-800 p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="font-semibold text-white mb-1">
+                    {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
+                  </div>
+                  <div className="text-sm text-gray-400">{booking.customer_email || '-'}</div>
+                  <div className="text-sm text-gray-400">{booking.customer_phone || '-'}</div>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                  booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
+                  booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
+                  booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
+                  'bg-gray-700 text-gray-300'
+                }`}>
+                  {booking.status}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 mb-2 text-white">
+                {isCarWash ? (
+                  <>
+                    <span className="text-blue-400">🚿</span>
+                    <span className="text-sm">{booking.service_name || 'Autolavaggio'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-green-400">🚗</span>
+                    <span className="text-sm">{booking.vehicle_name}</span>
+                  </>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-400 mb-2">
+                {isCarWash
+                  ? `📅 ${booking.appointment_date ? new Date(booking.appointment_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}`
+                  : `📅 ${booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'} → ${booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}`
+                }
+              </div>
+
+              <div className="text-right text-lg font-bold text-white">
+                €{(booking.price_total / 100).toFixed(2)}
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Display reservations as cards */}
+        {reservations.map((res) => (
+          <div key={`reservation-card-${res.id}`} className="bg-dr7-dark rounded-lg border border-gray-800 p-4">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1">
+                <div className="font-semibold text-white mb-1">{res.customers?.full_name || 'N/A'}</div>
+                <div className="text-sm text-gray-400">{res.customers?.email || '-'}</div>
+                <div className="text-sm text-gray-400">{res.customers?.phone || '-'}</div>
+              </div>
+              <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
+                res.status === 'active' ? 'bg-green-900 text-green-300' :
+                res.status === 'completed' ? 'bg-blue-900 text-blue-300' :
+                res.status === 'cancelled' ? 'bg-red-900 text-red-300' :
+                'bg-gray-700 text-gray-300'
+              }`}>
+                {res.status}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2 text-white">
+              <span className="text-green-400">🚗</span>
+              <span className="text-sm">{res.vehicles?.display_name || 'N/A'}</span>
+            </div>
+
+            <div className="text-xs text-gray-400 mb-2">
+              📅 {new Date(res.start_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })} → {new Date(res.end_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
+            </div>
+
+            <div className="text-right text-lg font-bold text-white">
+              {res.currency} {res.total_amount}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-dr7-darker">
