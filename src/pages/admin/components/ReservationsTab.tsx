@@ -65,6 +65,10 @@ interface Booking {
   booked_at: string
   created_at: string
   updated_at: string
+  // Car wash specific fields
+  service_type?: string
+  service_name?: string
+  appointment_date?: string
 }
 
 const API_BASE = '/.netlify/functions/admin'
