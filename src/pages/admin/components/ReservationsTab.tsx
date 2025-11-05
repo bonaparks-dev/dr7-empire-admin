@@ -447,7 +447,9 @@ export default function ReservationsTab() {
                 onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
                 options={[
                   { value: '', label: 'Seleziona cliente...' },
-                  ...customers.map(c => ({ value: c.id, label: c.full_name }))
+                  ...customers
+                    .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                    .map(c => ({ value: c.id, label: c.full_name }))
                 ]}
               />
             )}
