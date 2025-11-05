@@ -4,6 +4,27 @@
 
 @theme {
   --color-dr7-gold: #D4AF37;
-  --color-dr7-dark: #1a1a1a;
-  --color-dr7-darker: #0f0f0f;
+  --color-dr7-dark: #000000;
+  --color-dr7-darker: #000000;
+}
+
+/* Fix calendar icon visibility for datetime inputs */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
