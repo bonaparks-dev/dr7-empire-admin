@@ -183,8 +183,7 @@ export default function VehiclesTab() {
               options={[
                 { value: 'available', label: 'Disponibile' },
                 { value: 'rented', label: 'Noleggiato' },
-                { value: 'maintenance', label: 'Manutenzione' },
-                { value: 'retired', label: 'Ritirato' }
+                { value: 'maintenance', label: 'Manutenzione' }
               ]}
             />
             <Input
