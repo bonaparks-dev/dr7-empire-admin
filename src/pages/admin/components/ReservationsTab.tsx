@@ -532,11 +532,16 @@ export default function ReservationsTab() {
                 value={carWashData.appointment_date}
                 onChange={(e) => setCarWashData({ ...carWashData, appointment_date: e.target.value })}
               />
-              <Input
+              <Select
                 label="Servizio Aggiuntivo"
                 value={carWashData.additional_service}
                 onChange={(e) => setCarWashData({ ...carWashData, additional_service: e.target.value })}
-                placeholder="Es: Auto di cortesia, Supercar experience..."
+                options={[
+                  { value: '', label: 'Nessuno' },
+                  { value: 'courtesy-car', label: 'Utilitaria di Cortesia' },
+                  { value: 'supercar', label: 'Supercar Experience' },
+                  { value: 'lambo-ferrari', label: 'Lamborghini & Ferrari Experience' }
+                ]}
               />
               <Select
                 label="Stato"
