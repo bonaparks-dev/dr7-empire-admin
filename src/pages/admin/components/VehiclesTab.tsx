@@ -21,7 +21,6 @@ export default function VehiclesTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [filterCategory, setFilterCategory] = useState<string>('all')
 
   const [formData, setFormData] = useState({
     display_name: '',
