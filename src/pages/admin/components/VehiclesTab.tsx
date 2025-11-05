@@ -21,6 +21,9 @@ export default function VehiclesTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'exotic' | 'urban'>('all')
+  const [priceAdjustment, setPriceAdjustment] = useState<number>(0)
+  const [isAdjusting, setIsAdjusting] = useState(false)
 
   const [formData, setFormData] = useState({
     display_name: '',
@@ -123,6 +126,46 @@ export default function VehiclesTab() {
     setShowForm(true)
   }
 
+  async function handlePriceAdjustment(percentage: number, increase: boolean) {
+    if (!confirm(`Sei sicuro di voler ${increase ? 'aumentare' : 'diminuire'} i prezzi del ${percentage}%?`)) {
+      return
+    }
+
+    setIsAdjusting(true)
+    try {
+      // Filter vehicles by category if selected
+      const vehiclesToUpdate = selectedCategory === 'all'
+        ? vehicles
+        : vehicles.filter(v => v.category === selectedCategory)
+
+      // Update each vehicle's price
+      const updates = vehiclesToUpdate.map(async (vehicle) => {
+        const adjustment = increase ? (1 + percentage / 100) : (1 - percentage / 100)
+        const newRate = Math.round(vehicle.daily_rate * adjustment)
+
+        const { error } = await supabase
+          .from('vehicles')
+          .update({ daily_rate: newRate })
+          .eq('id', vehicle.id)
+
+        if (error) throw error
+        return { id: vehicle.id, newRate }
+      })
+
+      await Promise.all(updates)
+
+      // Reload vehicles
+      await loadVehicles()
+
+      alert(`Prezzi ${increase ? 'aumentati' : 'diminuiti'} con successo!`)
+    } catch (error) {
+      console.error('Failed to adjust prices:', error)
+      alert('Errore nell\'aggiornamento dei prezzi')
+    } finally {
+      setIsAdjusting(false)
+    }
+  }
+
   // Separate vehicles by category
   const exoticVehicles = vehicles.filter(v => v.category === 'exotic')
   const urbanVehicles = vehicles.filter(v => v.category === 'urban')
@@ -146,6 +189,89 @@ export default function VehiclesTab() {
         <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
           + Nuovo Veicolo
         </Button>
+      </div>
+
+      {/* Price Adjustment Section */}
+      <div className="bg-black border border-dr7-gold/30 rounded-lg p-6 mb-6">
+        <h3 className="text-xl font-bold text-white mb-4">Aggiustamento Prezzi</h3>
+
+        {/* Category Selection */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-white mb-2">Categoria da Modificare</label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedCategory === 'all'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-black border border-dr7-gold/30 text-white hover:border-dr7-gold'
+              }`}
+            >
+              Tutti ({vehicles.length})
+            </button>
+            <button
+              onClick={() => setSelectedCategory('urban')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedCategory === 'urban'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-black border border-dr7-gold/30 text-white hover:border-dr7-gold'
+              }`}
+            >
+              Urban ({urbanCount})
+            </button>
+            <button
+              onClick={() => setSelectedCategory('exotic')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedCategory === 'exotic'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-black border border-dr7-gold/30 text-white hover:border-dr7-gold'
+              }`}
+            >
+              Exotic ({exoticCount})
+            </button>
+          </div>
+        </div>
+
+        {/* Price Adjustment Buttons */}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Aumenta Prezzi</label>
+            <div className="flex gap-2">
+              {[10, 20, 30].map((percentage) => (
+                <button
+                  key={`increase-${percentage}`}
+                  onClick={() => handlePriceAdjustment(percentage, true)}
+                  disabled={isAdjusting}
+                  className="flex-1 bg-green-900 hover:bg-green-800 text-white px-4 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  +{percentage}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white mb-2">Diminuisci Prezzi</label>
+            <div className="flex gap-2">
+              {[10, 20, 30].map((percentage) => (
+                <button
+                  key={`decrease-${percentage}`}
+                  onClick={() => handlePriceAdjustment(percentage, false)}
+                  disabled={isAdjusting}
+                  className="flex-1 bg-red-900 hover:bg-red-800 text-white px-4 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  -{percentage}%
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {isAdjusting && (
+          <div className="mt-4 text-center text-white">
+            <p>Aggiornamento prezzi in corso...</p>
+          </div>
+        )}
       </div>
 
       {showForm && (
