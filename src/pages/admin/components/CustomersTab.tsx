@@ -36,13 +36,54 @@ export default function CustomersTab() {
   async function loadCustomers() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // First try to get customers from the customers table
+      const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      setCustomers(data || [])
+      if (customersError) throw customersError
+
+      // Also get unique customers from bookings table to show all users who made bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('customer_name, customer_email, customer_phone, user_id, booked_at')
+        .order('booked_at', { ascending: false })
+
+      if (bookingsError) {
+        console.warn('Could not load customers from bookings:', bookingsError)
+      }
+
+      // Merge customers from both sources
+      const customerMap = new Map<string, Customer>()
+
+      // Add customers from customers table
+      if (customersData) {
+        customersData.forEach(c => {
+          customerMap.set(c.id, c)
+        })
+      }
+
+      // Add customers from bookings (if not already in customers table)
+      if (bookingsData) {
+        bookingsData.forEach((booking: any) => {
+          const key = booking.customer_email || booking.customer_phone || booking.user_id
+          if (key && !customerMap.has(key)) {
+            customerMap.set(key, {
+              id: booking.user_id || key,
+              full_name: booking.customer_name || 'Cliente',
+              email: booking.customer_email || null,
+              phone: booking.customer_phone || null,
+              driver_license_number: null,
+              notes: null,
+              created_at: booking.booked_at,
+              updated_at: booking.booked_at
+            })
+          }
+        })
+      }
+
+      setCustomers(Array.from(customerMap.values()))
     } catch (error) {
       console.error('Failed to load customers:', error)
     } finally {

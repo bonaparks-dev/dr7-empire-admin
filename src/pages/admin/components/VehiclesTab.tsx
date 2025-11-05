@@ -124,13 +124,12 @@ export default function VehiclesTab() {
     setShowForm(true)
   }
 
-  // Filter vehicles by category
-  const filteredVehicles = filterCategory === 'all'
-    ? vehicles
-    : vehicles.filter(v => v.category === filterCategory)
+  // Separate vehicles by category
+  const exoticVehicles = vehicles.filter(v => v.category === 'exotic')
+  const urbanVehicles = vehicles.filter(v => v.category === 'urban')
 
-  const exoticCount = vehicles.filter(v => v.category === 'exotic').length
-  const urbanCount = vehicles.filter(v => v.category === 'urban').length
+  const exoticCount = exoticVehicles.length
+  const urbanCount = urbanVehicles.length
 
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
@@ -207,112 +206,144 @@ export default function VehiclesTab() {
         </form>
       )}
 
-      {/* Category Filter */}
-      <div className="mb-6 flex gap-2">
-        <button
-          onClick={() => setFilterCategory('all')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            filterCategory === 'all'
-              ? 'bg-white text-black'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          Tutti ({vehicles.length})
-        </button>
-        <button
-          onClick={() => setFilterCategory('exotic')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            filterCategory === 'exotic'
-              ? 'bg-white text-black'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          Exotic Supercars ({exoticCount})
-        </button>
-        <button
-          onClick={() => setFilterCategory('urban')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            filterCategory === 'urban'
-              ? 'bg-white text-black'
-              : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          Urban ({urbanCount})
-        </button>
-      </div>
-
-      <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-black">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Categoria</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Targa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Stato</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tariffa</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredVehicles.map((vehicle) => (
-                <tr key={vehicle.id} className="border-t border-gray-700 hover:bg-gray-800">
-                  <td className="px-4 py-3 text-sm text-white font-semibold">{vehicle.display_name}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      vehicle.category === 'exotic' ? 'bg-purple-900 text-purple-200' :
-                      vehicle.category === 'urban' ? 'bg-cyan-900 text-cyan-200' :
-                      'bg-gray-700 text-gray-200'
-                    }`}>
-                      {vehicle.category === 'exotic' ? 'Exotic' :
-                       vehicle.category === 'urban' ? 'Urban' : 'N/A'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white">{vehicle.plate || '-'}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      vehicle.status === 'available' ? 'bg-green-900 text-green-200' :
-                      vehicle.status === 'rented' ? 'bg-blue-900 text-blue-200' :
-                      vehicle.status === 'maintenance' ? 'bg-yellow-900 text-yellow-200' :
-                      'bg-gray-700 text-gray-200'
-                    }`}>
-                      {vehicle.status === 'available' ? 'Disponibile' :
-                       vehicle.status === 'rented' ? 'Noleggiato' :
-                       vehicle.status === 'maintenance' ? 'Manutenzione' : 'Ritirato'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white">€{vehicle.daily_rate}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleEdit(vehicle)}
-                        variant="secondary"
-                        className="text-xs py-1 px-3"
-                      >
-                        Modifica
-                      </Button>
-                      <Button
-                        onClick={() => handleDelete(vehicle.id)}
-                        variant="secondary"
-                        className="text-xs py-1 px-3 bg-red-900 hover:bg-red-800"
-                      >
-                        Elimina
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredVehicles.length === 0 && (
+      {/* Two Column Layout: Urban and Exotic */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Urban Vehicles Column */}
+        <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+          <div className="bg-cyan-900/30 px-4 py-3 border-b border-gray-700">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span className="px-3 py-1 bg-cyan-900 text-cyan-200 rounded text-sm">Urban</span>
+              <span className="text-sm text-gray-400">({urbanCount} veicoli)</span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-black">
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    {vehicles.length === 0
-                      ? 'Nessun veicolo trovato'
-                      : 'Nessun veicolo trovato con i filtri selezionati'}
-                  </td>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Targa</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Stato</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tariffa</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {urbanVehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="border-t border-gray-700 hover:bg-gray-800">
+                    <td className="px-4 py-3 text-sm text-white font-semibold">{vehicle.display_name}</td>
+                    <td className="px-4 py-3 text-sm text-white">{vehicle.plate || '-'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        vehicle.status === 'available' ? 'bg-green-900 text-green-200' :
+                        vehicle.status === 'rented' ? 'bg-blue-900 text-blue-200' :
+                        vehicle.status === 'maintenance' ? 'bg-yellow-900 text-yellow-200' :
+                        'bg-gray-700 text-gray-200'
+                      }`}>
+                        {vehicle.status === 'available' ? 'Disponibile' :
+                         vehicle.status === 'rented' ? 'Noleggiato' :
+                         vehicle.status === 'maintenance' ? 'Manutenzione' : 'Ritirato'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white">€{vehicle.daily_rate}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleEdit(vehicle)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3"
+                        >
+                          Modifica
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(vehicle.id)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-red-900 hover:bg-red-800"
+                        >
+                          Elimina
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {urbanVehicles.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      Nessun veicolo Urban trovato
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Exotic Vehicles Column */}
+        <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+          <div className="bg-purple-900/30 px-4 py-3 border-b border-gray-700">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span className="px-3 py-1 bg-purple-900 text-purple-200 rounded text-sm">Exotic Supercars</span>
+              <span className="text-sm text-gray-400">({exoticCount} veicoli)</span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-black">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Targa</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Stato</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tariffa</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exoticVehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="border-t border-gray-700 hover:bg-gray-800">
+                    <td className="px-4 py-3 text-sm text-white font-semibold">{vehicle.display_name}</td>
+                    <td className="px-4 py-3 text-sm text-white">{vehicle.plate || '-'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        vehicle.status === 'available' ? 'bg-green-900 text-green-200' :
+                        vehicle.status === 'rented' ? 'bg-blue-900 text-blue-200' :
+                        vehicle.status === 'maintenance' ? 'bg-yellow-900 text-yellow-200' :
+                        'bg-gray-700 text-gray-200'
+                      }`}>
+                        {vehicle.status === 'available' ? 'Disponibile' :
+                         vehicle.status === 'rented' ? 'Noleggiato' :
+                         vehicle.status === 'maintenance' ? 'Manutenzione' : 'Ritirato'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white">€{vehicle.daily_rate}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleEdit(vehicle)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3"
+                        >
+                          Modifica
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(vehicle.id)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-red-900 hover:bg-red-800"
+                        >
+                          Elimina
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {exoticVehicles.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      Nessun veicolo Exotic trovato
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
