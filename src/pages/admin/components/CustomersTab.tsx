@@ -36,49 +36,63 @@ export default function CustomersTab() {
   async function loadCustomers() {
     setLoading(true)
     try {
-      // First try to get customers from the customers table
-      const { data: customersData, error: customersError } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (customersError) throw customersError
-
-      // Also get unique customers from bookings table to show all users who made bookings
+      // Get unique customers from bookings table (primary source of customer data)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('customer_name, customer_email, customer_phone, user_id, booked_at')
         .order('booked_at', { ascending: false })
 
       if (bookingsError) {
-        console.warn('Could not load customers from bookings:', bookingsError)
+        console.error('Could not load customers from bookings:', bookingsError)
       }
 
-      // Merge customers from both sources
+      // Merge customers by email or phone
       const customerMap = new Map<string, Customer>()
 
-      // Add customers from customers table
-      if (customersData) {
-        customersData.forEach(c => {
-          customerMap.set(c.id, c)
+      // Process bookings data to create unique customer entries
+      if (bookingsData) {
+        bookingsData.forEach((booking: any) => {
+          // Use email as primary key, fallback to phone or user_id
+          const key = booking.customer_email || booking.customer_phone || booking.user_id
+
+          if (key) {
+            // If customer already exists, update phone if missing
+            const existing = customerMap.get(key)
+            if (existing) {
+              if (!existing.phone && booking.customer_phone) {
+                existing.phone = booking.customer_phone
+              }
+              if (!existing.email && booking.customer_email) {
+                existing.email = booking.customer_email
+              }
+            } else {
+              // Create new customer entry
+              customerMap.set(key, {
+                id: booking.user_id || key,
+                full_name: booking.customer_name || 'Cliente',
+                email: booking.customer_email || null,
+                phone: booking.customer_phone || null,
+                driver_license_number: null,
+                notes: null,
+                created_at: booking.booked_at,
+                updated_at: booking.booked_at
+              })
+            }
+          }
         })
       }
 
-      // Add customers from bookings (if not already in customers table)
-      if (bookingsData) {
-        bookingsData.forEach((booking: any) => {
-          const key = booking.customer_email || booking.customer_phone || booking.user_id
+      // Also get customers from customers table if it exists
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (!customersError && customersData) {
+        customersData.forEach(c => {
+          const key = c.email || c.phone || c.id
           if (key && !customerMap.has(key)) {
-            customerMap.set(key, {
-              id: booking.user_id || key,
-              full_name: booking.customer_name || 'Cliente',
-              email: booking.customer_email || null,
-              phone: booking.customer_phone || null,
-              driver_license_number: null,
-              notes: null,
-              created_at: booking.booked_at,
-              updated_at: booking.booked_at
-            })
+            customerMap.set(key, c)
           }
         })
       }

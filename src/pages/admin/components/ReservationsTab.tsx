@@ -69,6 +69,21 @@ interface Booking {
   service_type?: string
   service_name?: string
   appointment_date?: string
+  appointment_time?: string
+}
+
+// Helper function to calculate car wash end time
+function calculateCarWashEndTime(appointmentDate: string, appointmentTime: string, priceTotal: number): string {
+  // Each 25€ = 1 hour
+  const durationHours = Math.ceil((priceTotal / 100) / 25);
+
+  // Parse the time
+  const [hours, minutes] = appointmentTime.split(':').map(Number);
+  const endDate = new Date(appointmentDate);
+  endDate.setHours(hours + durationHours);
+  endDate.setMinutes(minutes);
+
+  return endDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 }
 
 const API_BASE = '/.netlify/functions/admin'
@@ -706,7 +721,9 @@ export default function ReservationsTab() {
                     </td>
                     <td className="px-4 py-3 text-sm text-white">
                       {isCarWash
-                        ? '-'
+                        ? (booking.appointment_date && booking.appointment_time
+                            ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT')} ${calculateCarWashEndTime(booking.appointment_date, booking.appointment_time, booking.price_total)}`
+                            : '-')
                         : (booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT') : '-')
                       }
                     </td>
