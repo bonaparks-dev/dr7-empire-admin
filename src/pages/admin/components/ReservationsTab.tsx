@@ -114,6 +114,7 @@ export default function ReservationsTab() {
     service_name: '',
     appointment_date: '',
     additional_service: '',
+    additional_service_hours: '1',
     notes: ''
   })
 
@@ -312,6 +313,7 @@ export default function ReservationsTab() {
       service_name: '',
       appointment_date: '',
       additional_service: '',
+      additional_service_hours: '1',
       notes: ''
     })
     setNewCustomerData({
@@ -537,14 +539,44 @@ export default function ReservationsTab() {
               <Select
                 label="Servizio Aggiuntivo"
                 value={carWashData.additional_service}
-                onChange={(e) => setCarWashData({ ...carWashData, additional_service: e.target.value })}
+                onChange={(e) => {
+                  setCarWashData({ ...carWashData, additional_service: e.target.value })
+                  // Reset hours when changing service
+                  if (!e.target.value) {
+                    setCarWashData(prev => ({ ...prev, additional_service_hours: '1' }))
+                  }
+                }}
                 options={[
                   { value: '', label: 'Nessuno' },
-                  { value: 'courtesy-car', label: 'Utilitaria di Cortesia' },
-                  { value: 'supercar', label: 'Supercar Experience' },
-                  { value: 'lambo-ferrari', label: 'Lamborghini & Ferrari Experience' }
+                  { value: 'courtesy-car', label: 'Utilitaria di Cortesia (€15/h - €25/2h - €35/3h)' },
+                  { value: 'supercar', label: 'Supercar Experience (€59/h - €99/2h - €139/3h)' },
+                  { value: 'lambo-ferrari', label: 'Lamborghini & Ferrari Experience (€149/h - €249/2h - €299/3h)' }
                 ]}
               />
+              {carWashData.additional_service && (
+                <Select
+                  label="Durata Servizio Aggiuntivo"
+                  value={carWashData.additional_service_hours}
+                  onChange={(e) => {
+                    setCarWashData({ ...carWashData, additional_service_hours: e.target.value })
+                    // Update total based on service and hours
+                    const servicePrices: Record<string, number[]> = {
+                      'courtesy-car': [15, 25, 35],
+                      'supercar': [59, 99, 139],
+                      'lambo-ferrari': [149, 249, 299]
+                    }
+                    const hourIndex = parseInt(e.target.value) - 1
+                    const additionalPrice = servicePrices[carWashData.additional_service]?.[hourIndex] || 0
+                    const basePrice = parseFloat(formData.total_amount) || 0
+                    setFormData({ ...formData, total_amount: (basePrice + additionalPrice).toString() })
+                  }}
+                  options={[
+                    { value: '1', label: '1 ora' },
+                    { value: '2', label: '2 ore' },
+                    { value: '3', label: '3 ore' }
+                  ]}
+                />
+              )}
               <Select
                 label="Stato"
                 required
