@@ -22,7 +22,8 @@ export default function VehiclesTab() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'exotic' | 'urban'>('all')
-  // const [priceAdjustment, setPriceAdjustment] = useState<number>(0)
+  const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
+  const [adjustmentPercentage, setAdjustmentPercentage] = useState<string>('10')
   const [isAdjusting, setIsAdjusting] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -126,17 +127,28 @@ export default function VehiclesTab() {
     setShowForm(true)
   }
 
-  async function handlePriceAdjustment(percentage: number, increase: boolean) {
-    if (!confirm(`Sei sicuro di voler ${increase ? 'aumentare' : 'diminuire'} i prezzi del ${percentage}%?`)) {
+  async function handlePriceAdjustment(increase: boolean) {
+    const percentage = parseFloat(adjustmentPercentage)
+    if (isNaN(percentage) || percentage <= 0) {
+      alert('Inserisci una percentuale valida')
+      return
+    }
+
+    const vehicleName = selectedVehicle === 'all' ? 'tutti i veicoli' : vehicles.find(v => v.id === selectedVehicle)?.display_name
+    if (!confirm(`Sei sicuro di voler ${increase ? 'aumentare' : 'diminuire'} i prezzi del ${percentage}% per ${vehicleName}?`)) {
       return
     }
 
     setIsAdjusting(true)
     try {
-      // Filter vehicles by category if selected
-      const vehiclesToUpdate = selectedCategory === 'all'
-        ? vehicles
-        : vehicles.filter(v => v.category === selectedCategory)
+      // Determine which vehicles to update
+      let vehiclesToUpdate: Vehicle[] = []
+      if (selectedVehicle === 'all') {
+        vehiclesToUpdate = vehicles
+      } else {
+        const vehicle = vehicles.find(v => v.id === selectedVehicle)
+        if (vehicle) vehiclesToUpdate = [vehicle]
+      }
 
       // Update each vehicle's price
       const updates = vehiclesToUpdate.map(async (vehicle) => {
@@ -191,84 +203,57 @@ export default function VehiclesTab() {
         </Button>
       </div>
 
-      {/* Price Adjustment Section */}
-      <div className="bg-black border border-dr7-gold/30 rounded-lg p-6 mb-6">
-        <h3 className="text-xl font-bold text-white mb-4">Aggiustamento Prezzi</h3>
-
-        {/* Category Selection */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-white mb-2">Categoria da Modificare</label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === 'all'
-                  ? 'bg-dr7-gold text-black'
-                  : 'bg-black border border-dr7-gold/30 text-white hover:border-dr7-gold'
-              }`}
+      {/* Price Adjustment Section - Compact */}
+      <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 mb-6">
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-400 mb-1">Veicolo</label>
+            <select
+              value={selectedVehicle}
+              onChange={(e) => setSelectedVehicle(e.target.value)}
+              className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white text-sm"
             >
-              Tutti ({vehicles.length})
-            </button>
-            <button
-              onClick={() => setSelectedCategory('urban')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === 'urban'
-                  ? 'bg-dr7-gold text-black'
-                  : 'bg-black border border-dr7-gold/30 text-white hover:border-dr7-gold'
-              }`}
-            >
-              Urban ({urbanCount})
-            </button>
-            <button
-              onClick={() => setSelectedCategory('exotic')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === 'exotic'
-                  ? 'bg-dr7-gold text-black'
-                  : 'bg-black border border-dr7-gold/30 text-white hover:border-dr7-gold'
-              }`}
-            >
-              Exotic ({exoticCount})
-            </button>
-          </div>
-        </div>
-
-        {/* Price Adjustment Buttons */}
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Aumenta Prezzi</label>
-            <div className="flex gap-2">
-              {[10, 20, 30].map((percentage) => (
-                <button
-                  key={`increase-${percentage}`}
-                  onClick={() => handlePriceAdjustment(percentage, true)}
-                  disabled={isAdjusting}
-                  className="flex-1 bg-green-900 hover:bg-green-800 text-white px-4 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  +{percentage}%
-                </button>
+              <option value="all">Tutti i veicoli ({vehicles.length})</option>
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.display_name} (€{vehicle.daily_rate})
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">Diminuisci Prezzi</label>
-            <div className="flex gap-2">
-              {[10, 20, 30].map((percentage) => (
-                <button
-                  key={`decrease-${percentage}`}
-                  onClick={() => handlePriceAdjustment(percentage, false)}
-                  disabled={isAdjusting}
-                  className="flex-1 bg-red-900 hover:bg-red-800 text-white px-4 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  -{percentage}%
-                </button>
-              ))}
-            </div>
+          <div className="w-32">
+            <label className="block text-xs text-gray-400 mb-1">Percentuale</label>
+            <input
+              type="number"
+              value={adjustmentPercentage}
+              onChange={(e) => setAdjustmentPercentage(e.target.value)}
+              min="1"
+              max="100"
+              className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white text-sm"
+              placeholder="10"
+            />
           </div>
+
+          <button
+            onClick={() => handlePriceAdjustment(true)}
+            disabled={isAdjusting}
+            className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            + Aumenta
+          </button>
+
+          <button
+            onClick={() => handlePriceAdjustment(false)}
+            disabled={isAdjusting}
+            className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            - Diminuisci
+          </button>
         </div>
 
         {isAdjusting && (
-          <div className="mt-4 text-center text-white">
+          <div className="mt-3 text-center text-sm text-gray-400">
             <p>Aggiornamento prezzi in corso...</p>
           </div>
         )}
