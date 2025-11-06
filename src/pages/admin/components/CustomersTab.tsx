@@ -60,26 +60,37 @@ export default function CustomersTab() {
       // Process bookings data to create unique customer entries
       if (bookingsData) {
         bookingsData.forEach((booking: any) => {
+          // Extract customer data from booking_details if available
+          const details = booking.booking_details?.customer || {}
+
+          // Get customer info from direct columns or booking_details
+          const customerName = booking.customer_name || details.fullName || 'Cliente'
+          const customerEmail = booking.customer_email || details.email || null
+          const customerPhone = booking.customer_phone || details.phone || null
+
           // Use email as primary key, fallback to phone or user_id
-          const key = booking.customer_email || booking.customer_phone || booking.user_id
+          const key = customerEmail || customerPhone || booking.user_id
 
           if (key) {
-            // If customer already exists, update phone if missing
+            // If customer already exists, update phone and email if missing
             const existing = customerMap.get(key)
             if (existing) {
-              if (!existing.phone && booking.customer_phone) {
-                existing.phone = booking.customer_phone
+              if (!existing.phone && customerPhone) {
+                existing.phone = customerPhone
               }
-              if (!existing.email && booking.customer_email) {
-                existing.email = booking.customer_email
+              if (!existing.email && customerEmail) {
+                existing.email = customerEmail
+              }
+              if (existing.full_name === 'Cliente' && customerName) {
+                existing.full_name = customerName
               }
             } else {
               // Create new customer entry
               customerMap.set(key, {
                 id: booking.user_id || key,
-                full_name: booking.customer_name || 'Cliente',
-                email: booking.customer_email || null,
-                phone: booking.customer_phone || null,
+                full_name: customerName,
+                email: customerEmail,
+                phone: customerPhone,
                 driver_license_number: null,
                 notes: null,
                 created_at: booking.booked_at,
