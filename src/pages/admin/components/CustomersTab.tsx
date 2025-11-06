@@ -497,7 +497,6 @@ export default function CustomersTab() {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Email</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Telefono</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Patente</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
               </tr>
             </thead>
@@ -507,7 +506,6 @@ export default function CustomersTab() {
                   <td className="px-4 py-3 text-sm text-white">{customer.full_name}</td>
                   <td className="px-4 py-3 text-sm text-white">{customer.email || '-'}</td>
                   <td className="px-4 py-3 text-sm text-white">{customer.phone || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-white">{customer.driver_license_number || '-'}</td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex gap-2">
                       <Button
@@ -537,7 +535,7 @@ export default function CustomersTab() {
               ))}
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
                     Nessun cliente trovato
                   </td>
                 </tr>
