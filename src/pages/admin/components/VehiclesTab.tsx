@@ -21,7 +21,7 @@ export default function VehiclesTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'exotic' | 'urban'>('all')
+  // const [selectedCategory, setSelectedCategory] = useState<'all' | 'exotic' | 'urban'>('all')
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
   const [adjustmentPercentage, setAdjustmentPercentage] = useState<string>('10')
   const [isAdjusting, setIsAdjusting] = useState(false)
