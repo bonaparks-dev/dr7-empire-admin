@@ -59,6 +59,7 @@ export default function CustomersTab() {
 
       // Process bookings data to create unique customer entries
       if (bookingsData) {
+        console.log('Total bookings:', bookingsData.length)
         bookingsData.forEach((booking: any) => {
           // Extract customer data from booking_details if available
           const details = booking.booking_details?.customer || {}
@@ -67,6 +68,16 @@ export default function CustomersTab() {
           const customerName = booking.customer_name || details.fullName || 'Cliente'
           const customerEmail = booking.customer_email || details.email || null
           const customerPhone = booking.customer_phone || details.phone || null
+
+          // Debug log
+          if (!customerPhone) {
+            console.log('Missing phone for:', {
+              customerName,
+              customerEmail,
+              booking_details: booking.booking_details,
+              direct_phone: booking.customer_phone
+            })
+          }
 
           // Use email as primary key, fallback to phone or user_id
           const key = customerEmail || customerPhone || booking.user_id
@@ -99,6 +110,7 @@ export default function CustomersTab() {
             }
           }
         })
+        console.log('Unique customers:', customerMap.size)
       }
 
       // Also get customers from customers table if it exists
