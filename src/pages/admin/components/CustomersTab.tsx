@@ -207,12 +207,12 @@ export default function CustomersTab() {
 
     try {
       // List files in driver-licenses bucket for this user
-      const { data: licenseFiles, error: licenseError } = await supabase.storage
+      const { data: licenseFiles } = await supabase.storage
         .from('driver-licenses')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
 
       // List files in driver-ids bucket for this user
-      const { data: idFiles, error: idError } = await supabase.storage
+      const { data: idFiles } = await supabase.storage
         .from('driver-ids')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
 
