@@ -13,6 +13,11 @@ interface Customer {
   notes: string | null
   created_at: string
   updated_at: string
+  verification?: {
+    idStatus: 'unverified' | 'pending' | 'verified'
+    stripeVerificationSessionId?: string
+    verifiedAt?: string
+  }
 }
 
 export default function CustomersTab() {
@@ -20,6 +25,9 @@ export default function CustomersTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [viewingDocuments, setViewingDocuments] = useState<Customer | null>(null)
+  const [documentsUrls, setDocumentsUrls] = useState<{ license: string | null; id: string | null }>({ license: null, id: null })
+  const [loadingDocuments, setLoadingDocuments] = useState(false)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -39,7 +47,7 @@ export default function CustomersTab() {
       // Get unique customers from bookings table (primary source of customer data)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('customer_name, customer_email, customer_phone, user_id, booked_at')
+        .select('customer_name, customer_email, customer_phone, user_id, booked_at, booking_details')
         .order('booked_at', { ascending: false })
 
       if (bookingsError) {
@@ -97,7 +105,28 @@ export default function CustomersTab() {
         })
       }
 
-      setCustomers(Array.from(customerMap.values()))
+      // Get verification status and documents from auth.users metadata
+      const customersArray = Array.from(customerMap.values())
+      const enrichedCustomers = await Promise.all(
+        customersArray.map(async (customer) => {
+          if (customer.id && customer.id.length > 10) { // Valid UUID
+            try {
+              const { data, error } = await supabase.auth.admin.getUserById(customer.id)
+              if (!error && data?.user?.user_metadata?.verification) {
+                return {
+                  ...customer,
+                  verification: data.user.user_metadata.verification
+                }
+              }
+            } catch (e) {
+              console.error('Error fetching verification for user:', customer.id, e)
+            }
+          }
+          return customer
+        })
+      )
+
+      setCustomers(enrichedCustomers)
     } catch (error) {
       console.error('Failed to load customers:', error)
     } finally {
@@ -172,12 +201,228 @@ export default function CustomersTab() {
     setShowForm(true)
   }
 
+  async function fetchCustomerDocuments(userId: string) {
+    setLoadingDocuments(true)
+    setDocumentsUrls({ license: null, id: null })
+
+    try {
+      // List files in driver-licenses bucket for this user
+      const { data: licenseFiles, error: licenseError } = await supabase.storage
+        .from('driver-licenses')
+        .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
+
+      // List files in driver-ids bucket for this user
+      const { data: idFiles, error: idError } = await supabase.storage
+        .from('driver-ids')
+        .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
+
+      let licenseUrl = null
+      let idUrl = null
+
+      // Get signed URL for the latest driver license
+      if (licenseFiles && licenseFiles.length > 0) {
+        const latestLicense = licenseFiles[0]
+        const { data: signedLicense } = await supabase.storage
+          .from('driver-licenses')
+          .createSignedUrl(`${userId}/${latestLicense.name}`, 3600) // 1 hour expiry
+        if (signedLicense) licenseUrl = signedLicense.signedUrl
+      }
+
+      // Get signed URL for the latest ID
+      if (idFiles && idFiles.length > 0) {
+        const latestId = idFiles[0]
+        const { data: signedId } = await supabase.storage
+          .from('driver-ids')
+          .createSignedUrl(`${userId}/${latestId.name}`, 3600) // 1 hour expiry
+        if (signedId) idUrl = signedId.signedUrl
+      }
+
+      setDocumentsUrls({ license: licenseUrl, id: idUrl })
+    } catch (error) {
+      console.error('Error fetching documents:', error)
+    } finally {
+      setLoadingDocuments(false)
+    }
+  }
+
+  async function handleViewDocuments(customer: Customer) {
+    setViewingDocuments(customer)
+    if (customer.id && customer.id.length > 10) {
+      await fetchCustomerDocuments(customer.id)
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
   }
 
   return (
     <div>
+      {/* Documents Modal */}
+      {viewingDocuments && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white">
+                Documenti - {viewingDocuments.full_name}
+              </h3>
+              <button
+                onClick={() => setViewingDocuments(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Verification Status */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-3">Stato Verifica Identità</h4>
+                {viewingDocuments.verification ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-400">Stato:</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        viewingDocuments.verification.idStatus === 'verified'
+                          ? 'bg-green-500/20 text-green-400'
+                          : viewingDocuments.verification.idStatus === 'pending'
+                          ? 'bg-yellow-500/20 text-yellow-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {viewingDocuments.verification.idStatus === 'verified' && '✓ Verificato'}
+                        {viewingDocuments.verification.idStatus === 'pending' && '⏳ In Attesa'}
+                        {viewingDocuments.verification.idStatus === 'unverified' && '✗ Non Verificato'}
+                      </span>
+                    </div>
+                    {viewingDocuments.verification.verifiedAt && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Data Verifica:</span>
+                        <span className="text-sm text-white">
+                          {new Date(viewingDocuments.verification.verifiedAt).toLocaleString('it-IT')}
+                        </span>
+                      </div>
+                    )}
+                    {viewingDocuments.verification.stripeVerificationSessionId && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Stripe Session ID:</span>
+                        <span className="text-xs text-gray-500 font-mono">
+                          {viewingDocuments.verification.stripeVerificationSessionId}
+                        </span>
+                      </div>
+                    )}
+                    {viewingDocuments.verification.idStatus === 'verified' && (
+                      <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded">
+                        <p className="text-sm text-green-400">
+                          ✓ Identità verificata tramite Stripe Identity. I documenti sono conservati in modo sicuro da Stripe.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">Nessuna verifica effettuata</p>
+                    <p className="text-xs text-gray-600 mt-2">
+                      Il cliente non ha ancora completato la verifica dell'identità
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-3">Informazioni Cliente</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Email:</span>
+                    <span className="text-sm text-white">{viewingDocuments.email || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Telefono:</span>
+                    <span className="text-sm text-white">{viewingDocuments.phone || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Numero Patente:</span>
+                    <span className="text-sm text-white">{viewingDocuments.driver_license_number || '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Uploaded Documents */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-3">Documenti Caricati</h4>
+                {loadingDocuments ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-400">Caricamento documenti...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Driver's License */}
+                    <div className="border border-gray-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-300">📄 Patente di Guida</span>
+                        {documentsUrls.license && (
+                          <a
+                            href={documentsUrls.license}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 hover:text-blue-300"
+                          >
+                            Apri in nuova scheda →
+                          </a>
+                        )}
+                      </div>
+                      {documentsUrls.license ? (
+                        <img
+                          src={documentsUrls.license}
+                          alt="Patente di guida"
+                          className="w-full rounded border border-gray-600"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Nessun documento caricato</p>
+                      )}
+                    </div>
+
+                    {/* ID Card / Passport */}
+                    <div className="border border-gray-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-300">🆔 Carta d'Identità / Passaporto</span>
+                        {documentsUrls.id && (
+                          <a
+                            href={documentsUrls.id}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 hover:text-blue-300"
+                          >
+                            Apri in nuova scheda →
+                          </a>
+                        )}
+                      </div>
+                      {documentsUrls.id ? (
+                        <img
+                          src={documentsUrls.id}
+                          alt="Carta d'identità"
+                          className="w-full rounded border border-gray-600"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">Nessun documento caricato</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Note */}
+              {viewingDocuments.notes && (
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-2">Note</h4>
+                  <p className="text-sm text-white whitespace-pre-wrap">{viewingDocuments.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* Stats Card */}
       <div className="mb-6 bg-gradient-to-r from-dr7-gold/20 to-dr7-gold/5 border border-dr7-gold/30 rounded-lg p-6">
         <div className="flex items-center justify-between">
@@ -265,6 +510,13 @@ export default function CustomersTab() {
                   <td className="px-4 py-3 text-sm text-white">{customer.driver_license_number || '-'}</td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleViewDocuments(customer)}
+                        variant="secondary"
+                        className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                      >
+                        Documenti
+                      </Button>
                       <Button
                         onClick={() => handleEdit(customer)}
                         variant="secondary"
