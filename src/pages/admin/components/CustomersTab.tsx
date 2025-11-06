@@ -128,17 +128,20 @@ export default function CustomersTab() {
         })
       }
 
-      // Get verification status and documents from auth.users metadata
+      // Get verification status, phone, and documents from auth.users metadata
       const customersArray = Array.from(customerMap.values())
       const enrichedCustomers = await Promise.all(
         customersArray.map(async (customer) => {
           if (customer.id && customer.id.length > 10) { // Valid UUID
             try {
               const { data, error } = await supabase.auth.admin.getUserById(customer.id)
-              if (!error && data?.user?.user_metadata?.verification) {
+              if (!error && data?.user) {
+                const metadata = data.user.user_metadata || {}
                 return {
                   ...customer,
-                  verification: data.user.user_metadata.verification
+                  // Use phone from user_metadata if customer doesn't have one
+                  phone: customer.phone || metadata.phone || null,
+                  verification: metadata.verification
                 }
               }
             } catch (e) {
