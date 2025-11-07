@@ -7,11 +7,20 @@ const adminApiToken = process.env.ADMIN_API_TOKEN!
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
-const ALLOWED_ORIGIN = 'https://admin.dr7empire.com'
+const ALLOWED_ORIGINS = [
+  'https://admin.dr7empire.com',
+  'http://localhost:5173',
+  'http://localhost:8888',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:8888'
+]
 
-function corsHeaders(origin: string = ALLOWED_ORIGIN): Record<string, string> {
+function corsHeaders(origin: string = ALLOWED_ORIGINS[0]): Record<string, string> {
+  // Allow the requesting origin if it's in the allowed list, otherwise use the first one
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+
   return {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
     'Content-Type': 'application/json'

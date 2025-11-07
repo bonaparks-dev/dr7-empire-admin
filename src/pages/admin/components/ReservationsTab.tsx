@@ -72,16 +72,26 @@ interface Booking {
   appointment_time?: string
 }
 
-// Helper function to calculate car wash end time
+// Helper function to calculate car wash end time based on actual service durations
 function calculateCarWashEndTime(appointmentDate: string, appointmentTime: string, priceTotal: number): string {
-  // Each 25€ = 1 hour
-  const durationHours = Math.ceil((priceTotal / 100) / 25);
+  // Map prices to actual durations (in hours) from the main website
+  const priceToDuration: Record<number, number> = {
+    2500: 0.75,  // 25€ = 30-45 min (use 45 min = 0.75hr)
+    4900: 1.25,  // 49€ = 1-1.5 hrs (use 1.5hr)
+    7500: 2.5,   // 75€ = 2-3 hrs (use 2.5hr)
+    9900: 3.5    // 99€ = 3-4 hrs (use 3.5hr)
+  };
+
+  const durationHours = priceToDuration[priceTotal] || 1;
 
   // Parse the time
   const [hours, minutes] = appointmentTime.split(':').map(Number);
   const endDate = new Date(appointmentDate);
-  endDate.setHours(hours + durationHours);
-  endDate.setMinutes(minutes);
+
+  // Add the duration
+  const totalMinutes = (durationHours * 60);
+  endDate.setHours(hours);
+  endDate.setMinutes(minutes + totalMinutes);
 
   return endDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 }
