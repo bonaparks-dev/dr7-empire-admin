@@ -163,21 +163,53 @@ export default function ReservationsTab() {
       }
 
       // Fetch reservations, customers, and vehicles from API
-      const [resData, custData, vehData] = await Promise.all([
-        fetch(`${API_BASE}/reservations`, {
-          headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-        }).then(r => r.json()),
-        fetch(`${API_BASE}/customers`, {
-          headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-        }).then(r => r.json()),
-        fetch(`${API_BASE}/vehicles`, {
-          headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-        }).then(r => r.json())
-      ])
+      try {
+        const [resData, custData, vehData] = await Promise.all([
+          fetch(`${API_BASE}/reservations`, {
+            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+          }).then(async r => {
+            if (!r.ok) {
+              console.error('Reservations API error:', r.status, await r.text())
+              return { data: [] }
+            }
+            return r.json()
+          }),
+          fetch(`${API_BASE}/customers`, {
+            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+          }).then(async r => {
+            if (!r.ok) {
+              console.error('Customers API error:', r.status, await r.text())
+              return { data: [] }
+            }
+            return r.json()
+          }),
+          fetch(`${API_BASE}/vehicles`, {
+            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+          }).then(async r => {
+            if (!r.ok) {
+              console.error('Vehicles API error:', r.status, await r.text())
+              return { data: [] }
+            }
+            return r.json()
+          })
+        ])
 
-      setReservations(resData.data || [])
-      setCustomers(custData.data || [])
-      setVehicles(vehData.data || [])
+        setReservations(resData.data || [])
+        setCustomers(custData.data || [])
+        setVehicles(vehData.data || [])
+
+        console.log('Loaded data:', {
+          reservations: resData.data?.length || 0,
+          customers: custData.data?.length || 0,
+          vehicles: vehData.data?.length || 0
+        })
+      } catch (apiError) {
+        console.error('API fetch error:', apiError)
+        // Continue with empty arrays to allow the UI to render
+        setReservations([])
+        setCustomers([])
+        setVehicles([])
+      }
     } catch (error) {
       console.error('Failed to load data:', error)
     } finally {
