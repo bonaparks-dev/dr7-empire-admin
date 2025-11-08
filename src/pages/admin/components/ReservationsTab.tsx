@@ -114,6 +114,8 @@ export default function ReservationsTab() {
     vehicle_id: '',
     start_at: '',
     end_at: '',
+    pickup_location: 'office',
+    dropoff_location: 'office',
     status: 'pending',
     source: 'admin',
     total_amount: '0',
@@ -141,6 +143,14 @@ export default function ReservationsTab() {
     { id: 'top-shine', name: 'LAVAGGIO TOP', price: 49 },
     { id: 'vip', name: 'LAVAGGIO VIP', price: 75 },
     { id: 'dr7-luxury', name: 'LAVAGGIO DR7 LUXURY', price: 99 }
+  ]
+
+  const LOCATIONS = [
+    { value: 'office', label: 'Sede DR7 (Ufficio)' },
+    { value: 'airport', label: 'Aeroporto' },
+    { value: 'hotel', label: 'Hotel' },
+    { value: 'home', label: 'Domicilio' },
+    { value: 'other', label: 'Altro' }
   ]
 
   useEffect(() => {
@@ -327,13 +337,18 @@ export default function ReservationsTab() {
       } else {
         // Create vehicle rental booking in bookings table (for website availability blocking)
         const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
+
+        // Get location labels
+        const pickupLocationLabel = LOCATIONS.find(l => l.value === formData.pickup_location)?.label || formData.pickup_location
+        const dropoffLocationLabel = LOCATIONS.find(l => l.value === formData.dropoff_location)?.label || formData.dropoff_location
+
         const bookingData = {
           vehicle_name: vehicle?.display_name || '',
           vehicle_image_url: null,
           pickup_date: new Date(formData.start_at).toISOString(),
           dropoff_date: new Date(formData.end_at).toISOString(),
-          pickup_location: 'Sede DR7',
-          dropoff_location: 'Sede DR7',
+          pickup_location: pickupLocationLabel,
+          dropoff_location: dropoffLocationLabel,
           price_total: Math.round(parseFloat(formData.total_amount) * 100), // Convert to cents
           currency: formData.currency.toLowerCase(),
           status: formData.status,
@@ -348,6 +363,8 @@ export default function ReservationsTab() {
               email: customerInfo?.email || '',
               phone: customerInfo?.phone || ''
             },
+            pickupLocation: formData.pickup_location,
+            dropoffLocation: formData.dropoff_location,
             source: 'admin_manual'
           }
         }
@@ -396,6 +413,8 @@ export default function ReservationsTab() {
       vehicle_id: '',
       start_at: '',
       end_at: '',
+      pickup_location: 'office',
+      dropoff_location: 'office',
       status: 'pending',
       source: 'admin',
       total_amount: '0',
@@ -569,20 +588,44 @@ export default function ReservationsTab() {
                   ...vehicles.map(v => ({ value: v.id, label: v.display_name }))
                 ]}
               />
-              <Input
-                label="Data/Ora Inizio"
-                type="datetime-local"
-                required
-                value={formData.start_at}
-                onChange={(e) => setFormData({ ...formData, start_at: e.target.value })}
-              />
-              <Input
-                label="Data/Ora Fine"
-                type="datetime-local"
-                required
-                value={formData.end_at}
-                onChange={(e) => setFormData({ ...formData, end_at: e.target.value })}
-              />
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-dr7-darker rounded-lg border border-gray-700">
+                <div>
+                  <Input
+                    label="📅 Data/Ora Ritiro"
+                    type="datetime-local"
+                    required
+                    value={formData.start_at}
+                    onChange={(e) => setFormData({ ...formData, start_at: e.target.value })}
+                    step="3600"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Orari interi (es: 10:00, 11:00)</p>
+                </div>
+                <Select
+                  label="📍 Luogo Ritiro"
+                  required
+                  value={formData.pickup_location}
+                  onChange={(e) => setFormData({ ...formData, pickup_location: e.target.value })}
+                  options={LOCATIONS}
+                />
+                <div>
+                  <Input
+                    label="📅 Data/Ora Riconsegna"
+                    type="datetime-local"
+                    required
+                    value={formData.end_at}
+                    onChange={(e) => setFormData({ ...formData, end_at: e.target.value })}
+                    step="3600"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Orari interi (es: 10:00, 11:00)</p>
+                </div>
+                <Select
+                  label="📍 Luogo Riconsegna"
+                  required
+                  value={formData.dropoff_location}
+                  onChange={(e) => setFormData({ ...formData, dropoff_location: e.target.value })}
+                  options={LOCATIONS}
+                />
+              </div>
               <Select
                 label="Stato"
                 required
