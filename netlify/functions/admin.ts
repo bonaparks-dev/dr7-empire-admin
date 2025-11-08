@@ -54,7 +54,7 @@ async function logAudit(actorId: string | null, action: string, entityType: stri
 }
 
 export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResponse> => {
-  const origin = event.headers.origin || event.headers.Origin || ALLOWED_ORIGIN
+  const origin = event.headers.origin || event.headers.Origin || ALLOWED_ORIGINS[0]
 
   if (event.httpMethod === 'OPTIONS') {
     return {

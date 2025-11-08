@@ -162,53 +162,101 @@ export default function ReservationsTab() {
         setBookings(bookingsData || [])
       }
 
-      // Fetch reservations, customers, and vehicles from API
+      // Fetch customers from bookings table (same as CustomersTab)
+      const { data: bookingsForCustomers, error: bookingsCustomerError } = await supabase
+        .from('bookings')
+        .select('customer_name, customer_email, customer_phone, user_id, booked_at, booking_details')
+        .order('booked_at', { ascending: false })
+
+      if (bookingsCustomerError) {
+        console.error('Failed to load customers from bookings:', bookingsCustomerError)
+      }
+
+      // Merge customers by email or phone (same logic as CustomersTab)
+      const customerMap = new Map<string, Customer>()
+
+      if (bookingsForCustomers) {
+        bookingsForCustomers.forEach((booking: any) => {
+          const details = booking.booking_details?.customer || {}
+          const customerName = booking.customer_name || details.fullName || 'Cliente'
+          const customerEmail = booking.customer_email || details.email || null
+          const customerPhone = booking.customer_phone || details.phone || null
+
+          const key = customerEmail || customerPhone || booking.user_id
+
+          if (key) {
+            const existing = customerMap.get(key)
+            if (existing) {
+              if (!existing.phone && customerPhone) existing.phone = customerPhone
+              if (!existing.email && customerEmail) existing.email = customerEmail
+              if (existing.full_name === 'Cliente' && customerName) existing.full_name = customerName
+            } else {
+              customerMap.set(key, {
+                id: booking.user_id || key,
+                full_name: customerName,
+                email: customerEmail,
+                phone: customerPhone,
+                driver_license_number: null,
+                notes: null,
+                created_at: booking.booked_at,
+                updated_at: booking.booked_at
+              })
+            }
+          }
+        })
+      }
+
+      // Also check customers table if it exists
+      const { data: customersTableData, error: customersTableError } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (!customersTableError && customersTableData) {
+        customersTableData.forEach(c => {
+          const key = c.email || c.phone || c.id
+          if (key && !customerMap.has(key)) {
+            customerMap.set(key, c)
+          }
+        })
+      }
+
+      const customersArray = Array.from(customerMap.values())
+      setCustomers(customersArray)
+
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('display_name')
+
+      if (vehiclesError) {
+        console.error('Failed to load vehicles:', vehiclesError)
+      } else {
+        setVehicles(vehiclesData || [])
+      }
+
+      // Fetch reservations from API (if available)
       try {
-        const [resData, custData, vehData] = await Promise.all([
-          fetch(`${API_BASE}/reservations`, {
-            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-          }).then(async r => {
-            if (!r.ok) {
-              console.error('Reservations API error:', r.status, await r.text())
-              return { data: [] }
-            }
-            return r.json()
-          }),
-          fetch(`${API_BASE}/customers`, {
-            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-          }).then(async r => {
-            if (!r.ok) {
-              console.error('Customers API error:', r.status, await r.text())
-              return { data: [] }
-            }
-            return r.json()
-          }),
-          fetch(`${API_BASE}/vehicles`, {
-            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-          }).then(async r => {
-            if (!r.ok) {
-              console.error('Vehicles API error:', r.status, await r.text())
-              return { data: [] }
-            }
-            return r.json()
-          })
-        ])
+        const resData = await fetch(`${API_BASE}/reservations`, {
+          headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+        }).then(async r => {
+          if (!r.ok) {
+            console.error('Reservations API error:', r.status, await r.text())
+            return { data: [] }
+          }
+          return r.json()
+        })
 
         setReservations(resData.data || [])
-        setCustomers(custData.data || [])
-        setVehicles(vehData.data || [])
 
         console.log('Loaded data:', {
           reservations: resData.data?.length || 0,
-          customers: custData.data?.length || 0,
-          vehicles: vehData.data?.length || 0
+          customers: customersData?.length || 0,
+          vehicles: vehiclesData?.length || 0
         })
       } catch (apiError) {
         console.error('API fetch error:', apiError)
-        // Continue with empty arrays to allow the UI to render
         setReservations([])
-        setCustomers([])
-        setVehicles([])
       }
     } catch (error) {
       console.error('Failed to load data:', error)
@@ -484,18 +532,25 @@ export default function ReservationsTab() {
                 />
               </div>
             ) : (
-              <Select
-                label="Seleziona Cliente"
-                required
-                value={formData.customer_id}
-                onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                options={[
-                  { value: '', label: 'Seleziona cliente...' },
-                  ...customers
-                    .sort((a, b) => a.full_name.localeCompare(b.full_name))
-                    .map(c => ({ value: c.id, label: c.full_name }))
-                ]}
-              />
+              <div>
+                <Select
+                  label="Seleziona Cliente"
+                  required
+                  value={formData.customer_id}
+                  onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
+                  options={[
+                    { value: '', label: 'Seleziona cliente...' },
+                    ...customers
+                      .sort((a, b) => a.full_name.localeCompare(b.full_name))
+                      .map(c => ({ value: c.id, label: `${c.full_name} (${c.email || c.phone || 'No contact'})` }))
+                  ]}
+                />
+                {customers.length === 0 && (
+                  <p className="text-sm text-yellow-400 mt-2">
+                    ⚠️ Nessun cliente trovato. Verifica che l'API sia attiva o crea un nuovo cliente.
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
