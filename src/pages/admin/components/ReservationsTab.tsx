@@ -222,6 +222,7 @@ export default function ReservationsTab() {
       }
 
       const customersArray = Array.from(customerMap.values())
+      console.log('CUSTOMERS LOADED:', customersArray.length, customersArray)
       setCustomers(customersArray)
 
       const { data: vehiclesData, error: vehiclesError } = await supabase
@@ -232,6 +233,7 @@ export default function ReservationsTab() {
       if (vehiclesError) {
         console.error('Failed to load vehicles:', vehiclesError)
       } else {
+        console.log('VEHICLES LOADED:', vehiclesData?.length || 0, vehiclesData)
         setVehicles(vehiclesData || [])
       }
 
@@ -251,7 +253,7 @@ export default function ReservationsTab() {
 
         console.log('Loaded data:', {
           reservations: resData.data?.length || 0,
-          customers: customersData?.length || 0,
+          customers: customersArray.length,
           vehicles: vehiclesData?.length || 0
         })
       } catch (apiError) {
