@@ -242,6 +242,7 @@ export default function ReservationsTab() {
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
         .select('*')
+        .neq('status', 'retired')
         .order('display_name')
 
       if (vehiclesError) {
