@@ -93,32 +93,61 @@ WHERE display_name = 'Porsche 992 Carrera 4S';
 
 -- CITY & UTILITY vehicles
 
--- FIAT PANDA (update to Benzina version)
-UPDATE vehicles
-SET daily_rate = 29.90,
-    display_name = 'Fiat Panda Benzina',
-    metadata = jsonb_set(
-      COALESCE(metadata, '{}'::jsonb),
-      '{pricing}',
-      '{"daily": 29.90, "weekly": 149, "monthly": 599}'::jsonb
-    )
-WHERE display_name = 'Fiat Panda';
-
--- Add FIAT PANDA DIESEL if it doesn't exist
+-- FIAT PANDA BENZINA (Orange)
 INSERT INTO vehicles (display_name, plate, status, daily_rate, category, metadata)
 VALUES (
-  'Fiat Panda Diesel',
+  'Fiat Panda Benzina (Arancione)',
+  NULL,
+  'available',
+  29.90,
+  'urban',
+  '{
+    "pricing": {"daily": 29.90, "weekly": 149, "monthly": 599},
+    "color": "Arancione",
+    "image": "/panda-orange.jpeg",
+    "specs": {"power": "70Cv", "seats": "5 posti", "engine": "1.2L Benzina"}
+  }'::jsonb
+)
+ON CONFLICT DO NOTHING;
+
+-- FIAT PANDA BENZINA (White)
+INSERT INTO vehicles (display_name, plate, status, daily_rate, category, metadata)
+VALUES (
+  'Fiat Panda Benzina (Bianca)',
+  NULL,
+  'available',
+  29.90,
+  'urban',
+  '{
+    "pricing": {"daily": 29.90, "weekly": 149, "monthly": 599},
+    "color": "Bianca",
+    "image": "/panda-white.jpeg",
+    "specs": {"power": "70Cv", "seats": "5 posti", "engine": "1.2L Benzina"}
+  }'::jsonb
+)
+ON CONFLICT DO NOTHING;
+
+-- FIAT PANDA DIESEL (Grey)
+INSERT INTO vehicles (display_name, plate, status, daily_rate, category, metadata)
+VALUES (
+  'Fiat Panda Diesel (Grigia)',
   NULL,
   'available',
   34.90,
   'urban',
   '{
     "pricing": {"daily": 34.90, "weekly": 189, "monthly": 749},
-    "image": "/panda.jpeg",
-    "specs": {"power": "95Cv", "seats": "5 posti", "engine": "1.3L MultiJet"}
+    "color": "Grigia",
+    "image": "/panda-grey.jpeg",
+    "specs": {"power": "95Cv", "seats": "5 posti", "engine": "1.3L MultiJet Diesel"}
   }'::jsonb
 )
 ON CONFLICT DO NOTHING;
+
+-- Update existing Fiat Panda (if any exists without color specification)
+UPDATE vehicles
+SET status = 'retired'
+WHERE display_name = 'Fiat Panda' AND display_name NOT LIKE '%(%';
 
 -- Add RENAULT CAPTUR if it doesn't exist
 INSERT INTO vehicles (display_name, plate, status, daily_rate, category, metadata)
