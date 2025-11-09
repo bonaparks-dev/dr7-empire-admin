@@ -44,6 +44,7 @@ export default function VehiclesTab() {
       const { data, error } = await supabase
         .from('vehicles')
         .select('*')
+        .neq('status', 'retired')
         .order('display_name')
 
       if (error) throw error
