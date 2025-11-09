@@ -309,8 +309,7 @@ export default function ReservationsTab() {
       if (bookingType === 'carwash') {
         // Create car wash booking
         const carWashBookingData = {
-          user_id: customerId || null,
-          guest_id: customerId ? null : `guest_${Date.now()}`,
+          user_id: customerId,
           service_type: 'car_wash',
           service_name: carWashData.service_name,
           appointment_date: new Date(carWashData.appointment_date).toISOString(),
@@ -365,8 +364,7 @@ export default function ReservationsTab() {
         const dropoffLocationLabel = LOCATIONS.find(l => l.value === formData.dropoff_location)?.label || formData.dropoff_location
 
         const bookingData = {
-          user_id: customerId || null,
-          guest_id: customerId ? null : `guest_${Date.now()}`,
+          user_id: customerId,
           vehicle_name: vehicle?.display_name || '',
           vehicle_image_url: null,
           pickup_date: new Date(formData.start_at).toISOString(),
