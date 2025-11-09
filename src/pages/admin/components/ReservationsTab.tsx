@@ -115,8 +115,8 @@ export default function ReservationsTab() {
     vehicle_id: '',
     start_at: '',
     end_at: '',
-    pickup_location: 'office',
-    dropoff_location: 'office',
+    pickup_location: 'dr7_office',
+    dropoff_location: 'dr7_office',
     status: 'pending',
     source: 'admin',
     total_amount: '0',
@@ -153,11 +153,8 @@ export default function ReservationsTab() {
   ]
 
   const LOCATIONS = [
-    { value: 'office', label: 'Sede DR7 (Ufficio)' },
-    { value: 'airport', label: 'Aeroporto' },
-    { value: 'hotel', label: 'Hotel' },
-    { value: 'home', label: 'Domicilio' },
-    { value: 'other', label: 'Altro' }
+    { value: 'dr7_office', label: 'Ufficio DR7 Cagliari' },
+    { value: 'cagliari_airport', label: 'Aeroporto di Cagliari Elmas (+€50)' }
   ]
 
   useEffect(() => {
