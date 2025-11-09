@@ -125,6 +125,7 @@ export default function ReservationsTab() {
   const [carWashData, setCarWashData] = useState({
     service_name: '',
     appointment_date: '',
+    appointment_time: '',
     additional_service: '',
     additional_service_hours: '1',
     notes: ''
@@ -143,6 +144,11 @@ export default function ReservationsTab() {
     { id: 'top-shine', name: 'LAVAGGIO TOP', price: 49 },
     { id: 'vip', name: 'LAVAGGIO VIP', price: 75 },
     { id: 'dr7-luxury', name: 'LAVAGGIO DR7 LUXURY', price: 99 }
+  ]
+
+  const TIME_SLOTS = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
+    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
   ]
 
   const LOCATIONS = [
@@ -306,6 +312,7 @@ export default function ReservationsTab() {
           service_type: 'car_wash',
           service_name: carWashData.service_name,
           appointment_date: new Date(carWashData.appointment_date).toISOString(),
+          appointment_time: carWashData.appointment_time,
           price_total: Math.round(parseFloat(formData.total_amount) * 100), // Convert to cents
           currency: formData.currency.toLowerCase(),
           status: formData.status,
@@ -423,6 +430,7 @@ export default function ReservationsTab() {
     setCarWashData({
       service_name: '',
       appointment_date: '',
+      appointment_time: '',
       additional_service: '',
       additional_service_hours: '1',
       notes: ''
@@ -672,11 +680,21 @@ export default function ReservationsTab() {
                 ]}
               />
               <Input
-                label="Data/Ora Appuntamento"
-                type="datetime-local"
+                label="📅 Data Appuntamento"
+                type="date"
                 required
                 value={carWashData.appointment_date}
                 onChange={(e) => setCarWashData({ ...carWashData, appointment_date: e.target.value })}
+              />
+              <Select
+                label="🕐 Ora Appuntamento"
+                required
+                value={carWashData.appointment_time}
+                onChange={(e) => setCarWashData({ ...carWashData, appointment_time: e.target.value })}
+                options={[
+                  { value: '', label: 'Seleziona orario...' },
+                  ...TIME_SLOTS.map(slot => ({ value: slot, label: slot }))
+                ]}
               />
               <Select
                 label="Servizio Aggiuntivo"
