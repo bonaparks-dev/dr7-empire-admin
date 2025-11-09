@@ -393,6 +393,36 @@ export default function ReservationsTab() {
         }
 
         console.log('Car wash booking created successfully:', insertedData)
+
+        // Create Google Calendar event for car wash
+        try {
+          const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
+          const endDateTime = new Date(appointmentDateTime)
+          endDateTime.setHours(endDateTime.getHours() + 2) // Default 2 hour duration
+
+          await fetch('/.netlify/functions/create-calendar-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vehicleName: `🚿 LUXURY WASH - ${carWashData.service_name}`,
+              customerName: customerInfo?.full_name || '',
+              customerEmail: customerInfo?.email || '',
+              customerPhone: customerInfo?.phone || '',
+              pickupDate: appointmentDateTime.toISOString().split('T')[0],
+              pickupTime: appointmentDateTime.toTimeString().substring(0, 5),
+              returnDate: endDateTime.toISOString().split('T')[0],
+              returnTime: endDateTime.toTimeString().substring(0, 5),
+              pickupLocation: 'DR7 Office - Car Wash',
+              returnLocation: 'DR7 Office - Car Wash',
+              totalPrice: parseFloat(formData.total_amount),
+              bookingId: insertedData?.[0]?.id?.substring(0, 8)
+            })
+          })
+          console.log('✅ Car wash calendar event created successfully')
+        } catch (calendarError) {
+          console.error('⚠️ Failed to create car wash calendar event:', calendarError)
+          // Don't fail the whole booking if calendar fails
+        }
       } else {
         // Create vehicle rental booking in bookings table (for website availability blocking)
         const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
@@ -429,13 +459,44 @@ export default function ReservationsTab() {
           }
         }
 
-        const { error: bookingError } = await supabase
+        const { data: insertedBooking, error: bookingError } = await supabase
           .from('bookings')
           .insert([bookingData])
+          .select()
+          .single()
 
         if (bookingError) {
           console.error('Failed to create booking:', bookingError)
           throw new Error('Failed to create booking entry')
+        }
+
+        // Create Google Calendar event
+        try {
+          const pickupDateTime = new Date(formData.start_at)
+          const returnDateTime = new Date(formData.end_at)
+
+          await fetch('/.netlify/functions/create-calendar-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vehicleName: vehicle?.display_name || '',
+              customerName: customerInfo?.full_name || '',
+              customerEmail: customerInfo?.email || '',
+              customerPhone: customerInfo?.phone || '',
+              pickupDate: pickupDateTime.toISOString().split('T')[0],
+              pickupTime: pickupDateTime.toTimeString().substring(0, 5),
+              returnDate: returnDateTime.toISOString().split('T')[0],
+              returnTime: returnDateTime.toTimeString().substring(0, 5),
+              pickupLocation: pickupLocationLabel,
+              returnLocation: dropoffLocationLabel,
+              totalPrice: parseFloat(formData.total_amount),
+              bookingId: insertedBooking?.id?.substring(0, 8)
+            })
+          })
+          console.log('✅ Calendar event created successfully')
+        } catch (calendarError) {
+          console.error('⚠️ Failed to create calendar event:', calendarError)
+          // Don't fail the whole booking if calendar fails
         }
 
         // Also create in reservations table (for internal tracking)
