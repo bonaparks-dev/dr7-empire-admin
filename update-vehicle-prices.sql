@@ -1,0 +1,176 @@
+-- Update vehicle prices according to DR7 official price list
+-- SPORT & LUXURY vehicles
+
+-- AUDI RS3 VERDE (Green)
+UPDATE vehicles
+SET daily_rate = 40,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 40, "weekly": 200, "monthly": 500}'::jsonb
+    )
+WHERE display_name = 'Audi RS3 Verde';
+
+-- AUDI RS3 ROSSA (Red)
+UPDATE vehicles
+SET daily_rate = 60,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 60, "weekly": 350, "monthly": 500}'::jsonb
+    )
+WHERE display_name = 'Audi RS3 Rossa';
+
+-- MERCEDES A45 S AMG (Mercedes Classe A)
+UPDATE vehicles
+SET daily_rate = 70,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 70, "weekly": 400, "monthly": 500}'::jsonb
+    )
+WHERE display_name = 'Mercedes A45 S AMG';
+
+-- BMW M3 Competition
+UPDATE vehicles
+SET daily_rate = 70,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 70, "weekly": 400, "monthly": 500}'::jsonb
+    )
+WHERE display_name = 'BMW M3 Competition';
+
+-- PORSCHE MACAN GTS
+UPDATE vehicles
+SET daily_rate = 80,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 80, "weekly": 450, "monthly": 1000}'::jsonb
+    )
+WHERE display_name = 'Porsche Macan GTS';
+
+-- BMW M4 Competition
+UPDATE vehicles
+SET daily_rate = 80,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 80, "weekly": 450, "monthly": 750}'::jsonb
+    )
+WHERE display_name = 'BMW M4 Competition';
+
+-- MERCEDES GLE 63 AMG
+UPDATE vehicles
+SET daily_rate = 80,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 80, "weekly": 450, "monthly": 1500}'::jsonb
+    )
+WHERE display_name = 'Mercedes GLE 63 AMG';
+
+-- MERCEDES C63 S AMG
+UPDATE vehicles
+SET daily_rate = 100,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 100, "weekly": 600, "monthly": 1500}'::jsonb
+    )
+WHERE display_name = 'Mercedes C63 S AMG';
+
+-- PORSCHE 992 CARRERA 4S (Porsche Carrera 911)
+UPDATE vehicles
+SET daily_rate = 150,
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 150, "weekly": 900, "monthly": 2000}'::jsonb
+    )
+WHERE display_name = 'Porsche 992 Carrera 4S';
+
+-- CITY & UTILITY vehicles
+
+-- FIAT PANDA (update to Benzina version)
+UPDATE vehicles
+SET daily_rate = 29.90,
+    display_name = 'Fiat Panda Benzina',
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 29.90, "weekly": 149, "monthly": 599}'::jsonb
+    )
+WHERE display_name = 'Fiat Panda';
+
+-- Add FIAT PANDA DIESEL if it doesn't exist
+INSERT INTO vehicles (display_name, plate, status, daily_rate, category, metadata)
+VALUES (
+  'Fiat Panda Diesel',
+  NULL,
+  'available',
+  34.90,
+  'urban',
+  '{
+    "pricing": {"daily": 34.90, "weekly": 189, "monthly": 749},
+    "image": "/panda.jpeg",
+    "specs": {"power": "95Cv", "seats": "5 posti", "engine": "1.3L MultiJet"}
+  }'::jsonb
+)
+ON CONFLICT DO NOTHING;
+
+-- Add RENAULT CAPTUR if it doesn't exist
+INSERT INTO vehicles (display_name, plate, status, daily_rate, category, metadata)
+VALUES (
+  'Renault Captur',
+  NULL,
+  'available',
+  44.90,
+  'urban',
+  '{
+    "pricing": {"daily": 44.90, "weekly": 239, "monthly": 899},
+    "image": "/captur.jpeg",
+    "specs": {"power": "130Cv", "seats": "5 posti", "engine": "1.3L TCe"}
+  }'::jsonb
+)
+ON CONFLICT DO NOTHING;
+
+-- MERCEDES V CLASS (Mercedes-Benz Classe V)
+UPDATE vehicles
+SET daily_rate = 249,
+    display_name = 'Mercedes V Class VIP DR7',
+    metadata = jsonb_set(
+      jsonb_set(
+        COALESCE(metadata, '{}'::jsonb),
+        '{pricing}',
+        '{"daily": 249, "ncc": "Su preventivo personalizzato"}'::jsonb
+      ),
+      '{notes}',
+      '"Corse con conducente (Taxi/NCC) disponibili"'::jsonb
+    )
+WHERE display_name LIKE 'Mercedes%Classe V%' OR display_name LIKE 'Mercedes-Benz Classe V%';
+
+-- FIAT DUCATO MAXI (Furgone DR7)
+UPDATE vehicles
+SET daily_rate = 79,
+    display_name = 'Furgone DR7 (Fiat Ducato Maxi)',
+    metadata = jsonb_set(
+      COALESCE(metadata, '{}'::jsonb),
+      '{pricing}',
+      '{"daily": 79, "weekly": 549, "monthly": 1950}'::jsonb
+    )
+WHERE display_name LIKE 'Fiat Ducato%';
+
+-- Remove vehicles not in the new price list (optional - comment out if you want to keep them)
+-- UPDATE vehicles SET status = 'retired' WHERE display_name IN ('Citroen C5 Aircross', 'Fiat 500X', 'VW T-ROC', 'Cupra Formentor', 'VW Tiguan', 'Mercedes A250');
+
+-- Verify updates
+SELECT
+  display_name,
+  daily_rate,
+  category,
+  status,
+  metadata->'pricing' as pricing_info
+FROM vehicles
+ORDER BY category, daily_rate;
