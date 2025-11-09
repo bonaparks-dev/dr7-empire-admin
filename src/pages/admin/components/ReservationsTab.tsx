@@ -321,6 +321,12 @@ export default function ReservationsTab() {
           customer_name: customerInfo?.full_name || '',
           customer_email: customerInfo?.email || '',
           customer_phone: customerInfo?.phone || '',
+          vehicle_name: null, // Required field, null for car wash
+          vehicle_image_url: null,
+          pickup_date: null,
+          dropoff_date: null,
+          pickup_location: null,
+          dropoff_location: null,
           booking_details: {
             customer: {
               fullName: customerInfo?.full_name || '',
@@ -333,14 +339,21 @@ export default function ReservationsTab() {
           }
         }
 
-        const { error: carWashError } = await supabase
+        console.log('Attempting to create car wash booking with data:', carWashBookingData)
+
+        const { error: carWashError, data: insertedData } = await supabase
           .from('bookings')
           .insert([carWashBookingData])
+          .select()
 
         if (carWashError) {
           console.error('Failed to create car wash booking:', carWashError)
+          console.error('Error details:', JSON.stringify(carWashError, null, 2))
+          alert(`Failed to create car wash booking: ${carWashError.message || JSON.stringify(carWashError)}`)
           throw new Error('Failed to create car wash booking')
         }
+
+        console.log('Car wash booking created successfully:', insertedData)
       } else {
         // Create vehicle rental booking in bookings table (for website availability blocking)
         const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
