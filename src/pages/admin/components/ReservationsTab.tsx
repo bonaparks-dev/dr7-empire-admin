@@ -107,6 +107,7 @@ export default function ReservationsTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   const [bookingType, setBookingType] = useState<'rental' | 'carwash'>('rental')
   const [formData, setFormData] = useState({
@@ -280,6 +281,45 @@ export default function ReservationsTab() {
       console.error('Failed to load data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleCancelBooking(bookingId: string, bookingType: 'booking' | 'reservation') {
+    if (!confirm('Sei sicuro di voler cancellare questa prenotazione?')) {
+      return
+    }
+
+    try {
+      if (bookingType === 'booking') {
+        // Cancel booking in bookings table
+        const { error } = await supabase
+          .from('bookings')
+          .update({ status: 'cancelled' })
+          .eq('id', bookingId)
+
+        if (error) {
+          console.error('Failed to cancel booking:', error)
+          throw new Error('Failed to cancel booking')
+        }
+      } else {
+        // Cancel reservation via API
+        const res = await fetch(`${API_BASE}/reservations`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: bookingId, status: 'cancelled' })
+        })
+
+        if (!res.ok) throw new Error('Failed to cancel reservation')
+      }
+
+      alert('Prenotazione cancellata con successo')
+      loadData()
+    } catch (error) {
+      console.error('Failed to cancel booking:', error)
+      alert('Errore durante la cancellazione: ' + (error as Error).message)
     }
   }
 
@@ -805,7 +845,11 @@ export default function ReservationsTab() {
         {bookings.map((booking) => {
           const isCarWash = booking.service_type === 'car_wash'
           return (
-            <div key={`booking-card-${booking.id}`} className="bg-dr7-dark rounded-lg border border-gray-800 p-4">
+            <div
+              key={`booking-card-${booking.id}`}
+              className="bg-dr7-dark rounded-lg border border-gray-800 p-4 cursor-pointer hover:border-dr7-gold transition-colors"
+              onClick={() => setSelectedBooking(booking)}
+            >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <div className="font-semibold text-white mb-1">
@@ -845,8 +889,21 @@ export default function ReservationsTab() {
                 }
               </div>
 
-              <div className="text-right text-lg font-bold text-white">
-                €{(booking.price_total / 100).toFixed(2)}
+              <div className="flex justify-between items-center mt-3">
+                <div className="text-lg font-bold text-white">
+                  €{(booking.price_total / 100).toFixed(2)}
+                </div>
+                {booking.status !== 'cancelled' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleCancelBooking(booking.id, 'booking')
+                    }}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                  >
+                    Cancella
+                  </button>
+                )}
               </div>
             </div>
           )
@@ -880,8 +937,18 @@ export default function ReservationsTab() {
               📅 {new Date(res.start_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })} → {new Date(res.end_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
             </div>
 
-            <div className="text-right text-lg font-bold text-white">
-              {res.currency} {res.total_amount}
+            <div className="flex justify-between items-center mt-3">
+              <div className="text-lg font-bold text-white">
+                {res.currency} {res.total_amount}
+              </div>
+              {res.status !== 'cancelled' && (
+                <button
+                  onClick={() => handleCancelBooking(res.id, 'reservation')}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                >
+                  Cancella
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -901,6 +968,7 @@ export default function ReservationsTab() {
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Data Fine</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Stato</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Totale</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -952,6 +1020,24 @@ export default function ReservationsTab() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-white">€{(booking.price_total / 100).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedBooking(booking)}
+                          className="px-3 py-1 bg-dr7-gold hover:bg-yellow-600 text-black text-xs rounded transition-colors"
+                        >
+                          Dettagli
+                        </button>
+                        {booking.status !== 'cancelled' && (
+                          <button
+                            onClick={() => handleCancelBooking(booking.id, 'booking')}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                          >
+                            Cancella
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
@@ -981,7 +1067,7 @@ export default function ReservationsTab() {
 
               {bookings.length === 0 && reservations.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                     Nessuna prenotazione trovata
                   </td>
                 </tr>
@@ -990,6 +1076,111 @@ export default function ReservationsTab() {
           </table>
         </div>
       </div>
+
+      {/* Detail Modal - Mobile Optimized */}
+      {selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-dr7-dark w-full sm:max-w-2xl sm:rounded-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-dr7-darker p-4 border-b border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg sm:text-xl font-bold text-dr7-gold">Dettagli Prenotazione</h3>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="text-gray-400 hover:text-white text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 sm:p-6 space-y-4">
+              {/* Customer Info */}
+              <div className="bg-dr7-darker p-4 rounded-lg">
+                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <span>👤</span> Cliente
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div><span className="text-gray-400">Nome:</span> <span className="text-white">{selectedBooking.booking_details?.customer?.fullName || selectedBooking.customer_name || 'N/A'}</span></div>
+                  <div><span className="text-gray-400">Email:</span> <span className="text-white">{selectedBooking.customer_email || '-'}</span></div>
+                  <div><span className="text-gray-400">Telefono:</span> <span className="text-white">{selectedBooking.customer_phone || '-'}</span></div>
+                </div>
+              </div>
+
+              {/* Service Info */}
+              <div className="bg-dr7-darker p-4 rounded-lg">
+                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  {selectedBooking.service_type === 'car_wash' ? <span>🚿</span> : <span>🚗</span>}
+                  Servizio
+                </h4>
+                <div className="space-y-2 text-sm">
+                  {selectedBooking.service_type === 'car_wash' ? (
+                    <>
+                      <div><span className="text-gray-400">Tipo:</span> <span className="text-white">{selectedBooking.service_name || 'Autolavaggio'}</span></div>
+                      <div><span className="text-gray-400">Data:</span> <span className="text-white">{selectedBooking.appointment_date ? new Date(selectedBooking.appointment_date).toLocaleDateString('it-IT', { dateStyle: 'full' }) : '-'}</span></div>
+                      <div><span className="text-gray-400">Ora:</span> <span className="text-white">{selectedBooking.appointment_time || '-'}</span></div>
+                      {selectedBooking.booking_details?.additionalService && (
+                        <div><span className="text-gray-400">Servizio Aggiuntivo:</span> <span className="text-white">{selectedBooking.booking_details.additionalService}</span></div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div><span className="text-gray-400">Veicolo:</span> <span className="text-white">{selectedBooking.vehicle_name || '-'}</span></div>
+                      <div><span className="text-gray-400">Ritiro:</span> <span className="text-white">{selectedBooking.pickup_date ? new Date(typeof selectedBooking.pickup_date === 'number' ? selectedBooking.pickup_date * 1000 : selectedBooking.pickup_date).toLocaleString('it-IT') : '-'}</span></div>
+                      <div><span className="text-gray-400">Luogo Ritiro:</span> <span className="text-white">{selectedBooking.pickup_location || '-'}</span></div>
+                      <div><span className="text-gray-400">Riconsegna:</span> <span className="text-white">{selectedBooking.dropoff_date ? new Date(typeof selectedBooking.dropoff_date === 'number' ? selectedBooking.dropoff_date * 1000 : selectedBooking.dropoff_date).toLocaleString('it-IT') : '-'}</span></div>
+                      <div><span className="text-gray-400">Luogo Riconsegna:</span> <span className="text-white">{selectedBooking.dropoff_location || '-'}</span></div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Info */}
+              <div className="bg-dr7-darker p-4 rounded-lg">
+                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <span>💳</span> Pagamento
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div><span className="text-gray-400">Importo:</span> <span className="text-white font-bold text-lg">€{(selectedBooking.price_total / 100).toFixed(2)}</span></div>
+                  <div><span className="text-gray-400">Stato Pagamento:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.payment_status === 'completed' ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}`}>{selectedBooking.payment_status}</span></div>
+                  <div><span className="text-gray-400">Metodo:</span> <span className="text-white">{selectedBooking.payment_method || 'N/A'}</span></div>
+                  <div><span className="text-gray-400">Stato Prenotazione:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.status === 'confirmed' ? 'bg-green-900 text-green-300' : selectedBooking.status === 'cancelled' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>{selectedBooking.status}</span></div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedBooking.booking_details?.notes && (
+                <div className="bg-dr7-darker p-4 rounded-lg">
+                  <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                    <span>📝</span> Note
+                  </h4>
+                  <p className="text-sm text-gray-300">{selectedBooking.booking_details.notes}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                {selectedBooking.status !== 'cancelled' && (
+                  <button
+                    onClick={() => {
+                      handleCancelBooking(selectedBooking.id, 'booking')
+                      setSelectedBooking(null)
+                    }}
+                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                  >
+                    🗑️ Cancella Prenotazione
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium"
+                >
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
