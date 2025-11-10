@@ -331,7 +331,15 @@ export default function ReservationsTab() {
     }
 
     try {
+      // Get booking details before cancelling
+      let customerName = ''
+      let vehicleName = ''
+
       if (bookingType === 'booking') {
+        const booking = bookings.find(b => b.id === bookingId)
+        customerName = booking?.customer_name || ''
+        vehicleName = booking?.vehicle_name || ''
+
         // Cancel booking in bookings table
         const { error } = await supabase
           .from('bookings')
@@ -343,6 +351,10 @@ export default function ReservationsTab() {
           throw new Error('Failed to cancel booking')
         }
       } else {
+        const reservation = reservations.find(r => r.id === bookingId)
+        customerName = reservation?.customers?.full_name || ''
+        vehicleName = reservation?.vehicles?.display_name || ''
+
         // Cancel reservation via API
         const res = await fetch(`${API_BASE}/reservations`, {
           method: 'PATCH',
@@ -354,6 +366,23 @@ export default function ReservationsTab() {
         })
 
         if (!res.ok) throw new Error('Failed to cancel reservation')
+      }
+
+      // Delete Google Calendar event
+      try {
+        await fetch('/.netlify/functions/delete-calendar-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            customerName,
+            vehicleName
+          })
+        })
+        console.log('✅ Calendar event deleted successfully')
+      } catch (calendarError) {
+        console.error('⚠️ Failed to delete calendar event:', calendarError)
+        // Don't fail the whole cancellation if calendar delete fails
       }
 
       alert('Prenotazione cancellata con successo')
