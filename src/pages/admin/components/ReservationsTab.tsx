@@ -347,7 +347,7 @@ export default function ReservationsTab() {
       if (bookingType === 'carwash') {
         // Create car wash booking
         const carWashBookingData = {
-          user_id: customerId,
+          user_id: null, // Set to null for admin-created bookings
           service_type: 'car_wash',
           service_name: carWashData.service_name,
           appointment_date: new Date(carWashData.appointment_date).toISOString(),
@@ -370,7 +370,8 @@ export default function ReservationsTab() {
             customer: {
               fullName: customerInfo?.full_name || '',
               email: customerInfo?.email || '',
-              phone: customerInfo?.phone || ''
+              phone: customerInfo?.phone || '',
+              customerId: customerId // Store customer ID in booking_details instead
             },
             additionalService: carWashData.additional_service || null,
             notes: carWashData.notes || null,
@@ -432,7 +433,7 @@ export default function ReservationsTab() {
         const dropoffLocationLabel = LOCATIONS.find(l => l.value === formData.dropoff_location)?.label || formData.dropoff_location
 
         const bookingData = {
-          user_id: customerId,
+          user_id: null, // Set to null for admin-created bookings
           vehicle_name: vehicle?.display_name || '',
           vehicle_image_url: null,
           pickup_date: new Date(formData.start_at).toISOString(),
@@ -451,7 +452,8 @@ export default function ReservationsTab() {
             customer: {
               fullName: customerInfo?.full_name || '',
               email: customerInfo?.email || '',
-              phone: customerInfo?.phone || ''
+              phone: customerInfo?.phone || '',
+              customerId: customerId // Store customer ID in booking_details instead
             },
             pickupLocation: formData.pickup_location,
             dropoffLocation: formData.dropoff_location,
@@ -884,7 +886,9 @@ export default function ReservationsTab() {
             </div>
           )}
           <div className="flex gap-3 mt-4">
-            <Button type="submit">Salva</Button>
+            <Button type="submit">
+              Salva
+            </Button>
             <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); setNewCustomerMode(false); resetForm() }}>
               Annulla
             </Button>
