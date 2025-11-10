@@ -720,9 +720,9 @@ export default function ReservationsTab() {
                     required
                     value={formData.start_at}
                     onChange={(e) => setFormData({ ...formData, start_at: e.target.value })}
-                    step="3600"
+                    step="1800"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Orari interi (es: 10:00, 11:00)</p>
+                  <p className="text-xs text-gray-500 mt-1">Lun-Ven: 10:30-12:30, 17:30-18:30 | Sab: 10:30-13:30 | Dom: Chiuso</p>
                 </div>
                 <Select
                   label="📍 Luogo Ritiro"
@@ -738,9 +738,9 @@ export default function ReservationsTab() {
                     required
                     value={formData.end_at}
                     onChange={(e) => setFormData({ ...formData, end_at: e.target.value })}
-                    step="3600"
+                    step="1800"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Orari interi (es: 10:00, 11:00)</p>
+                  <p className="text-xs text-gray-500 mt-1">Intervalli di 30 minuti</p>
                 </div>
                 <Select
                   label="📍 Luogo Riconsegna"
