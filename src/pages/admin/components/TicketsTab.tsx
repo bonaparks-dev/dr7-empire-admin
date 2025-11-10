@@ -124,8 +124,8 @@ export default function TicketsTab() {
 
   // Commercial tickets stats
   const totalCommercialRevenue = commercialTickets.reduce((sum, ticket) => sum + ticket.amount_paid, 0)
-  const totalCommercialTickets = commercialTickets.length
-  const uniquePurchases = new Set(commercialTickets.map(t => t.payment_intent_id)).size
+  const totalCommercialTickets = commercialTickets.reduce((sum, ticket) => sum + ticket.quantity, 0)
+  const uniquePurchases = commercialTickets.length
 
   // Gift cards stats
   const filteredCards = filterStatus === 'all'
