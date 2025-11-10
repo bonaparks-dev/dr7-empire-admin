@@ -480,9 +480,10 @@ export default function ReservationsTab() {
 
         const bookingData = {
           user_id: null, // Set to null for admin-created bookings
-          guest_name: customerInfo?.full_name || 'N/A', // Add guest_name for constraint
-          guest_email: customerInfo?.email || null, // Add guest_email
-          guest_phone: customerInfo?.phone || null, // Add guest_phone
+          guest_name: customerInfo?.full_name || 'Admin Booking', // Add guest_name for constraint (NOT NULL required)
+          guest_email: customerInfo?.email, // Add guest_email
+          guest_phone: customerInfo?.phone, // Add guest_phone
+          vehicle_type: 'car', // Add vehicle_type
           vehicle_name: vehicle?.display_name || 'N/A',
           vehicle_image_url: null,
           pickup_date: new Date(pickupDateTime).toISOString(),
