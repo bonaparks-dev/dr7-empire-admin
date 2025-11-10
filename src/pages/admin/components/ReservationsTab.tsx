@@ -481,8 +481,6 @@ export default function ReservationsTab() {
         const bookingData = {
           user_id: null, // Set to null for admin-created bookings
           guest_name: customerInfo?.full_name || 'Admin Booking', // Add guest_name for constraint (NOT NULL required)
-          guest_email: customerInfo?.email, // Add guest_email
-          guest_phone: customerInfo?.phone, // Add guest_phone
           vehicle_type: 'car', // Add vehicle_type
           vehicle_name: vehicle?.display_name || 'N/A',
           vehicle_image_url: null,
@@ -491,7 +489,7 @@ export default function ReservationsTab() {
           pickup_location: pickupLocationLabel,
           dropoff_location: dropoffLocationLabel,
           price_total: Math.round(parseFloat(formData.total_amount) * 100), // Convert to cents
-          currency: formData.currency.toLowerCase(),
+          currency: formData.currency.toUpperCase(),
           status: formData.status,
           payment_status: formData.status === 'confirmed' ? 'completed' : 'pending',
           payment_method: 'agency',
