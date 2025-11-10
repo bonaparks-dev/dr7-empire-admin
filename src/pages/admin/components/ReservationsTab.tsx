@@ -115,6 +115,10 @@ export default function ReservationsTab() {
     vehicle_id: '',
     start_at: '',
     end_at: '',
+    pickup_date: '',
+    pickup_time: '',
+    return_date: '',
+    return_time: '',
     pickup_location: 'dr7_office',
     dropoff_location: 'dr7_office',
     status: 'pending',
@@ -151,6 +155,32 @@ export default function ReservationsTab() {
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
   ]
+
+  // Get valid pickup times based on day of week (matching main website)
+  const getValidPickupTimes = (date: string): string[] => {
+    if (!date) return []
+    const dayOfWeek = new Date(date).getDay()
+
+    // Sunday = 0, closed
+    if (dayOfWeek === 0) return []
+
+    const times: string[] = []
+
+    // Monday-Friday (1-5)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      // Morning: 10:30-12:30
+      times.push('10:30', '11:00', '11:30', '12:00', '12:30')
+      // Afternoon: 17:30-18:30
+      times.push('17:30', '18:00', '18:30')
+    }
+    // Saturday (6)
+    else if (dayOfWeek === 6) {
+      // 10:30-13:30
+      times.push('10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30')
+    }
+
+    return times
+  }
 
   const LOCATIONS = [
     { value: 'dr7_office', label: 'Ufficio DR7 Cagliari' },
@@ -432,12 +462,16 @@ export default function ReservationsTab() {
         const pickupLocationLabel = LOCATIONS.find(l => l.value === formData.pickup_location)?.label || formData.pickup_location
         const dropoffLocationLabel = LOCATIONS.find(l => l.value === formData.dropoff_location)?.label || formData.dropoff_location
 
+        // Combine date and time
+        const pickupDateTime = `${formData.pickup_date}T${formData.pickup_time}:00`
+        const returnDateTime = `${formData.return_date}T${formData.return_time}:00`
+
         const bookingData = {
           user_id: null, // Set to null for admin-created bookings
           vehicle_name: vehicle?.display_name || '',
           vehicle_image_url: null,
-          pickup_date: new Date(formData.start_at).toISOString(),
-          dropoff_date: new Date(formData.end_at).toISOString(),
+          pickup_date: new Date(pickupDateTime).toISOString(),
+          dropoff_date: new Date(returnDateTime).toISOString(),
           pickup_location: pickupLocationLabel,
           dropoff_location: dropoffLocationLabel,
           price_total: Math.round(parseFloat(formData.total_amount) * 100), // Convert to cents
@@ -474,9 +508,6 @@ export default function ReservationsTab() {
 
         // Create Google Calendar event
         try {
-          const pickupDateTime = new Date(formData.start_at)
-          const returnDateTime = new Date(formData.end_at)
-
           await fetch('/.netlify/functions/create-calendar-event', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -485,10 +516,10 @@ export default function ReservationsTab() {
               customerName: customerInfo?.full_name || '',
               customerEmail: customerInfo?.email || '',
               customerPhone: customerInfo?.phone || '',
-              pickupDate: pickupDateTime.toISOString().split('T')[0],
-              pickupTime: pickupDateTime.toTimeString().substring(0, 5),
-              returnDate: returnDateTime.toISOString().split('T')[0],
-              returnTime: returnDateTime.toTimeString().substring(0, 5),
+              pickupDate: formData.pickup_date,
+              pickupTime: formData.pickup_time,
+              returnDate: formData.return_date,
+              returnTime: formData.return_time,
               pickupLocation: pickupLocationLabel,
               returnLocation: dropoffLocationLabel,
               totalPrice: parseFloat(formData.total_amount),
@@ -503,9 +534,21 @@ export default function ReservationsTab() {
 
         // Also create in reservations table (for internal tracking)
         const method = editingId ? 'PATCH' : 'POST'
+        const reservationData = {
+          customer_id: customerId,
+          vehicle_id: formData.vehicle_id,
+          start_at: pickupDateTime,
+          end_at: returnDateTime,
+          pickup_location: formData.pickup_location,
+          dropoff_location: formData.dropoff_location,
+          status: formData.status,
+          source: formData.source,
+          total_amount: parseFloat(formData.total_amount),
+          currency: formData.currency
+        }
         const body = editingId
-          ? { id: editingId, ...formData, customer_id: customerId, total_amount: parseFloat(formData.total_amount) }
-          : { ...formData, customer_id: customerId, total_amount: parseFloat(formData.total_amount) }
+          ? { id: editingId, ...reservationData }
+          : reservationData
 
         const res = await fetch(`${API_BASE}/reservations`, {
           method,
@@ -536,8 +579,12 @@ export default function ReservationsTab() {
       vehicle_id: '',
       start_at: '',
       end_at: '',
-      pickup_location: 'office',
-      dropoff_location: 'office',
+      pickup_date: '',
+      pickup_time: '',
+      return_date: '',
+      return_time: '',
+      pickup_location: 'dr7_office',
+      dropoff_location: 'dr7_office',
       status: 'pending',
       source: 'admin',
       total_amount: '0',
@@ -713,14 +760,25 @@ export default function ReservationsTab() {
                 ]}
               />
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-dr7-darker rounded-lg border border-gray-700">
-                <div>
+                <div className="space-y-3">
                   <Input
-                    label="📅 Data/Ora Ritiro"
-                    type="datetime-local"
+                    label="📅 Data Ritiro"
+                    type="date"
                     required
-                    value={formData.start_at}
-                    onChange={(e) => setFormData({ ...formData, start_at: e.target.value })}
-                    step="1800"
+                    value={formData.pickup_date}
+                    onChange={(e) => {
+                      setFormData({ ...formData, pickup_date: e.target.value, pickup_time: '' })
+                    }}
+                  />
+                  <Select
+                    label="🕐 Ora Ritiro"
+                    required
+                    value={formData.pickup_time}
+                    onChange={(e) => setFormData({ ...formData, pickup_time: e.target.value })}
+                    options={[
+                      { value: '', label: formData.pickup_date ? (getValidPickupTimes(formData.pickup_date).length > 0 ? 'Seleziona ora...' : 'Nessun orario disponibile (Domenica chiusa)') : 'Seleziona prima la data' },
+                      ...getValidPickupTimes(formData.pickup_date).map(time => ({ value: time, label: time }))
+                    ]}
                   />
                   <p className="text-xs text-yellow-400 mt-1 font-semibold">⚠️ ORARI RITIRO:</p>
                   <p className="text-xs text-gray-400">Lun-Ven: 10:30-12:30, 17:30-18:30</p>
@@ -734,16 +792,27 @@ export default function ReservationsTab() {
                   onChange={(e) => setFormData({ ...formData, pickup_location: e.target.value })}
                   options={LOCATIONS}
                 />
-                <div>
+                <div className="space-y-3">
                   <Input
-                    label="📅 Data/Ora Riconsegna"
-                    type="datetime-local"
+                    label="📅 Data Riconsegna"
+                    type="date"
                     required
-                    value={formData.end_at}
-                    onChange={(e) => setFormData({ ...formData, end_at: e.target.value })}
-                    step="1800"
+                    value={formData.return_date}
+                    onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">⚠️ SABATO: Aeroporto max 11:00 | Ufficio max 12:00</p>
+                  <Select
+                    label="🕐 Ora Riconsegna"
+                    required
+                    value={formData.return_time}
+                    onChange={(e) => setFormData({ ...formData, return_time: e.target.value })}
+                    options={[
+                      { value: '', label: 'Seleziona ora...' },
+                      ...getValidPickupTimes(formData.return_date || formData.pickup_date).map(time => ({ value: time, label: time }))
+                    ]}
+                  />
+                  <p className="text-xs text-yellow-400 mt-1 font-semibold">⚠️ SABATO RICONSEGNA:</p>
+                  <p className="text-xs text-gray-400">Aeroporto: max 11:00</p>
+                  <p className="text-xs text-gray-400">Ufficio: max 12:00</p>
                 </div>
                 <Select
                   label="📍 Luogo Riconsegna"
