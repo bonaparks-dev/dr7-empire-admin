@@ -137,6 +137,7 @@ export default function ReservationsTab() {
   })
 
   const [newCustomerMode, setNewCustomerMode] = useState(false)
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('')
   const [newCustomerData, setNewCustomerData] = useState({
     full_name: '',
     email: '',
@@ -623,6 +624,7 @@ export default function ReservationsTab() {
       additional_service_hours: '1',
       notes: ''
     })
+    setCustomerSearchQuery('')
     setNewCustomerData({
       full_name: '',
       email: '',
@@ -749,7 +751,15 @@ export default function ReservationsTab() {
                 />
               </div>
             ) : (
-              <div>
+              <div className="space-y-3">
+                {/* Search Input for Mobile */}
+                <Input
+                  label="🔍 Cerca Cliente (nome, email, telefono)"
+                  placeholder="Inizia a scrivere per cercare..."
+                  value={customerSearchQuery}
+                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                />
+
                 <Select
                   label="Seleziona Cliente"
                   required
@@ -758,10 +768,33 @@ export default function ReservationsTab() {
                   options={[
                     { value: '', label: 'Seleziona cliente...' },
                     ...customers
+                      .filter(c => {
+                        if (!customerSearchQuery) return true
+                        const query = customerSearchQuery.toLowerCase()
+                        return (
+                          c.full_name.toLowerCase().includes(query) ||
+                          c.email?.toLowerCase().includes(query) ||
+                          c.phone?.toLowerCase().includes(query)
+                        )
+                      })
                       .sort((a, b) => a.full_name.localeCompare(b.full_name))
                       .map(c => ({ value: c.id, label: `${c.full_name} (${c.email || c.phone || 'No contact'})` }))
                   ]}
                 />
+
+                {customerSearchQuery && customers.filter(c => {
+                  const query = customerSearchQuery.toLowerCase()
+                  return (
+                    c.full_name.toLowerCase().includes(query) ||
+                    c.email?.toLowerCase().includes(query) ||
+                    c.phone?.toLowerCase().includes(query)
+                  )
+                }).length === 0 && (
+                  <p className="text-sm text-yellow-400 mt-2">
+                    ⚠️ Nessun cliente trovato con "{customerSearchQuery}"
+                  </p>
+                )}
+
                 {customers.length === 0 && (
                   <p className="text-sm text-yellow-400 mt-2">
                     ⚠️ Nessun cliente trovato. Verifica che l'API sia attiva o crea un nuovo cliente.
