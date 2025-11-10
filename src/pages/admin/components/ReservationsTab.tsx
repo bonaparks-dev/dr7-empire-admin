@@ -182,6 +182,18 @@ export default function ReservationsTab() {
     return times
   }
 
+  // Auto-calculate return time (pickup time - 1h30 like main website)
+  const calculateReturnTime = (pickupTime: string): string => {
+    if (!pickupTime) return ''
+    const [hours, minutes] = pickupTime.split(':').map(Number)
+    const tempDate = new Date()
+    tempDate.setHours(hours, minutes, 0)
+    tempDate.setMinutes(tempDate.getMinutes() - 90) // Subtract 1h30
+    const returnHours = String(tempDate.getHours()).padStart(2, '0')
+    const returnMinutes = String(tempDate.getMinutes()).padStart(2, '0')
+    return `${returnHours}:${returnMinutes}`
+  }
+
   const LOCATIONS = [
     { value: 'dr7_office', label: 'Ufficio DR7 Cagliari' },
     { value: 'cagliari_airport', label: 'Aeroporto di Cagliari Elmas (+€50)' }
@@ -468,7 +480,7 @@ export default function ReservationsTab() {
 
         const bookingData = {
           user_id: null, // Set to null for admin-created bookings
-          vehicle_name: vehicle?.display_name || '',
+          vehicle_name: vehicle?.display_name || 'N/A',
           vehicle_image_url: null,
           pickup_date: new Date(pickupDateTime).toISOString(),
           dropoff_date: new Date(returnDateTime).toISOString(),
@@ -479,9 +491,10 @@ export default function ReservationsTab() {
           status: formData.status,
           payment_status: formData.status === 'confirmed' ? 'completed' : 'pending',
           payment_method: 'agency',
-          customer_name: customerInfo?.full_name || '',
-          customer_email: customerInfo?.email || '',
-          customer_phone: customerInfo?.phone || '',
+          customer_name: customerInfo?.full_name || 'N/A',
+          customer_email: customerInfo?.email || null,
+          customer_phone: customerInfo?.phone || null,
+          booked_at: new Date().toISOString(), // Add booked_at timestamp
           booking_details: {
             customer: {
               fullName: customerInfo?.full_name || '',
@@ -495,6 +508,8 @@ export default function ReservationsTab() {
           }
         }
 
+        console.log('Attempting to create booking with data:', bookingData)
+
         const { data: insertedBooking, error: bookingError } = await supabase
           .from('bookings')
           .insert([bookingData])
@@ -503,8 +518,11 @@ export default function ReservationsTab() {
 
         if (bookingError) {
           console.error('Failed to create booking:', bookingError)
-          throw new Error('Failed to create booking entry')
+          console.error('Booking data that failed:', bookingData)
+          throw new Error(`Failed to create booking entry: ${bookingError.message || JSON.stringify(bookingError)}`)
         }
+
+        console.log('Booking created successfully:', insertedBooking)
 
         // Create Google Calendar event
         try {
@@ -774,7 +792,11 @@ export default function ReservationsTab() {
                     label="🕐 Ora Ritiro"
                     required
                     value={formData.pickup_time}
-                    onChange={(e) => setFormData({ ...formData, pickup_time: e.target.value })}
+                    onChange={(e) => {
+                      const pickupTime = e.target.value
+                      const returnTime = calculateReturnTime(pickupTime)
+                      setFormData({ ...formData, pickup_time: pickupTime, return_time: returnTime })
+                    }}
                     options={[
                       { value: '', label: formData.pickup_date ? (getValidPickupTimes(formData.pickup_date).length > 0 ? 'Seleziona ora...' : 'Nessun orario disponibile (Domenica chiusa)') : 'Seleziona prima la data' },
                       ...getValidPickupTimes(formData.pickup_date).map(time => ({ value: time, label: time }))
@@ -800,16 +822,16 @@ export default function ReservationsTab() {
                     value={formData.return_date}
                     onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
                   />
-                  <Select
-                    label="🕐 Ora Riconsegna"
-                    required
-                    value={formData.return_time}
-                    onChange={(e) => setFormData({ ...formData, return_time: e.target.value })}
-                    options={[
-                      { value: '', label: 'Seleziona ora...' },
-                      ...getValidPickupTimes(formData.return_date || formData.pickup_date).map(time => ({ value: time, label: time }))
-                    ]}
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">🕐 Ora Riconsegna</label>
+                    <input
+                      type="text"
+                      value={formData.return_time || 'Auto-calcolato'}
+                      readOnly
+                      className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-blue-400 mt-1">⚙️ Ora automatica: Ritiro - 1h30</p>
+                  </div>
                   <p className="text-xs text-yellow-400 mt-1 font-semibold">⚠️ SABATO RICONSEGNA:</p>
                   <p className="text-xs text-gray-400">Aeroporto: max 11:00</p>
                   <p className="text-xs text-gray-400">Ufficio: max 12:00</p>
