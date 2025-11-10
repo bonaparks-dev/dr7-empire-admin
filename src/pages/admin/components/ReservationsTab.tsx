@@ -740,7 +740,7 @@ export default function ReservationsTab() {
                     onChange={(e) => setFormData({ ...formData, end_at: e.target.value })}
                     step="1800"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Intervalli di 30 minuti</p>
+                  <p className="text-xs text-gray-500 mt-1">⚠️ SABATO: Aeroporto max 11:00 | Ufficio max 12:00</p>
                 </div>
                 <Select
                   label="📍 Luogo Riconsegna"
