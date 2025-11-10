@@ -366,6 +366,12 @@ export default function ReservationsTab() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
+      // Get current logged-in admin user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('You must be logged in to create bookings')
+      }
+
       let customerId = formData.customer_id
 
       // If creating new customer, create them first
@@ -478,11 +484,8 @@ export default function ReservationsTab() {
         const pickupDateTime = `${formData.pickup_date}T${formData.pickup_time}:00`
         const returnDateTime = `${formData.return_date}T${formData.return_time}:00`
 
-        // Use a dummy admin user ID (the constraint requires user_id OR guest info, we use user_id approach)
-        const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000000' // Admin placeholder UUID
-
         const bookingData = {
-          user_id: ADMIN_USER_ID, // Use placeholder UUID for admin bookings
+          user_id: user.id, // Use logged-in admin's user ID
           vehicle_type: 'car',
           vehicle_name: vehicle?.display_name || 'N/A',
           vehicle_image_url: null,
