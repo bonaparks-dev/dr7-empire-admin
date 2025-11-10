@@ -390,6 +390,9 @@ export default function ReservationsTab() {
         // Create car wash booking
         const carWashBookingData = {
           user_id: null, // Set to null for admin-created bookings
+          guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
+          guest_email: customerInfo?.email || null,
+          guest_phone: customerInfo?.phone || null,
           service_type: 'car_wash',
           service_name: carWashData.service_name,
           appointment_date: new Date(carWashData.appointment_date).toISOString(),
@@ -480,6 +483,9 @@ export default function ReservationsTab() {
 
         const bookingData = {
           user_id: null, // Set to null for admin-created bookings
+          guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
+          guest_email: customerInfo?.email || null,
+          guest_phone: customerInfo?.phone || null,
           vehicle_type: 'car',
           vehicle_name: vehicle?.display_name || 'N/A',
           vehicle_image_url: null,
