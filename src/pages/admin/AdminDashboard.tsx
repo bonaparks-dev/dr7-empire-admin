@@ -6,15 +6,17 @@ import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
 import TicketsTab from './components/TicketsTab'
+import AviationQuotesTab from './components/AviationQuotesTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'aviation'
 
 const tabs = [
   { id: 'reservations' as TabType, label: 'Prenotazioni', icon: '📅' },
   { id: 'customers' as TabType, label: 'Clienti', icon: '👥' },
   { id: 'vehicles' as TabType, label: 'Veicoli', icon: '🚗' },
   { id: 'fattura' as TabType, label: 'Fatture', icon: '📄' },
-  { id: 'tickets' as TabType, label: 'Biglietti', icon: '🎫' }
+  { id: 'tickets' as TabType, label: 'Biglietti', icon: '🎫' },
+  { id: 'aviation' as TabType, label: 'Elicotteri/Jet', icon: '🚁' }
 ]
 
 export default function AdminDashboard() {
@@ -80,6 +82,7 @@ export default function AdminDashboard() {
         {activeTab === 'vehicles' && <VehiclesTab />}
         {activeTab === 'fattura' && <FatturaTab />}
         {activeTab === 'tickets' && <TicketsTab />}
+        {activeTab === 'aviation' && <AviationQuotesTab />}
       </main>
 
       {/* Mobile Bottom Navigation */}
