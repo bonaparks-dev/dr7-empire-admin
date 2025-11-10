@@ -722,7 +722,10 @@ export default function ReservationsTab() {
                     onChange={(e) => setFormData({ ...formData, start_at: e.target.value })}
                     step="1800"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Lun-Ven: 10:30-12:30, 17:30-18:30 | Sab: 10:30-13:30 | Dom: Chiuso</p>
+                  <p className="text-xs text-yellow-400 mt-1 font-semibold">⚠️ ORARI RITIRO:</p>
+                  <p className="text-xs text-gray-400">Lun-Ven: 10:30-12:30, 17:30-18:30</p>
+                  <p className="text-xs text-gray-400">Sabato: 10:30-13:30</p>
+                  <p className="text-xs text-red-400">Domenica: CHIUSO</p>
                 </div>
                 <Select
                   label="📍 Luogo Ritiro"
