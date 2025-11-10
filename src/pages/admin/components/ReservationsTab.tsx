@@ -478,10 +478,12 @@ export default function ReservationsTab() {
         const pickupDateTime = `${formData.pickup_date}T${formData.pickup_time}:00`
         const returnDateTime = `${formData.return_date}T${formData.return_time}:00`
 
+        // Use a dummy admin user ID (the constraint requires user_id OR guest info, we use user_id approach)
+        const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000000' // Admin placeholder UUID
+
         const bookingData = {
-          user_id: null, // Set to null for admin-created bookings
-          guest_name: customerInfo?.full_name || 'Admin Booking', // Add guest_name for constraint (NOT NULL required)
-          vehicle_type: 'car', // Add vehicle_type
+          user_id: ADMIN_USER_ID, // Use placeholder UUID for admin bookings
+          vehicle_type: 'car',
           vehicle_name: vehicle?.display_name || 'N/A',
           vehicle_image_url: null,
           pickup_date: new Date(pickupDateTime).toISOString(),
@@ -496,13 +498,13 @@ export default function ReservationsTab() {
           customer_name: customerInfo?.full_name || 'N/A',
           customer_email: customerInfo?.email || null,
           customer_phone: customerInfo?.phone || null,
-          booked_at: new Date().toISOString(), // Add booked_at timestamp
+          booked_at: new Date().toISOString(),
           booking_details: {
             customer: {
               fullName: customerInfo?.full_name || '',
               email: customerInfo?.email || '',
               phone: customerInfo?.phone || '',
-              customerId: customerId // Store customer ID in booking_details instead
+              customerId: customerId
             },
             pickupLocation: formData.pickup_location,
             dropoffLocation: formData.dropoff_location,
