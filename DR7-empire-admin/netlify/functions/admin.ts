@@ -210,6 +210,89 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
       const body = JSON.parse(event.body || '{}')
       const { customer_id, vehicle_id, start_at, end_at, status, source, total_amount, currency } = body
 
+      // Validate dates and times
+      const startDate = new Date(start_at)
+      const endDate = new Date(end_at)
+
+      // Check if Sunday (0)
+      if (startDate.getDay() === 0 || endDate.getDay() === 0) {
+        return response(400, {
+          error: 'Le prenotazioni non sono disponibili la domenica.'
+        }, origin)
+      }
+
+      // Check Saturday time restrictions (day 6)
+      if (endDate.getDay() === 6) {
+        const endHour = endDate.getHours()
+        const endMinutes = endDate.getMinutes()
+        const endTimeInMinutes = endHour * 60 + endMinutes
+
+        // Maximum 12:00 on Saturday
+        if (endTimeInMinutes > 12 * 60) {
+          return response(400, {
+            error: 'Il sabato, la riconsegna deve essere entro le 12:00.'
+          }, origin)
+        }
+      }
+
+      // Get vehicle details to check conflicts
+      const { data: vehicle } = await supabase
+        .from('vehicles')
+        .select('display_name')
+        .eq('id', vehicle_id)
+        .single()
+
+      if (vehicle) {
+        // Check conflicts in bookings table (main website)
+        const { data: bookingConflicts } = await supabase
+          .from('bookings')
+          .select('pickup_date, dropoff_date, vehicle_name, status')
+          .eq('vehicle_name', vehicle.display_name)
+          .in('status', ['confirmed', 'pending'])
+
+        // Check conflicts in reservations table (admin panel)
+        const { data: reservationConflicts } = await supabase
+          .from('reservations')
+          .select('start_at, end_at, vehicle_id, status')
+          .eq('vehicle_id', vehicle_id)
+          .in('status', ['confirmed', 'pending', 'active'])
+
+        // Check for overlapping dates
+        const hasConflict = (existingStart: Date, existingEnd: Date) => {
+          return (
+            (startDate >= existingStart && startDate < existingEnd) ||
+            (endDate > existingStart && endDate <= existingEnd) ||
+            (startDate <= existingStart && endDate >= existingEnd)
+          )
+        }
+
+        // Check booking conflicts
+        if (bookingConflicts && bookingConflicts.length > 0) {
+          for (const booking of bookingConflicts) {
+            const existingStart = new Date(booking.pickup_date)
+            const existingEnd = new Date(booking.dropoff_date)
+            if (hasConflict(existingStart, existingEnd)) {
+              return response(400, {
+                error: `❌ Questo veicolo non è disponibile. È già prenotato dal ${existingStart.toLocaleDateString('it-IT')} al ${existingEnd.toLocaleDateString('it-IT')}.`
+              }, origin)
+            }
+          }
+        }
+
+        // Check reservation conflicts
+        if (reservationConflicts && reservationConflicts.length > 0) {
+          for (const reservation of reservationConflicts) {
+            const existingStart = new Date(reservation.start_at)
+            const existingEnd = new Date(reservation.end_at)
+            if (hasConflict(existingStart, existingEnd)) {
+              return response(400, {
+                error: `❌ Questo veicolo non è disponibile. È già prenotato dal ${existingStart.toLocaleDateString('it-IT')} al ${existingEnd.toLocaleDateString('it-IT')}.`
+              }, origin)
+            }
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from('reservations')
         .insert({

@@ -111,7 +111,57 @@ export default function ReservationsTab() {
         body: JSON.stringify(body)
       })
 
-      if (!res.ok) throw new Error('Failed to save reservation')
+      if (!res.ok) {
+        const errorData = await res.json()
+        const errorMessage = errorData.error || 'Failed to save reservation'
+        alert(errorMessage)
+        return
+      }
+
+      const result = await res.json()
+      const reservation = result.data
+
+      // Send WhatsApp notifications for new reservations only
+      if (!editingId && reservation) {
+        // Get customer and vehicle details for notification
+        const customer = customers.find(c => c.id === formData.customer_id)
+        const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
+
+        if (customer && vehicle) {
+          // Send admin notification
+          sendWhatsAppNotification({
+            customer_name: customer.full_name,
+            customer_email: customer.email || '',
+            customer_phone: customer.phone || '',
+            vehicle_name: vehicle.display_name,
+            start_at: formData.start_at,
+            end_at: formData.end_at,
+            total_amount: parseFloat(formData.total_amount),
+            currency: formData.currency,
+            status: formData.status,
+            reservation_id: reservation.id,
+            recipient_type: 'admin'
+          })
+
+          // Send customer notification if phone number is available
+          if (customer.phone) {
+            sendWhatsAppNotification({
+              customer_name: customer.full_name,
+              customer_email: customer.email || '',
+              customer_phone: customer.phone,
+              vehicle_name: vehicle.display_name,
+              start_at: formData.start_at,
+              end_at: formData.end_at,
+              total_amount: parseFloat(formData.total_amount),
+              currency: formData.currency,
+              status: formData.status,
+              reservation_id: reservation.id,
+              recipient_type: 'customer',
+              customer_whatsapp: customer.phone
+            })
+          }
+        }
+      }
 
       setShowForm(false)
       setEditingId(null)
@@ -120,6 +170,20 @@ export default function ReservationsTab() {
     } catch (error) {
       console.error('Failed to save reservation:', error)
       alert('Failed to save reservation')
+    }
+  }
+
+  async function sendWhatsAppNotification(data: any) {
+    try {
+      await fetch('/.netlify/functions/send-whatsapp-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      console.log(`WhatsApp notification sent to ${data.recipient_type}`)
+    } catch (error) {
+      console.error('Failed to send WhatsApp notification:', error)
+      // Don't throw - notification failure shouldn't break reservation creation
     }
   }
 
