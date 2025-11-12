@@ -1271,12 +1271,12 @@ export default function ReservationsTab() {
               {/* Display reservations from reservations table */}
               {reservations.map((res) => (
                 <tr key={`reservation-${res.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
-                  <td className="px-4 py-3 text-sm">{res.customers?.full_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm">{res.customers?.email || '-'}</td>
-                  <td className="px-4 py-3 text-sm">{res.customers?.phone || '-'}</td>
-                  <td className="px-4 py-3 text-sm">{res.vehicles?.display_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm">{new Date(res.start_at).toLocaleString('it-IT')}</td>
-                  <td className="px-4 py-3 text-sm">{new Date(res.end_at).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm text-white">{res.customers?.full_name || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm text-white">{res.customers?.email || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-white">{res.customers?.phone || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-white">{res.vehicles?.display_name || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm text-white">{new Date(res.start_at).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm text-white">{new Date(res.end_at).toLocaleString('it-IT')}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       res.status === 'active' ? 'bg-green-900 text-green-300' :
@@ -1287,7 +1287,7 @@ export default function ReservationsTab() {
                       {res.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm">{res.currency} {res.total_amount}</td>
+                  <td className="px-4 py-3 text-sm text-white">{res.currency} {res.total_amount}</td>
                 </tr>
               ))}
 
