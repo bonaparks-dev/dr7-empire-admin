@@ -441,6 +441,7 @@ export default function ReservationsTab() {
           dropoff_date: null,
           pickup_location: null,
           dropoff_location: null,
+          booking_source: 'admin', // Mark as admin booking
           booking_details: {
             customer: {
               fullName: customerInfo?.full_name || '',
@@ -532,6 +533,7 @@ export default function ReservationsTab() {
           customer_email: customerInfo?.email || null,
           customer_phone: customerInfo?.phone || null,
           booked_at: new Date().toISOString(),
+          booking_source: 'admin', // Mark as admin booking
           booking_details: {
             customer: {
               fullName: customerInfo?.full_name || '',
