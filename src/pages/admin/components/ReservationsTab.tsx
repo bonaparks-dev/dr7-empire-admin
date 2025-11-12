@@ -1110,7 +1110,7 @@ export default function ReservationsTab() {
 
               <div className="text-xs text-gray-400 mb-2">
                 {isCarWash
-                  ? `📅 ${booking.appointment_date ? new Date(booking.appointment_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}`
+                  ? `📅 ${booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString('it-IT', { dateStyle: 'short' }) : '-'}${booking.appointment_time ? ` alle ${booking.appointment_time}` : ''}`
                   : `📅 ${booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'} → ${booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}`
                 }
               </div>
@@ -1223,7 +1223,7 @@ export default function ReservationsTab() {
                     </td>
                     <td className="px-4 py-3 text-sm text-white">
                       {isCarWash
-                        ? (booking.appointment_date ? new Date(booking.appointment_date).toLocaleString('it-IT') : '-')
+                        ? (booking.appointment_date ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT')}${booking.appointment_time ? ` ${booking.appointment_time}` : ''}` : '-')
                         : (booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT') : '-')
                       }
                     </td>
