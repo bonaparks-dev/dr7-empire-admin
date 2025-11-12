@@ -718,14 +718,14 @@ export default function ReservationsTab() {
               <button
                 type="button"
                 onClick={() => setBookingType('rental')}
-                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'rental' ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'rental' ? 'bg-dr7-gold text-dr7-darker' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
                 🚗 Noleggio
               </button>
               <button
                 type="button"
                 onClick={() => setBookingType('carwash')}
-                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'carwash' ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'carwash' ? 'bg-dr7-gold text-dr7-darker' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
                 🚿 Lavaggio
               </button>
@@ -739,14 +739,14 @@ export default function ReservationsTab() {
               <button
                 type="button"
                 onClick={() => setNewCustomerMode(false)}
-                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${!newCustomerMode ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${!newCustomerMode ? 'bg-dr7-gold text-dr7-darker' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
                 Esistente
               </button>
               <button
                 type="button"
                 onClick={() => setNewCustomerMode(true)}
-                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${newCustomerMode ? 'bg-white text-black' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
+                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${newCustomerMode ? 'bg-dr7-gold text-dr7-darker' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
               >
                 Nuovo
               </button>
