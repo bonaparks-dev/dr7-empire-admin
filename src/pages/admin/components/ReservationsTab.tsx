@@ -393,6 +393,65 @@ export default function ReservationsTab() {
     }
   }
 
+  function handleEditBooking(booking: Booking) {
+    const isCarWash = booking.service_type === 'car_wash'
+
+    // Set booking type
+    setBookingType(isCarWash ? 'carwash' : 'rental')
+
+    // Set customer data
+    const customerId = booking.booking_details?.customer?.customerId || booking.user_id || ''
+    setFormData({
+      ...formData,
+      customer_id: customerId,
+      status: booking.status,
+      total_amount: (booking.price_total / 100).toString(),
+      currency: booking.currency.toUpperCase()
+    })
+
+    if (isCarWash) {
+      // Populate car wash data
+      setCarWashData({
+        service_name: booking.service_name || '',
+        appointment_date: booking.appointment_date ? new Date(booking.appointment_date).toISOString().split('T')[0] : '',
+        appointment_time: booking.appointment_time || '',
+        additional_service: booking.booking_details?.additionalService || '',
+        additional_service_hours: '1',
+        notes: booking.booking_details?.notes || ''
+      })
+    } else {
+      // Populate rental data
+      const pickupDate = booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date) : null
+      const dropoffDate = booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date) : null
+
+      // Find vehicle by name
+      const vehicle = vehicles.find(v => v.display_name === booking.vehicle_name)
+
+      // Extract location codes from booking_details
+      const pickupLoc = booking.booking_details?.pickupLocation || 'dr7_office'
+      const dropoffLoc = booking.booking_details?.dropoffLocation || 'dr7_office'
+
+      setFormData({
+        ...formData,
+        customer_id: customerId,
+        vehicle_id: vehicle?.id || '',
+        pickup_date: pickupDate ? pickupDate.toISOString().split('T')[0] : '',
+        pickup_time: pickupDate ? pickupDate.toTimeString().substring(0, 5) : '',
+        return_date: dropoffDate ? dropoffDate.toISOString().split('T')[0] : '',
+        return_time: dropoffDate ? dropoffDate.toTimeString().substring(0, 5) : '',
+        pickup_location: pickupLoc,
+        dropoff_location: dropoffLoc,
+        status: booking.status,
+        total_amount: (booking.price_total / 100).toString(),
+        currency: booking.currency.toUpperCase(),
+        source: 'admin'
+      })
+    }
+
+    setEditingId(booking.id)
+    setShowForm(true)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
@@ -417,7 +476,7 @@ export default function ReservationsTab() {
       const customerInfo = newCustomerMode ? newCustomerData : customers.find(c => c.id === customerId)
 
       if (bookingType === 'carwash') {
-        // Create car wash booking
+        // Create or update car wash booking
         const carWashBookingData = {
           user_id: null, // Set to null for admin-created bookings
           guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
@@ -455,21 +514,41 @@ export default function ReservationsTab() {
           }
         }
 
-        console.log('Attempting to create car wash booking with data:', carWashBookingData)
+        console.log(editingId ? 'Updating car wash booking' : 'Creating car wash booking', 'with data:', carWashBookingData)
 
-        const { error: carWashError, data: insertedData } = await supabase
-          .from('bookings')
-          .insert([carWashBookingData])
-          .select()
+        let insertedData
+        if (editingId) {
+          // Update existing booking
+          const { error: carWashError, data } = await supabase
+            .from('bookings')
+            .update(carWashBookingData)
+            .eq('id', editingId)
+            .select()
 
-        if (carWashError) {
-          console.error('Failed to create car wash booking:', carWashError)
-          console.error('Error details:', JSON.stringify(carWashError, null, 2))
-          alert(`Failed to create car wash booking: ${carWashError.message || JSON.stringify(carWashError)}`)
-          throw new Error('Failed to create car wash booking')
+          if (carWashError) {
+            console.error('Failed to update car wash booking:', carWashError)
+            console.error('Error details:', JSON.stringify(carWashError, null, 2))
+            alert(`Failed to update car wash booking: ${carWashError.message || JSON.stringify(carWashError)}`)
+            throw new Error('Failed to update car wash booking')
+          }
+          insertedData = data
+          console.log('Car wash booking updated successfully:', insertedData)
+        } else {
+          // Create new booking
+          const { error: carWashError, data } = await supabase
+            .from('bookings')
+            .insert([carWashBookingData])
+            .select()
+
+          if (carWashError) {
+            console.error('Failed to create car wash booking:', carWashError)
+            console.error('Error details:', JSON.stringify(carWashError, null, 2))
+            alert(`Failed to create car wash booking: ${carWashError.message || JSON.stringify(carWashError)}`)
+            throw new Error('Failed to create car wash booking')
+          }
+          insertedData = data
+          console.log('Car wash booking created successfully:', insertedData)
         }
-
-        console.log('Car wash booking created successfully:', insertedData)
 
         // Create Google Calendar event for car wash
         try {
@@ -501,7 +580,7 @@ export default function ReservationsTab() {
           // Don't fail the whole booking if calendar fails
         }
       } else {
-        // Create vehicle rental booking in bookings table (for website availability blocking)
+        // Create or update vehicle rental booking in bookings table (for website availability blocking)
         const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
 
         // Get location labels
@@ -532,7 +611,7 @@ export default function ReservationsTab() {
           customer_name: customerInfo?.full_name || 'N/A',
           customer_email: customerInfo?.email || null,
           customer_phone: customerInfo?.phone || null,
-          booked_at: new Date().toISOString(),
+          booked_at: editingId ? undefined : new Date().toISOString(), // Don't update booked_at on edit
           booking_source: 'admin', // Mark as admin booking
           booking_details: {
             customer: {
@@ -547,21 +626,41 @@ export default function ReservationsTab() {
           }
         }
 
-        console.log('Attempting to create booking with data:', bookingData)
+        console.log(editingId ? 'Updating rental booking' : 'Creating rental booking', 'with data:', bookingData)
 
-        const { data: insertedBooking, error: bookingError } = await supabase
-          .from('bookings')
-          .insert([bookingData])
-          .select()
-          .single()
+        let insertedBooking
+        if (editingId) {
+          // Update existing booking
+          const { data, error: bookingError } = await supabase
+            .from('bookings')
+            .update(bookingData)
+            .eq('id', editingId)
+            .select()
+            .single()
 
-        if (bookingError) {
-          console.error('Failed to create booking:', bookingError)
-          console.error('Booking data that failed:', bookingData)
-          throw new Error(`Failed to create booking entry: ${bookingError.message || JSON.stringify(bookingError)}`)
+          if (bookingError) {
+            console.error('Failed to update booking:', bookingError)
+            console.error('Booking data that failed:', bookingData)
+            throw new Error(`Failed to update booking entry: ${bookingError.message || JSON.stringify(bookingError)}`)
+          }
+          insertedBooking = data
+          console.log('Booking updated successfully:', insertedBooking)
+        } else {
+          // Create new booking
+          const { data, error: bookingError } = await supabase
+            .from('bookings')
+            .insert([bookingData])
+            .select()
+            .single()
+
+          if (bookingError) {
+            console.error('Failed to create booking:', bookingError)
+            console.error('Booking data that failed:', bookingData)
+            throw new Error(`Failed to create booking entry: ${bookingError.message || JSON.stringify(bookingError)}`)
+          }
+          insertedBooking = data
+          console.log('Booking created successfully:', insertedBooking)
         }
-
-        console.log('Booking created successfully:', insertedBooking)
 
         // Create Google Calendar event
         try {
@@ -1122,15 +1221,26 @@ export default function ReservationsTab() {
                   €{(booking.price_total / 100).toFixed(2)}
                 </div>
                 {booking.status !== 'cancelled' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleCancelBooking(booking.id, 'booking')
-                    }}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
-                  >
-                    Cancella
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEditBooking(booking)
+                      }}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                    >
+                      Modifica
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleCancelBooking(booking.id, 'booking')
+                      }}
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                    >
+                      Cancella
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1257,12 +1367,20 @@ export default function ReservationsTab() {
                           Dettagli
                         </button>
                         {booking.status !== 'cancelled' && (
-                          <button
-                            onClick={() => handleCancelBooking(booking.id, 'booking')}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                          >
-                            Cancella
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleEditBooking(booking)}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                            >
+                              Modifica
+                            </button>
+                            <button
+                              onClick={() => handleCancelBooking(booking.id, 'booking')}
+                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                            >
+                              Cancella
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
