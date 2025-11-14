@@ -955,11 +955,12 @@ export default function ReservationsTab() {
                     required
                     value={formData.pickup_date}
                     onChange={(e) => {
-                      setFormData({ ...formData, pickup_date: e.target.value, pickup_time: '' })
+                      setFormData({ ...formData, pickup_date: e.target.value })
                     }}
                   />
-                  <Select
+                  <Input
                     label="🕐 Ora Ritiro"
+                    type="time"
                     required
                     value={formData.pickup_time}
                     onChange={(e) => {
@@ -967,15 +968,8 @@ export default function ReservationsTab() {
                       const returnTime = calculateReturnTime(pickupTime)
                       setFormData({ ...formData, pickup_time: pickupTime, return_time: returnTime })
                     }}
-                    options={[
-                      { value: '', label: formData.pickup_date ? (getValidPickupTimes(formData.pickup_date).length > 0 ? 'Seleziona ora...' : 'Nessun orario disponibile (Domenica chiusa)') : 'Seleziona prima la data' },
-                      ...getValidPickupTimes(formData.pickup_date).map(time => ({ value: time, label: time }))
-                    ]}
                   />
-                  <p className="text-xs text-yellow-400 mt-1 font-semibold">⚠️ ORARI RITIRO:</p>
-                  <p className="text-xs text-gray-400">Lun-Ven: 10:30-12:30, 17:30-18:30</p>
-                  <p className="text-xs text-gray-400">Sabato: 10:30-13:30</p>
-                  <p className="text-xs text-red-400">Domenica: CHIUSO</p>
+                  <p className="text-xs text-green-400 mt-1">✅ Admin: Qualsiasi orario disponibile</p>
                 </div>
                 <Select
                   label="📍 Luogo Ritiro"
@@ -992,19 +986,15 @@ export default function ReservationsTab() {
                     value={formData.return_date}
                     onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
                   />
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">🕐 Ora Riconsegna</label>
-                    <input
-                      type="text"
-                      value={formData.return_time || 'Auto-calcolato'}
-                      readOnly
-                      className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
-                    />
-                    <p className="text-xs text-blue-400 mt-1">⚙️ Ora automatica: Ritiro - 1h30</p>
-                  </div>
-                  <p className="text-xs text-yellow-400 mt-1 font-semibold">⚠️ SABATO RICONSEGNA:</p>
-                  <p className="text-xs text-gray-400">Aeroporto: max 11:00</p>
-                  <p className="text-xs text-gray-400">Ufficio: max 12:00</p>
+                  <Input
+                    label="🕐 Ora Riconsegna"
+                    type="time"
+                    required
+                    value={formData.return_time}
+                    onChange={(e) => setFormData({ ...formData, return_time: e.target.value })}
+                  />
+                  <p className="text-xs text-blue-400 mt-1">💡 Suggerito: Ritiro - 1h30</p>
+                  <p className="text-xs text-green-400">✅ Admin: Qualsiasi orario disponibile</p>
                 </div>
                 <Select
                   label="📍 Luogo Riconsegna"
