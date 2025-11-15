@@ -1,3 +1,4 @@
+// Reservations management component
 import { useState, useEffect } from 'react'
 import Input from './Input'
 import Select from './Select'
