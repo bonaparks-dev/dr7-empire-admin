@@ -418,10 +418,9 @@ export default function CalendarTab() {
                         <span className="text-white ml-2">
                           {selectedBooking.appointment_date
                             ? new Date(selectedBooking.appointment_date).toLocaleDateString('it-IT', {
-                                weekday: 'long',
+                                day: '2-digit',
+                                month: '2-digit',
                                 year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
                                 timeZone: 'Europe/Rome'
                               })
                             : 'N/A'}
@@ -439,10 +438,9 @@ export default function CalendarTab() {
                         <span className="text-white ml-2">
                           {selectedBooking.pickup_date
                             ? new Date(selectedBooking.pickup_date).toLocaleString('it-IT', {
-                                weekday: 'long',
+                                day: '2-digit',
+                                month: '2-digit',
                                 year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
                                 timeZone: 'Europe/Rome',
@@ -456,10 +454,9 @@ export default function CalendarTab() {
                         <span className="text-white ml-2">
                           {selectedBooking.dropoff_date
                             ? new Date(selectedBooking.dropoff_date).toLocaleString('it-IT', {
-                                weekday: 'long',
+                                day: '2-digit',
+                                month: '2-digit',
                                 year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
                                 timeZone: 'Europe/Rome',
