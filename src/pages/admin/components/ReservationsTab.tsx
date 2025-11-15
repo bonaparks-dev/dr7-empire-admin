@@ -157,32 +157,6 @@ export default function ReservationsTab() {
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
   ]
 
-  // Get valid pickup times based on day of week (matching main website)
-  const getValidPickupTimes = (date: string): string[] => {
-    if (!date) return []
-    const dayOfWeek = new Date(date).getDay()
-
-    // Sunday = 0, closed
-    if (dayOfWeek === 0) return []
-
-    const times: string[] = []
-
-    // Monday-Friday (1-5)
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      // Morning: 10:30-12:30
-      times.push('10:30', '11:00', '11:30', '12:00', '12:30')
-      // Afternoon: 17:30-18:30
-      times.push('17:30', '18:00', '18:30')
-    }
-    // Saturday (6)
-    else if (dayOfWeek === 6) {
-      // 10:30-13:30
-      times.push('10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30')
-    }
-
-    return times
-  }
-
   // Auto-calculate return time (pickup time - 1h30 like main website)
   const calculateReturnTime = (pickupTime: string): string => {
     if (!pickupTime) return ''

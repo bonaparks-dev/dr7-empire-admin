@@ -6,18 +6,9 @@ import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
 import TicketsTab from './components/TicketsTab'
-import AviationQuotesTab from './components/AviationQuotesTab'
+import CalendarTab from './components/CalendarTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'aviation'
-
-const tabs = [
-  { id: 'reservations' as TabType, label: 'Prenotazioni', icon: '📅' },
-  { id: 'customers' as TabType, label: 'Clienti', icon: '👥' },
-  { id: 'vehicles' as TabType, label: 'Veicoli', icon: '🚗' },
-  { id: 'fattura' as TabType, label: 'Fatture', icon: '📄' },
-  { id: 'tickets' as TabType, label: 'Biglietti', icon: '🎫' },
-  { id: 'aviation' as TabType, label: 'Elicotteri/Jet', icon: '🚁' }
-]
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'calendar'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -29,84 +20,101 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black pb-20 lg:pb-0">
-      {/* Mobile-optimized header */}
-      <header className="bg-gradient-to-r from-gray-900 to-black border-b border-gray-800 sticky top-0 z-50 backdrop-blur-lg bg-opacity-95">
-        <div className="px-4 sm:px-6">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img src="/DR7logo1.png" alt="DR7 Empire" className="h-8 sm:h-10" />
-              <h1 className="text-lg sm:text-xl font-bold text-white hidden sm:block">Admin Panel</h1>
-              <h1 className="text-lg font-bold text-white sm:hidden">DR7</h1>
+    <div className="min-h-screen bg-black">
+      <header className="bg-gray-900 border-b border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-4">
+              <img src="/DR7logo.png" alt="DR7 Empire" className="h-10" />
+              <h1 className="text-2xl font-bold text-white">Pannello Admin</h1>
             </div>
             <button
               onClick={handleSignOut}
-              className="px-3 sm:px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all"
+              className="text-gray-400 hover:text-white transition-colors"
             >
-              <span className="hidden sm:inline">Esci</span>
-              <span className="sm:hidden">🚪</span>
+              Esci
             </button>
           </div>
         </div>
       </header>
 
-      {/* Desktop Navigation */}
-      <div className="hidden lg:block bg-gray-900 border-b border-gray-800 sticky top-14 sm:top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <nav className="flex space-x-1">
-            {tabs.map((tab) => (
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <div className="border-b border-gray-800">
+            <nav className="-mb-px flex space-x-8">
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-4 font-medium text-sm transition-all relative ${
-                  activeTab === tab.id
-                    ? 'text-white'
-                    : 'text-gray-400 hover:text-white'
+                onClick={() => setActiveTab('reservations')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'reservations'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
-                )}
+                Prenotazioni
               </button>
-            ))}
-          </nav>
+              <button
+                onClick={() => setActiveTab('customers')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'customers'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                Clienti
+              </button>
+              <button
+                onClick={() => setActiveTab('vehicles')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'vehicles'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                Veicoli
+              </button>
+              <button
+                onClick={() => setActiveTab('fattura')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'fattura'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                Fatture
+              </button>
+              <button
+                onClick={() => setActiveTab('tickets')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'tickets'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                Biglietti
+              </button>
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                📅 Calendario
+              </button>
+            </nav>
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
-        {activeTab === 'reservations' && <ReservationsTab />}
-        {activeTab === 'customers' && <CustomersTab />}
-        {activeTab === 'vehicles' && <VehiclesTab />}
-        {activeTab === 'fattura' && <FatturaTab />}
-        {activeTab === 'tickets' && <TicketsTab />}
-        {activeTab === 'aviation' && <AviationQuotesTab />}
+        <div className="mt-8">
+          {activeTab === 'reservations' && <ReservationsTab />}
+          {activeTab === 'customers' && <CustomersTab />}
+          {activeTab === 'vehicles' && <VehiclesTab />}
+          {activeTab === 'fattura' && <FatturaTab />}
+          {activeTab === 'tickets' && <TicketsTab />}
+          {activeTab === 'calendar' && <CalendarTab />}
+        </div>
       </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 z-50 safe-area-inset-bottom">
-        <div className="grid grid-cols-5 h-16">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center space-y-1 transition-all ${
-                activeTab === tab.id
-                  ? 'text-white bg-gray-800'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <span className="text-xl">{tab.icon}</span>
-              <span className="text-xs font-medium">{tab.label}</span>
-              {activeTab === tab.id && (
-                <div className="absolute top-0 left-0 right-0 h-1 bg-white"></div>
-              )}
-            </button>
-          ))}
-        </div>
-      </nav>
     </div>
   )
 }
