@@ -8,6 +8,7 @@ interface Booking {
   vehicle_name: string
   customer_name: string
   customer_email: string
+  customer_phone?: string
   appointment_date?: string
   appointment_time?: string
   pickup_date?: string
@@ -15,6 +16,8 @@ interface Booking {
   price_total: number
   status: string
   payment_status: string
+  booking_source?: string
+  currency?: string
 }
 
 export default function CalendarTab() {
@@ -22,6 +25,7 @@ export default function CalendarTab() {
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
   useEffect(() => {
     loadBookings()
@@ -47,7 +51,7 @@ export default function CalendarTab() {
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('id, service_type, service_name, vehicle_name, customer_name, customer_email, appointment_date, appointment_time, pickup_date, dropoff_date, price_total, status, payment_status')
+        .select('id, service_type, service_name, vehicle_name, customer_name, customer_email, customer_phone, appointment_date, appointment_time, pickup_date, dropoff_date, price_total, status, payment_status, booking_source, currency')
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -262,9 +266,14 @@ export default function CalendarTab() {
                   {dayBookings.slice(0, 2).map(booking => (
                     <div
                       key={booking.id}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedBooking(booking)
+                      }}
                       className={`
-                        text-xs px-1 py-0.5 rounded truncate border
+                        text-xs px-1 py-0.5 rounded truncate border cursor-pointer
                         ${getStatusColor(booking.status)}
+                        hover:opacity-80 transition-opacity
                       `}
                       title={`${booking.vehicle_name} - ${booking.customer_name}`}
                     >
@@ -273,7 +282,13 @@ export default function CalendarTab() {
                     </div>
                   ))}
                   {dayBookings.length > 2 && (
-                    <div className="text-xs text-gray-400">
+                    <div
+                      className="text-xs text-gray-400 cursor-pointer hover:text-gray-300"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedBooking(dayBookings[2])
+                      }}
+                    >
                       +{dayBookings.length - 2} altro
                     </div>
                   )}
@@ -306,6 +321,171 @@ export default function CalendarTab() {
           </div>
         </div>
       </div>
+
+      {/* Booking Details Modal */}
+      {selectedBooking && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedBooking(null)}
+        >
+          <div
+            className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-start p-6 border-b border-gray-800">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {selectedBooking.service_type === 'car_wash' ? '🚿 Autolavaggio' : '🚗 Noleggio'}
+                </h3>
+                <p className="text-sm text-gray-400">ID: DR7-{selectedBooking.id.toUpperCase().slice(0, 8)}</p>
+              </div>
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="text-gray-400 hover:text-white transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Status */}
+              <div>
+                <label className="text-sm font-medium text-gray-400">Stato</label>
+                <div className="mt-1">
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedBooking.status)}`}>
+                    {selectedBooking.status.toUpperCase()}
+                  </span>
+                  <span className={`inline-block ml-2 px-3 py-1 rounded-full text-sm font-medium ${
+                    selectedBooking.payment_status === 'succeeded' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                    'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                  }`}>
+                    Pagamento: {selectedBooking.payment_status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-white mb-3">👤 Cliente</h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-400">Nome:</span>
+                    <span className="text-white ml-2">{selectedBooking.customer_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Email:</span>
+                    <span className="text-white ml-2">{selectedBooking.customer_email}</span>
+                  </div>
+                  {selectedBooking.customer_phone && (
+                    <div>
+                      <span className="text-gray-400">Telefono:</span>
+                      <span className="text-white ml-2">{selectedBooking.customer_phone}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Vehicle/Service Info */}
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-white mb-3">
+                  {selectedBooking.service_type === 'car_wash' ? '🚿 Servizio' : '🚗 Veicolo'}
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-400">
+                      {selectedBooking.service_type === 'car_wash' ? 'Servizio:' : 'Veicolo:'}
+                    </span>
+                    <span className="text-white ml-2">
+                      {selectedBooking.service_type === 'car_wash'
+                        ? selectedBooking.service_name || selectedBooking.vehicle_name
+                        : selectedBooking.vehicle_name
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Date/Time Info */}
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-white mb-3">📅 Date</h4>
+                <div className="space-y-2 text-sm">
+                  {selectedBooking.service_type === 'car_wash' ? (
+                    <>
+                      <div>
+                        <span className="text-gray-400">Data:</span>
+                        <span className="text-white ml-2">
+                          {selectedBooking.appointment_date
+                            ? new Date(selectedBooking.appointment_date).toLocaleDateString('it-IT', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Ora:</span>
+                        <span className="text-white ml-2">{selectedBooking.appointment_time || 'N/A'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <span className="text-gray-400">Ritiro:</span>
+                        <span className="text-white ml-2">
+                          {selectedBooking.pickup_date
+                            ? new Date(selectedBooking.pickup_date).toLocaleDateString('it-IT', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Riconsegna:</span>
+                        <span className="text-white ml-2">
+                          {selectedBooking.dropoff_date
+                            ? new Date(selectedBooking.dropoff_date).toLocaleDateString('it-IT', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : 'N/A'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Price Info */}
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-white mb-3">💰 Prezzo</h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="text-gray-400">Totale:</span>
+                    <span className="text-white ml-2 text-lg font-bold">
+                      {(selectedBooking.price_total / 100).toFixed(2)} {selectedBooking.currency || 'EUR'}
+                    </span>
+                  </div>
+                  {selectedBooking.booking_source && (
+                    <div>
+                      <span className="text-gray-400">Fonte:</span>
+                      <span className="text-white ml-2 capitalize">{selectedBooking.booking_source}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
