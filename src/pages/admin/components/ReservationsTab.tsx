@@ -1175,8 +1175,8 @@ export default function ReservationsTab() {
 
               <div className="text-xs text-gray-400 mb-2">
                 {isCarWash
-                  ? `📅 ${booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString('it-IT', { dateStyle: 'short' }) : '-'}${booking.appointment_time ? ` alle ${booking.appointment_time}` : ''}`
-                  : `📅 ${booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'} → ${booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' }) : '-'}`
+                  ? `📅 ${booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' }) : '-'}${booking.appointment_time ? ` alle ${booking.appointment_time}` : ''}`
+                  : `📅 ${booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-'} → ${booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-'}`
                 }
               </div>
 
@@ -1236,7 +1236,7 @@ export default function ReservationsTab() {
             </div>
 
             <div className="text-xs text-gray-400 mb-2">
-              📅 {new Date(res.start_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })} → {new Date(res.end_at).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}
+              📅 {new Date(res.start_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })} → {new Date(res.end_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}
             </div>
 
             <div className="flex justify-between items-center mt-3">
@@ -1259,18 +1259,18 @@ export default function ReservationsTab() {
       {/* Desktop Table View */}
       <div className="hidden lg:block bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-max">
             <thead className="bg-dr7-darker">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Nome</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Telefono</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Servizio</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Data Inizio</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Data Fine</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Stato</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Totale</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Azioni</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[150px]">Nome</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[180px]">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[120px]">Telefono</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[180px]">Servizio</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[160px]">Data Inizio</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[160px]">Data Fine</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[100px]">Stato</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[80px]">Totale</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300 min-w-[200px]">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -1297,18 +1297,18 @@ export default function ReservationsTab() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-white">
+                    <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
                       {isCarWash
-                        ? (booking.appointment_date ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT')}${booking.appointment_time ? ` ${booking.appointment_time}` : ''}` : '-')
-                        : (booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT') : '-')
+                        ? (booking.appointment_date ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' })}${booking.appointment_time ? ` ${booking.appointment_time}` : ''}` : '-')
+                        : (booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-')
                       }
                     </td>
-                    <td className="px-4 py-3 text-sm text-white">
+                    <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
                       {isCarWash
                         ? (booking.appointment_date && booking.appointment_time
-                            ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT')} ${calculateCarWashEndTime(booking.appointment_date, booking.appointment_time, booking.price_total)}`
+                            ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' })} ${calculateCarWashEndTime(booking.appointment_date, booking.appointment_time, booking.price_total)}`
                             : '-')
-                        : (booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT') : '-')
+                        : (booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-')
                       }
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -1359,8 +1359,12 @@ export default function ReservationsTab() {
                   <td className="px-4 py-3 text-sm text-white">{res.customers?.email || '-'}</td>
                   <td className="px-4 py-3 text-sm text-white">{res.customers?.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm text-white">{res.vehicles?.display_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-white">{new Date(res.start_at).toLocaleString('it-IT')}</td>
-                  <td className="px-4 py-3 text-sm text-white">{new Date(res.end_at).toLocaleString('it-IT')}</td>
+                  <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
+                    {new Date(res.start_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
+                    {new Date(res.end_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}
+                  </td>
                   <td className="px-4 py-3 text-sm">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       res.status === 'active' ? 'bg-green-900 text-green-300' :
