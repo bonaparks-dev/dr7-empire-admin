@@ -26,6 +26,7 @@ export default function CalendarTab() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+  const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[] | null>(null)
 
   useEffect(() => {
     loadBookings()
@@ -263,7 +264,7 @@ export default function CalendarTab() {
 
                 {/* Booking indicators */}
                 <div className="space-y-1">
-                  {dayBookings.slice(0, 2).map(booking => (
+                  {dayBookings.slice(0, 3).map(booking => (
                     <div
                       key={booking.id}
                       onClick={(e) => {
@@ -278,18 +279,23 @@ export default function CalendarTab() {
                       title={`${booking.vehicle_name} - ${booking.customer_name}`}
                     >
                       {booking.service_type === 'car_wash' ? '🚿' : '🚗'}{' '}
-                      {booking.appointment_time || 'Noleggio'}
+                      <span className="font-semibold">{booking.vehicle_name}</span>
+                      {booking.service_type === 'car_wash' ? (
+                        booking.appointment_time ? ` ${booking.appointment_time}` : ''
+                      ) : (
+                        ` - ${booking.customer_name}`
+                      )}
                     </div>
                   ))}
-                  {dayBookings.length > 2 && (
+                  {dayBookings.length > 3 && (
                     <div
-                      className="text-xs text-gray-400 cursor-pointer hover:text-gray-300"
+                      className="text-xs text-gray-400 cursor-pointer hover:text-gray-300 font-semibold"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setSelectedBooking(dayBookings[2])
+                        setSelectedDayBookings(dayBookings)
                       }}
                     >
-                      +{dayBookings.length - 2} altro
+                      +{dayBookings.length - 3} altro ({dayBookings.length} totale)
                     </div>
                   )}
                 </div>
@@ -321,6 +327,108 @@ export default function CalendarTab() {
           </div>
         </div>
       </div>
+
+      {/* Day Bookings List Modal */}
+      {selectedDayBookings && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedDayBookings(null)}
+        >
+          <div
+            className="bg-gray-900 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-start p-6 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  📅 Prenotazioni del Giorno
+                </h3>
+                <p className="text-sm text-gray-400">{selectedDayBookings.length} prenotazioni</p>
+              </div>
+              <button
+                onClick={() => setSelectedDayBookings(null)}
+                className="text-gray-400 hover:text-white transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Bookings List */}
+            <div className="p-6 space-y-3">
+              {selectedDayBookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  onClick={() => {
+                    setSelectedDayBookings(null)
+                    setSelectedBooking(booking)
+                  }}
+                  className="bg-gray-800/50 rounded-lg p-4 cursor-pointer hover:bg-gray-800 transition-colors border border-gray-700"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {booking.service_type === 'car_wash' ? '🚿' : '🚗'}
+                      </span>
+                      <div>
+                        <div className="text-white font-semibold">
+                          {booking.vehicle_name || booking.service_name}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {booking.customer_name}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                      {booking.status}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-gray-300 mt-2">
+                    {booking.service_type === 'car_wash' ? (
+                      <>
+                        <div>🕐 {booking.appointment_time || 'N/A'}</div>
+                        <div>💰 €{(booking.price_total / 100).toFixed(2)}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          📅 {booking.pickup_date
+                            ? new Date(booking.pickup_date).toLocaleString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Europe/Rome',
+                                hour12: false
+                              })
+                            : 'N/A'} → {booking.dropoff_date
+                            ? new Date(booking.dropoff_date).toLocaleString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Europe/Rome',
+                                hour12: false
+                              })
+                            : 'N/A'}
+                        </div>
+                        <div>💰 €{(booking.price_total / 100).toFixed(2)}</div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="text-xs text-blue-400 mt-2">
+                    Clicca per vedere dettagli completi →
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Booking Details Modal */}
       {selectedBooking && (
