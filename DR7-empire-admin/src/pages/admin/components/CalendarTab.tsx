@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { supabase } from '../../../supabaseClient'
 
 interface Booking {
   id: string
@@ -11,15 +12,10 @@ interface Booking {
   appointment_time?: string
   pickup_date?: string
   dropoff_date?: string
-  start_at?: string
-  end_at?: string
   price_total: number
   status: string
   payment_status: string
 }
-
-const API_BASE = '/.netlify/functions/admin'
-const API_TOKEN = import.meta.env.VITE_ADMIN_UI_TOKEN
 
 export default function CalendarTab() {
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -30,16 +26,33 @@ export default function CalendarTab() {
 
   useEffect(() => {
     loadBookings()
+
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('calendar-bookings')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        () => {
+          loadBookings()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function loadBookings() {
     setLoading(true)
     try {
-      const response = await fetch(`${API_BASE}/reservations`, {
-        headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-      })
-      const data = await response.json()
-      setBookings(data.data || [])
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('id, service_type, service_name, vehicle_name, customer_name, customer_email, appointment_date, appointment_time, pickup_date, dropoff_date, price_total, status, payment_status')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setBookings(data || [])
     } catch (error) {
       console.error('Failed to load bookings:', error)
     } finally {
