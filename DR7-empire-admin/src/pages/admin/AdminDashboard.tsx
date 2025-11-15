@@ -6,8 +6,9 @@ import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
 import TicketsTab from './components/TicketsTab'
+import CalendarTab from './components/CalendarTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'calendar'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -91,6 +92,16 @@ export default function AdminDashboard() {
               >
                 Biglietti
               </button>
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                📅 Calendario
+              </button>
             </nav>
           </div>
         </div>
@@ -101,6 +112,7 @@ export default function AdminDashboard() {
           {activeTab === 'vehicles' && <VehiclesTab />}
           {activeTab === 'fattura' && <FatturaTab />}
           {activeTab === 'tickets' && <TicketsTab />}
+          {activeTab === 'calendar' && <CalendarTab />}
         </div>
       </main>
     </div>
