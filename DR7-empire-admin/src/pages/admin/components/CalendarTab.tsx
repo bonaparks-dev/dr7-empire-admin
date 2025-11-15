@@ -22,7 +22,6 @@ export default function CalendarTab() {
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
 
   useEffect(() => {
     loadBookings()
@@ -102,9 +101,9 @@ export default function CalendarTab() {
         return bookingDate === dateStr
       }
 
-      // Handle reservations (car rentals)
-      const startDate = booking.start_at || booking.pickup_date
-      const endDate = booking.end_at || booking.dropoff_date
+      // Handle car rentals
+      const startDate = booking.pickup_date
+      const endDate = booking.dropoff_date
 
       if (startDate && endDate) {
         const start = new Date(startDate)
