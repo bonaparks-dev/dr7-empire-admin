@@ -421,7 +421,8 @@ export default function CalendarTab() {
                                 weekday: 'long',
                                 year: 'numeric',
                                 month: 'long',
-                                day: 'numeric'
+                                day: 'numeric',
+                                timeZone: 'Europe/Rome'
                               })
                             : 'N/A'}
                         </span>
@@ -437,11 +438,15 @@ export default function CalendarTab() {
                         <span className="text-gray-400">Ritiro:</span>
                         <span className="text-white ml-2">
                           {selectedBooking.pickup_date
-                            ? new Date(selectedBooking.pickup_date).toLocaleDateString('it-IT', {
+                            ? new Date(selectedBooking.pickup_date).toLocaleString('it-IT', {
                                 weekday: 'long',
                                 year: 'numeric',
                                 month: 'long',
-                                day: 'numeric'
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Europe/Rome',
+                                hour12: false
                               })
                             : 'N/A'}
                         </span>
@@ -450,11 +455,15 @@ export default function CalendarTab() {
                         <span className="text-gray-400">Riconsegna:</span>
                         <span className="text-white ml-2">
                           {selectedBooking.dropoff_date
-                            ? new Date(selectedBooking.dropoff_date).toLocaleDateString('it-IT', {
+                            ? new Date(selectedBooking.dropoff_date).toLocaleString('it-IT', {
                                 weekday: 'long',
                                 year: 'numeric',
                                 month: 'long',
-                                day: 'numeric'
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Europe/Rome',
+                                hour12: false
                               })
                             : 'N/A'}
                         </span>
