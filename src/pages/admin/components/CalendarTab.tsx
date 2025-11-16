@@ -20,6 +20,8 @@ interface Booking {
   currency?: string
 }
 
+type ViewMode = 'month' | 'day'
+
 export default function CalendarTab() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,6 +29,23 @@ export default function CalendarTab() {
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[] | null>(null)
+
+  // View mode state - responsive default
+  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Check if mobile on mount and resize
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024 // lg breakpoint
+      setIsMobile(mobile)
+      setViewMode(mobile ? 'day' : 'month')
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     loadBookings()
@@ -137,6 +156,18 @@ export default function CalendarTab() {
     })
   }
 
+  const navigateDay = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev)
+      if (direction === 'prev') {
+        newDate.setDate(prev.getDate() - 1)
+      } else {
+        newDate.setDate(prev.getDate() + 1)
+      }
+      return newDate
+    })
+  }
+
   const goToToday = () => {
     setCurrentDate(new Date())
   }
@@ -157,6 +188,15 @@ export default function CalendarTab() {
     year: 'numeric'
   })
 
+  const dayName = currentDate.toLocaleDateString('it-IT', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+
+  const todayBookings = getBookingsForDate(currentDate)
+
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -167,10 +207,10 @@ export default function CalendarTab() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Controls */}
-      <div className="bg-gray-900 rounded-lg p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Vehicle Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -179,7 +219,7 @@ export default function CalendarTab() {
             <select
               value={selectedVehicle}
               onChange={(e) => setSelectedVehicle(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+              className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white text-sm lg:text-base"
             >
               <option value="all">Tutti i veicoli</option>
               {vehicles.map(vehicle => (
@@ -190,282 +230,367 @@ export default function CalendarTab() {
             </select>
           </div>
 
-          {/* Month Navigation */}
+          {/* Navigation */}
           <div className="flex items-end gap-2">
             <button
-              onClick={() => navigateMonth('prev')}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors"
+              onClick={() => viewMode === 'day' ? navigateDay('prev') : navigateMonth('prev')}
+              className="px-3 lg:px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-lg lg:text-xl"
+              aria-label="Previous"
             >
               ←
             </button>
             <button
               onClick={goToToday}
-              className="flex-1 px-4 py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-200 transition-colors"
+              className="flex-1 px-3 lg:px-4 py-2 bg-dr7-gold hover:bg-yellow-500 text-black font-semibold rounded-md transition-colors text-sm lg:text-base"
             >
               Oggi
             </button>
             <button
-              onClick={() => navigateMonth('next')}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors"
+              onClick={() => viewMode === 'day' ? navigateDay('next') : navigateMonth('next')}
+              className="px-3 lg:px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-lg lg:text-xl"
+              aria-label="Next"
             >
               →
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <div className="text-sm text-gray-400">Prenotazioni totali</div>
-            <div className="text-2xl font-bold text-white">{filteredBookings.length}</div>
+          {/* Stats & View Toggle */}
+          <div className="flex gap-2">
+            <div className="flex-1 bg-gray-800/50 rounded-lg p-3 lg:p-4">
+              <div className="text-xs lg:text-sm text-gray-400">Prenotazioni</div>
+              <div className="text-xl lg:text-2xl font-bold text-white">
+                {viewMode === 'day' ? todayBookings.length : filteredBookings.length}
+              </div>
+            </div>
+
+            {/* View Mode Toggle - Desktop Only */}
+            {!isMobile && (
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setViewMode('month')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    viewMode === 'month'
+                      ? 'bg-dr7-gold text-black'
+                      : 'bg-gray-800 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Mese
+                </button>
+                <button
+                  onClick={() => setViewMode('day')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    viewMode === 'day'
+                      ? 'bg-dr7-gold text-black'
+                      : 'bg-gray-800 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Giorno
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Calendar Month/Year Display */}
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white capitalize">{monthName}</h2>
+      {/* Date Display */}
+      <div className="text-center">
+        <h2 className="text-xl lg:text-2xl font-bold text-white capitalize">
+          {viewMode === 'day' ? dayName : monthName}
+        </h2>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-gray-900 rounded-lg p-6">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 gap-2 mb-4">
-          {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map((day, idx) => (
-            <div key={idx} className="text-center text-sm font-semibold text-gray-400 py-2">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-2">
-          {calendarDays.map((day, idx) => {
-            if (!day) {
-              return <div key={`empty-${idx}`} className="aspect-square" />
-            }
-
-            const dayBookings = getBookingsForDate(day)
-            const isToday = day.toDateString() === new Date().toDateString()
-            const isCurrentMonth = day.getMonth() === currentDate.getMonth()
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`
-                  aspect-square border rounded-lg p-2 transition-colors
-                  ${isToday ? 'border-white bg-white/10' : 'border-gray-700'}
-                  ${!isCurrentMonth ? 'opacity-50' : ''}
-                  ${dayBookings.length > 0 ? 'bg-gray-800/50' : 'bg-gray-900/30'}
-                  hover:bg-gray-800 cursor-pointer
-                `}
-              >
-                <div className="text-sm font-semibold text-white mb-1">
-                  {day.getDate()}
+      {/* DAY VIEW - Mobile & Desktop when selected */}
+      {viewMode === 'day' && (
+        <div className="bg-gray-900 rounded-lg overflow-hidden">
+          {/* Day Header */}
+          <div className="bg-gradient-to-r from-dr7-gold to-yellow-500 p-4 lg:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-black text-sm lg:text-base font-medium">
+                  {currentDate.toLocaleDateString('it-IT', { weekday: 'long' }).toUpperCase()}
                 </div>
+                <div className="text-black text-3xl lg:text-4xl font-bold">
+                  {currentDate.getDate()}
+                </div>
+                <div className="text-black/80 text-sm lg:text-base">
+                  {currentDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-black text-2xl lg:text-3xl font-bold">
+                  {todayBookings.length}
+                </div>
+                <div className="text-black/80 text-xs lg:text-sm">
+                  prenotazion{todayBookings.length === 1 ? 'e' : 'i'}
+                </div>
+              </div>
+            </div>
+          </div>
 
-                {/* Booking indicators */}
-                <div className="space-y-1">
-                  {dayBookings.slice(0, 3).map(booking => (
+          {/* Events List */}
+          <div className="p-4 lg:p-6">
+            {todayBookings.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <div className="text-4xl lg:text-5xl mb-4">📅</div>
+                <p className="text-base lg:text-lg">Nessuna prenotazione per questo giorno</p>
+              </div>
+            ) : (
+              <div className="space-y-3 lg:space-y-4">
+                {todayBookings
+                  .sort((a, b) => {
+                    // Sort by time
+                    const timeA = a.service_type === 'car_wash' ? a.appointment_time : new Date(a.pickup_date || 0).toTimeString()
+                    const timeB = b.service_type === 'car_wash' ? b.appointment_time : new Date(b.pickup_date || 0).toTimeString()
+                    return (timeA || '').localeCompare(timeB || '')
+                  })
+                  .map((booking) => (
                     <div
                       key={booking.id}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedBooking(booking)
-                      }}
+                      onClick={() => setSelectedBooking(booking)}
                       className={`
-                        text-xs px-1 py-0.5 rounded truncate border cursor-pointer
-                        ${getStatusColor(booking.status)}
-                        hover:opacity-80 transition-opacity
+                        bg-gray-800/50 rounded-lg p-4 lg:p-5 cursor-pointer
+                        hover:bg-gray-800 transition-all duration-200
+                        border-l-4 ${getStatusColor(booking.status).split(' ')[0]}
                       `}
-                      title={`${booking.vehicle_name} - ${booking.customer_name}`}
                     >
-                      {booking.service_type === 'car_wash' ? '🚿' : '🚗'}{' '}
-                      <span className="font-semibold">{booking.vehicle_name}</span>
-                      {booking.service_type === 'car_wash' ? (
-                        booking.appointment_time ? ` ${booking.appointment_time}` : ''
-                      ) : (
-                        ` - ${booking.customer_name}`
-                      )}
-                    </div>
-                  ))}
-                  {dayBookings.length > 3 && (
-                    <div
-                      className="text-xs text-gray-400 cursor-pointer hover:text-gray-300 font-semibold"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedDayBookings(dayBookings)
-                      }}
-                    >
-                      +{dayBookings.length - 3} altro ({dayBookings.length} totale)
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="mt-6 bg-gray-900 rounded-lg p-6">
-        <h4 className="text-sm font-semibold text-white mb-4">Legenda</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🚿</span>
-            <span className="text-sm text-gray-300">Autolavaggio</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🚗</span>
-            <span className="text-sm text-gray-300">Noleggio</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-500/20 border border-green-500/30"></div>
-            <span className="text-sm text-gray-300">Confermato</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-yellow-500/20 border border-yellow-500/30"></div>
-            <span className="text-sm text-gray-300">In attesa</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Day Bookings List Modal */}
-      {selectedDayBookings && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedDayBookings(null)}
-        >
-          <div
-            className="bg-gray-900 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex justify-between items-start p-6 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  📅 Prenotazioni del Giorno
-                </h3>
-                <p className="text-sm text-gray-400">{selectedDayBookings.length} prenotazioni</p>
-              </div>
-              <button
-                onClick={() => setSelectedDayBookings(null)}
-                className="text-gray-400 hover:text-white transition-colors text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Bookings List */}
-            <div className="p-6 space-y-3">
-              {selectedDayBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  onClick={() => {
-                    setSelectedDayBookings(null)
-                    setSelectedBooking(booking)
-                  }}
-                  className="bg-gray-800/50 rounded-lg p-4 cursor-pointer hover:bg-gray-800 transition-colors border border-gray-700"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">
-                        {booking.service_type === 'car_wash' ? '🚿' : '🚗'}
-                      </span>
-                      <div>
-                        <div className="text-white font-semibold">
-                          {booking.vehicle_name || booking.service_name}
+                      <div className="flex items-start gap-3 lg:gap-4">
+                        {/* Icon */}
+                        <div className="text-3xl lg:text-4xl flex-shrink-0">
+                          {booking.service_type === 'car_wash' ? '🚿' : '🚗'}
                         </div>
-                        <div className="text-sm text-gray-400">
-                          {booking.customer_name}
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          {/* Time */}
+                          <div className="text-dr7-gold font-bold text-base lg:text-lg mb-1">
+                            {booking.service_type === 'car_wash' ? (
+                              booking.appointment_time || 'Ora non specificata'
+                            ) : (
+                              booking.pickup_date
+                                ? new Date(booking.pickup_date).toLocaleTimeString('it-IT', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false
+                                  })
+                                : 'Ora non specificata'
+                            )}
+                          </div>
+
+                          {/* Vehicle/Service */}
+                          <div className="text-white font-semibold text-base lg:text-lg mb-1">
+                            {booking.service_type === 'car_wash'
+                              ? booking.service_name || booking.vehicle_name
+                              : booking.vehicle_name}
+                          </div>
+
+                          {/* Customer */}
+                          <div className="text-gray-300 text-sm lg:text-base mb-2">
+                            👤 {booking.customer_name}
+                          </div>
+
+                          {/* Additional Info */}
+                          <div className="flex flex-wrap gap-2 lg:gap-3 items-center text-xs lg:text-sm">
+                            {/* Status Badge */}
+                            <span className={`px-2 py-1 rounded-full font-medium ${getStatusColor(booking.status)}`}>
+                              {booking.status}
+                            </span>
+
+                            {/* Price */}
+                            <span className="text-gray-400">
+                              💰 €{(booking.price_total / 100).toFixed(2)}
+                            </span>
+
+                            {/* Duration for rentals */}
+                            {booking.service_type !== 'car_wash' && booking.dropoff_date && (
+                              <span className="text-gray-400">
+                                → {new Date(booking.dropoff_date).toLocaleString('it-IT', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false
+                                })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="text-gray-500 text-xl flex-shrink-0">
+                          →
                         </div>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                      {booking.status}
-                    </span>
-                  </div>
-
-                  <div className="text-sm text-gray-300 mt-2">
-                    {booking.service_type === 'car_wash' ? (
-                      <>
-                        <div>🕐 {booking.appointment_time || 'N/A'}</div>
-                        <div>💰 €{(booking.price_total / 100).toFixed(2)}</div>
-                      </>
-                    ) : (
-                      <>
-                        <div>
-                          📅 {booking.pickup_date
-                            ? new Date(booking.pickup_date).toLocaleString('it-IT', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZone: 'Europe/Rome',
-                                hour12: false
-                              })
-                            : 'N/A'} → {booking.dropoff_date
-                            ? new Date(booking.dropoff_date).toLocaleString('it-IT', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                timeZone: 'Europe/Rome',
-                                hour12: false
-                              })
-                            : 'N/A'}
-                        </div>
-                        <div>💰 €{(booking.price_total / 100).toFixed(2)}</div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-blue-400 mt-2">
-                    Clicca per vedere dettagli completi →
-                  </div>
-                </div>
-              ))}
-            </div>
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
+      {/* MONTH VIEW - Desktop Only */}
+      {viewMode === 'month' && (
+        <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
+          {/* Day headers */}
+          <div className="grid grid-cols-7 gap-2 lg:gap-3 mb-4">
+            {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map((day, idx) => (
+              <div
+                key={idx}
+                className="text-center text-xs lg:text-sm font-semibold text-gray-400 py-2 lg:py-3"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar days */}
+          <div className="grid grid-cols-7 gap-2 lg:gap-3">
+            {calendarDays.map((day, idx) => {
+              if (!day) {
+                return <div key={`empty-${idx}`} className="min-h-[100px] lg:min-h-[140px]" />
+              }
+
+              const dayBookings = getBookingsForDate(day)
+              const isToday = day.toDateString() === new Date().toDateString()
+              const isCurrentMonth = day.getMonth() === currentDate.getMonth()
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  onClick={() => {
+                    setCurrentDate(day)
+                    if (isMobile) {
+                      setViewMode('day')
+                    }
+                  }}
+                  className={`
+                    min-h-[100px] lg:min-h-[140px] border-2 rounded-xl p-2 lg:p-3
+                    transition-all duration-200 cursor-pointer
+                    ${isToday
+                      ? 'border-dr7-gold bg-dr7-gold/10 shadow-lg shadow-dr7-gold/20'
+                      : 'border-gray-700 hover:border-gray-600'
+                    }
+                    ${!isCurrentMonth ? 'opacity-40' : ''}
+                    ${dayBookings.length > 0 ? 'bg-gray-800/30' : 'bg-gray-900/30'}
+                    hover:bg-gray-800/50 hover:scale-[1.02]
+                  `}
+                >
+                  {/* Day number */}
+                  <div className={`
+                    text-sm lg:text-base font-bold mb-2 lg:mb-3
+                    ${isToday ? 'text-dr7-gold' : 'text-white'}
+                  `}>
+                    {day.getDate()}
+                  </div>
+
+                  {/* Booking indicators */}
+                  <div className="space-y-1 lg:space-y-1.5">
+                    {dayBookings.slice(0, 2).map(booking => (
+                      <div
+                        key={booking.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedBooking(booking)
+                        }}
+                        className={`
+                          text-[10px] lg:text-xs px-1.5 lg:px-2 py-1 lg:py-1.5 rounded-md border
+                          cursor-pointer transition-all duration-150
+                          ${getStatusColor(booking.status)}
+                          hover:scale-105 hover:shadow-md
+                          flex items-center gap-1
+                        `}
+                        title={`${booking.vehicle_name} - ${booking.customer_name}`}
+                      >
+                        <span className="text-sm lg:text-base flex-shrink-0">
+                          {booking.service_type === 'car_wash' ? '🚿' : '🚗'}
+                        </span>
+                        <span className="truncate font-medium flex-1">
+                          {booking.service_type === 'car_wash'
+                            ? booking.appointment_time || booking.vehicle_name
+                            : booking.vehicle_name
+                          }
+                        </span>
+                      </div>
+                    ))}
+                    {dayBookings.length > 2 && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCurrentDate(day)
+                          setViewMode('day')
+                        }}
+                        className="text-[10px] lg:text-xs text-dr7-gold hover:text-yellow-400 cursor-pointer font-bold py-1 text-center transition-colors"
+                      >
+                        +{dayBookings.length - 2} altro
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
+        <h4 className="text-sm font-semibold text-white mb-3 lg:mb-4">Legenda</h4>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl lg:text-2xl">🚿</span>
+            <span className="text-xs lg:text-sm text-gray-300">Autolavaggio</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl lg:text-2xl">🚗</span>
+            <span className="text-xs lg:text-sm text-gray-300">Noleggio</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-green-500/20 border border-green-500/30"></div>
+            <span className="text-xs lg:text-sm text-gray-300">Confermato</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-yellow-500/20 border border-yellow-500/30"></div>
+            <span className="text-xs lg:text-sm text-gray-300">In attesa</span>
+          </div>
+        </div>
+      </div>
+
       {/* Booking Details Modal */}
       {selectedBooking && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
           onClick={() => setSelectedBooking(null)}
         >
           <div
-            className="bg-gray-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
+            className="bg-gray-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex justify-between items-start p-6 border-b border-gray-800">
+            <div className="flex justify-between items-start p-4 lg:p-6 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">
+                <h3 className="text-xl lg:text-2xl font-bold text-white mb-2">
                   {selectedBooking.service_type === 'car_wash' ? '🚿 Autolavaggio' : '🚗 Noleggio'}
                 </h3>
-                <p className="text-sm text-gray-400">ID: DR7-{selectedBooking.id.toUpperCase().slice(0, 8)}</p>
+                <p className="text-xs lg:text-sm text-gray-400">ID: DR7-{selectedBooking.id.toUpperCase().slice(0, 8)}</p>
               </div>
               <button
                 onClick={() => setSelectedBooking(null)}
-                className="text-gray-400 hover:text-white transition-colors text-2xl"
+                className="text-gray-400 hover:text-white transition-colors text-2xl lg:text-3xl leading-none"
               >
                 ×
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 lg:p-6 space-y-4 lg:space-y-6">
               {/* Status */}
               <div>
-                <label className="text-sm font-medium text-gray-400">Stato</label>
-                <div className="mt-1">
-                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedBooking.status)}`}>
+                <label className="text-xs lg:text-sm font-medium text-gray-400">Stato</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className={`inline-block px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium ${getStatusColor(selectedBooking.status)}`}>
                     {selectedBooking.status.toUpperCase()}
                   </span>
-                  <span className={`inline-block ml-2 px-3 py-1 rounded-full text-sm font-medium ${
+                  <span className={`inline-block px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium ${
                     selectedBooking.payment_status === 'succeeded' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
                     'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                   }`}>
@@ -475,16 +600,16 @@ export default function CalendarTab() {
               </div>
 
               {/* Customer Info */}
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-3">👤 Cliente</h4>
-                <div className="space-y-2 text-sm">
+              <div className="bg-gray-800/50 rounded-lg p-4 lg:p-5">
+                <h4 className="text-base lg:text-lg font-semibold text-white mb-3">👤 Cliente</h4>
+                <div className="space-y-2 text-sm lg:text-base">
                   <div>
                     <span className="text-gray-400">Nome:</span>
                     <span className="text-white ml-2">{selectedBooking.customer_name}</span>
                   </div>
                   <div>
                     <span className="text-gray-400">Email:</span>
-                    <span className="text-white ml-2">{selectedBooking.customer_email}</span>
+                    <span className="text-white ml-2 break-all">{selectedBooking.customer_email}</span>
                   </div>
                   {selectedBooking.customer_phone && (
                     <div>
@@ -496,11 +621,11 @@ export default function CalendarTab() {
               </div>
 
               {/* Vehicle/Service Info */}
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-3">
+              <div className="bg-gray-800/50 rounded-lg p-4 lg:p-5">
+                <h4 className="text-base lg:text-lg font-semibold text-white mb-3">
                   {selectedBooking.service_type === 'car_wash' ? '🚿 Servizio' : '🚗 Veicolo'}
                 </h4>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-sm lg:text-base">
                   <div>
                     <span className="text-gray-400">
                       {selectedBooking.service_type === 'car_wash' ? 'Servizio:' : 'Veicolo:'}
@@ -516,9 +641,9 @@ export default function CalendarTab() {
               </div>
 
               {/* Date/Time Info */}
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-3">📅 Date</h4>
-                <div className="space-y-2 text-sm">
+              <div className="bg-gray-800/50 rounded-lg p-4 lg:p-5">
+                <h4 className="text-base lg:text-lg font-semibold text-white mb-3">📅 Date</h4>
+                <div className="space-y-2 text-sm lg:text-base">
                   {selectedBooking.service_type === 'car_wash' ? (
                     <>
                       <div>
@@ -579,12 +704,12 @@ export default function CalendarTab() {
               </div>
 
               {/* Price Info */}
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <h4 className="text-lg font-semibold text-white mb-3">💰 Prezzo</h4>
-                <div className="space-y-2 text-sm">
+              <div className="bg-gray-800/50 rounded-lg p-4 lg:p-5">
+                <h4 className="text-base lg:text-lg font-semibold text-white mb-3">💰 Prezzo</h4>
+                <div className="space-y-2 text-sm lg:text-base">
                   <div>
                     <span className="text-gray-400">Totale:</span>
-                    <span className="text-white ml-2 text-lg font-bold">
+                    <span className="text-white ml-2 text-lg lg:text-xl font-bold">
                       {(selectedBooking.price_total / 100).toFixed(2)} {selectedBooking.currency || 'EUR'}
                     </span>
                   </div>
