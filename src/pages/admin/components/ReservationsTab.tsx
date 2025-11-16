@@ -1188,17 +1188,18 @@ export default function ReservationsTab() {
       {/* Desktop Table View */}
       <div className="hidden lg:block bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full table-auto">
+          <table className="w-full">
             <thead className="bg-dr7-darker">
               <tr>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-32">Nome</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-32">Contatto</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-32">Servizio</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-28">Inizio</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-28">Fine</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-20">Stato</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-16">€</th>
-                <th className="px-2 py-2 text-left text-xs font-semibold text-gray-300 w-32">Azioni</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Nome</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Telefono</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Servizio</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Data Inizio</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Data Fine</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Stato</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Totale</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -1207,74 +1208,44 @@ export default function ReservationsTab() {
                 const isCarWash = booking.service_type === 'car_wash'
                 return (
                   <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
-                    <td className="px-2 py-2 text-xs text-white">
-                      <div className="truncate max-w-[120px]" title={booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}>
-                        {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
-                      </div>
+                    <td className="px-3 py-3 text-sm text-white">
+                      {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
                     </td>
-                    <td className="px-2 py-2 text-xs text-white">
-                      <div className="truncate max-w-[120px]" title={`${booking.customer_email || '-'}\n${booking.customer_phone || '-'}`}>
-                        <div>{booking.customer_email?.split('@')[0] || '-'}</div>
-                        <div className="text-gray-400">{booking.customer_phone || '-'}</div>
-                      </div>
+                    <td className="px-3 py-3 text-sm text-white">
+                      {booking.customer_email || '-'}
                     </td>
-                    <td className="px-2 py-2 text-xs text-white">
-                      <div className="flex items-center gap-1">
-                        {isCarWash ? (
-                          <>
-                            <span className="text-blue-400">🚿</span>
-                            <span className="truncate max-w-[100px]" title={booking.service_name || 'Autolavaggio'}>
-                              {booking.service_name || 'Autolavaggio'}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-green-400">🚗</span>
-                            <span className="truncate max-w-[100px]" title={booking.vehicle_name}>
-                              {booking.vehicle_name}
-                            </span>
-                          </>
-                        )}
-                      </div>
+                    <td className="px-3 py-3 text-sm text-white">
+                      {booking.customer_phone || '-'}
                     </td>
-                    <td className="px-2 py-2 text-xs text-white">
-                      <div className="whitespace-nowrap">
-                        {isCarWash
-                          ? (booking.appointment_date ? (
-                              <>
-                                <div>{new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Rome' })}</div>
-                                <div className="text-gray-400">{booking.appointment_time || '-'}</div>
-                              </>
-                            ) : '-')
-                          : (booking.pickup_date ? (
-                              <>
-                                <div>{new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Rome' })}</div>
-                                <div className="text-gray-400">{new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}</div>
-                              </>
-                            ) : '-')
-                        }
-                      </div>
+                    <td className="px-3 py-3 text-sm text-white">
+                      {isCarWash ? (
+                        <span className="flex items-center gap-2">
+                          <span className="text-blue-400">🚿</span>
+                          {booking.service_name || 'Autolavaggio'}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <span className="text-green-400">🚗</span>
+                          {booking.vehicle_name}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-2 py-2 text-xs text-white">
-                      <div className="whitespace-nowrap">
-                        {isCarWash
-                          ? (booking.appointment_date && booking.appointment_time ? (
-                              <>
-                                <div>{new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Rome' })}</div>
-                                <div className="text-gray-400">{calculateCarWashEndTime(booking.appointment_date, booking.appointment_time, booking.price_total)}</div>
-                              </>
-                            ) : '-')
-                          : (booking.dropoff_date ? (
-                              <>
-                                <div>{new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', timeZone: 'Europe/Rome' })}</div>
-                                <div className="text-gray-400">{new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}</div>
-                              </>
-                            ) : '-')
-                        }
-                      </div>
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
+                      {isCarWash
+                        ? (booking.appointment_date ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' })} ${booking.appointment_time || ''}` : '-')
+                        : (booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-')
+                      }
                     </td>
-                    <td className="px-2 py-2 text-xs">
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap ${
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
+                      {isCarWash
+                        ? (booking.appointment_date && booking.appointment_time
+                            ? `${new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' })} ${calculateCarWashEndTime(booking.appointment_date, booking.appointment_time, booking.price_total)}`
+                            : '-')
+                        : (booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-')
+                      }
+                    </td>
+                    <td className="px-3 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
                         booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
                         booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
                         booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
@@ -1283,14 +1254,14 @@ export default function ReservationsTab() {
                         {booking.status}
                       </span>
                     </td>
-                    <td className="px-2 py-2 text-xs text-white font-semibold whitespace-nowrap">
-                      €{(booking.price_total / 100).toFixed(0)}
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
+                      €{(booking.price_total / 100).toFixed(2)}
                     </td>
-                    <td className="px-2 py-2 text-xs">
-                      <div className="flex gap-1 flex-wrap">
+                    <td className="px-3 py-3 text-sm">
+                      <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedBooking(booking)}
-                          className="px-2 py-1 bg-dr7-gold hover:bg-yellow-600 text-black text-[10px] rounded transition-colors whitespace-nowrap"
+                          className="px-3 py-1 bg-dr7-gold hover:bg-yellow-600 text-black text-xs rounded transition-colors whitespace-nowrap"
                         >
                           Dettagli
                         </button>
@@ -1298,13 +1269,13 @@ export default function ReservationsTab() {
                           <>
                             <button
                               onClick={() => handleEditBooking(booking)}
-                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] rounded transition-colors whitespace-nowrap"
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors whitespace-nowrap"
                             >
                               Modifica
                             </button>
                             <button
                               onClick={() => handleCancelBooking(booking.id, 'booking')}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] rounded transition-colors whitespace-nowrap"
+                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors whitespace-nowrap"
                             >
                               Cancella
                             </button>
