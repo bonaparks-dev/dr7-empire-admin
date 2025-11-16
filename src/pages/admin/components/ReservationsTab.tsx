@@ -1287,26 +1287,26 @@ export default function ReservationsTab() {
                       €{(booking.price_total / 100).toFixed(0)}
                     </td>
                     <td className="px-2 py-2 text-xs">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap">
                         <button
                           onClick={() => setSelectedBooking(booking)}
                           className="px-2 py-1 bg-dr7-gold hover:bg-yellow-600 text-black text-[10px] rounded transition-colors whitespace-nowrap"
                         >
-                          Info
+                          Dettagli
                         </button>
                         {booking.status !== 'cancelled' && (
                           <>
                             <button
                               onClick={() => handleEditBooking(booking)}
-                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] rounded transition-colors"
+                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] rounded transition-colors whitespace-nowrap"
                             >
-                              ✏️
+                              Modifica
                             </button>
                             <button
                               onClick={() => handleCancelBooking(booking.id, 'booking')}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] rounded transition-colors"
+                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] rounded transition-colors whitespace-nowrap"
                             >
-                              ❌
+                              Cancella
                             </button>
                           </>
                         )}
