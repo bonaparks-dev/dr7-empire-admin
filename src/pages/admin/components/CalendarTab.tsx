@@ -28,7 +28,6 @@ export default function CalendarTab() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
-  const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[] | null>(null)
 
   // View mode state - responsive default
   const [viewMode, setViewMode] = useState<ViewMode>('month')
