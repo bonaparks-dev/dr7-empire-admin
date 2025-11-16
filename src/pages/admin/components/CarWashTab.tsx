@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
 import Input from './Input'
 import Button from './Button'
-import TextArea from './TextArea'
 
 interface CarWashService {
   id: string
