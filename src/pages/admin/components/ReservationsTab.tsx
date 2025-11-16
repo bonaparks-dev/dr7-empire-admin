@@ -109,6 +109,24 @@ export default function ReservationsTab() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
 
+  // Add custom scrollbar styles
+  const scrollbarStyle = `
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #4a4a4a;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #6a6a6a;
+    }
+  `
+
   const [bookingType, setBookingType] = useState<'rental' | 'carwash'>('rental')
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -737,9 +755,11 @@ export default function ReservationsTab() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Mobile-optimized header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+    <>
+      <style>{scrollbarStyle}</style>
+      <div className="space-y-4">
+        {/* Mobile-optimized header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-xl sm:text-2xl font-bold text-dr7-gold">Prenotazioni</h2>
         <div className="flex gap-2 sm:gap-3">
           <Button onClick={handleExport} variant="secondary" className="flex-1 sm:flex-none text-sm sm:text-base">
@@ -1187,19 +1207,19 @@ export default function ReservationsTab() {
 
       {/* Desktop Table View */}
       <div className="hidden lg:block bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-dr7-darker">
+        <div className="overflow-x-auto overflow-y-visible custom-scrollbar">
+          <table className="w-full min-w-max">
+            <thead className="bg-dr7-darker sticky top-0 z-10">
               <tr>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Nome</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Email</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Telefono</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Servizio</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Data Inizio</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Data Fine</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Stato</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Totale</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300">Azioni</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Nome</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Email</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Telefono</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Servizio</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Inizio</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Fine</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Stato</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Totale</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Azioni</th>
               </tr>
             </thead>
             <tbody>
@@ -1208,25 +1228,25 @@ export default function ReservationsTab() {
                 const isCarWash = booking.service_type === 'car_wash'
                 return (
                   <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
-                    <td className="px-3 py-3 text-sm text-white">
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
                     </td>
-                    <td className="px-3 py-3 text-sm text-white">
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {booking.customer_email || '-'}
                     </td>
-                    <td className="px-3 py-3 text-sm text-white">
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {booking.customer_phone || '-'}
                     </td>
-                    <td className="px-3 py-3 text-sm text-white">
+                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {isCarWash ? (
                         <span className="flex items-center gap-2">
                           <span className="text-blue-400">🚿</span>
-                          {booking.service_name || 'Autolavaggio'}
+                          <span>{booking.service_name || 'Autolavaggio'}</span>
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
                           <span className="text-green-400">🚗</span>
-                          {booking.vehicle_name}
+                          <span>{booking.vehicle_name}</span>
                         </span>
                       )}
                     </td>
@@ -1244,7 +1264,7 @@ export default function ReservationsTab() {
                         : (booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-')
                       }
                     </td>
-                    <td className="px-3 py-3 text-sm">
+                    <td className="px-3 py-3 text-sm whitespace-nowrap">
                       <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
                         booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
                         booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
@@ -1257,8 +1277,8 @@ export default function ReservationsTab() {
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       €{(booking.price_total / 100).toFixed(2)}
                     </td>
-                    <td className="px-3 py-3 text-sm">
-                      <div className="flex gap-2">
+                    <td className="px-3 py-3 text-sm whitespace-nowrap">
+                      <div className="flex gap-2 items-center">
                         <button
                           onClick={() => setSelectedBooking(booking)}
                           className="px-3 py-1 bg-dr7-gold hover:bg-yellow-600 text-black text-xs rounded transition-colors whitespace-nowrap"
@@ -1403,6 +1423,7 @@ export default function ReservationsTab() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
