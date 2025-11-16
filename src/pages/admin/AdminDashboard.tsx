@@ -7,8 +7,9 @@ import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
 import TicketsTab from './components/TicketsTab'
 import CalendarTab from './components/CalendarTab'
+import CarWashTab from './components/CarWashTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'calendar'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'calendar' | 'carwash'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -102,6 +103,16 @@ export default function AdminDashboard() {
               >
                 📅 Calendario
               </button>
+              <button
+                onClick={() => setActiveTab('carwash')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'carwash'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🚿 Autolavaggio
+              </button>
             </nav>
           </div>
         </div>
@@ -113,6 +124,7 @@ export default function AdminDashboard() {
           {activeTab === 'fattura' && <FatturaTab />}
           {activeTab === 'tickets' && <TicketsTab />}
           {activeTab === 'calendar' && <CalendarTab />}
+          {activeTab === 'carwash' && <CarWashTab />}
         </div>
       </main>
     </div>

@@ -662,34 +662,7 @@ export default function ReservationsTab() {
           // Don't fail the whole booking if calendar fails
         }
 
-        // Also create in reservations table (for internal tracking)
-        const method = editingId ? 'PATCH' : 'POST'
-        const reservationData = {
-          customer_id: customerId,
-          vehicle_id: formData.vehicle_id,
-          start_at: pickupDateTime,
-          end_at: returnDateTime,
-          pickup_location: formData.pickup_location,
-          dropoff_location: formData.dropoff_location,
-          status: formData.status,
-          source: formData.source,
-          total_amount: parseFloat(formData.total_amount),
-          currency: formData.currency
-        }
-        const body = editingId
-          ? { id: editingId, ...reservationData }
-          : reservationData
-
-        const res = await fetch(`${API_BASE}/reservations`, {
-          method,
-          headers: {
-            'Authorization': `Bearer ${API_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        })
-
-        if (!res.ok) throw new Error('Failed to save reservation')
+        // Note: Removed duplicate reservation creation - bookings table is the single source of truth
       }
 
       setShowForm(false)
