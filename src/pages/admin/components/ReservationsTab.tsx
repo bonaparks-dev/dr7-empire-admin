@@ -544,7 +544,7 @@ export default function ReservationsTab() {
           guest_phone: customerInfo?.phone || null,
           service_type: 'car_wash',
           service_name: carWashData.service_name,
-          appointment_date: new Date(carWashData.appointment_date).toISOString(),
+          appointment_date: new Date(carWashData.appointment_date).toISOString().split('T')[0], // Date only, no time
           appointment_time: carWashData.appointment_time,
           price_total: Math.round(parseFloat(formData.total_amount) * 100), // Convert to cents
           currency: formData.currency.toLowerCase(),
@@ -554,12 +554,7 @@ export default function ReservationsTab() {
           customer_name: customerInfo?.full_name || '',
           customer_email: customerInfo?.email || '',
           customer_phone: customerInfo?.phone || '',
-          vehicle_name: null, // Required field, null for car wash
-          vehicle_image_url: null,
-          pickup_date: null,
-          dropoff_date: null,
-          pickup_location: null,
-          dropoff_location: null,
+          vehicle_name: 'N/A', // Not applicable for car wash
           booking_source: 'admin', // Mark as admin booking
           booking_details: {
             customer: {
