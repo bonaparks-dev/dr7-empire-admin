@@ -1099,7 +1099,7 @@ export default function ReservationsTab() {
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
-        {bookings.length === 0 && reservations.length === 0 && (
+        {bookings.length === 0 && (
           <div className="bg-dr7-dark rounded-lg border border-gray-800 p-8 text-center text-gray-500">
             Nessuna prenotazione trovata
           </div>
@@ -1183,50 +1183,6 @@ export default function ReservationsTab() {
             </div>
           )
         })}
-
-        {/* Display reservations as cards */}
-        {reservations.map((res) => (
-          <div key={`reservation-card-${res.id}`} className="bg-dr7-dark rounded-lg border border-gray-800 p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <div className="font-semibold text-white mb-1">{res.customers?.full_name || 'N/A'}</div>
-                <div className="text-sm text-gray-400">{res.customers?.email || '-'}</div>
-                <div className="text-sm text-gray-400">{res.customers?.phone || '-'}</div>
-              </div>
-              <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                res.status === 'active' ? 'bg-green-900 text-green-300' :
-                res.status === 'completed' ? 'bg-blue-900 text-blue-300' :
-                res.status === 'cancelled' ? 'bg-red-900 text-red-300' :
-                'bg-gray-700 text-gray-300'
-              }`}>
-                {res.status}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 mb-2 text-white">
-              <span className="text-green-400">🚗</span>
-              <span className="text-sm">{res.vehicles?.display_name || 'N/A'}</span>
-            </div>
-
-            <div className="text-xs text-gray-400 mb-2">
-              📅 {new Date(res.start_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })} → {new Date(res.end_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}
-            </div>
-
-            <div className="flex justify-between items-center mt-3">
-              <div className="text-lg font-bold text-white">
-                {res.currency} {res.total_amount}
-              </div>
-              {res.status !== 'cancelled' && (
-                <button
-                  onClick={() => handleCancelBooking(res.id, 'reservation')}
-                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
-                >
-                  Cancella
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Desktop Table View */}
@@ -1247,7 +1203,7 @@ export default function ReservationsTab() {
               </tr>
             </thead>
             <tbody>
-              {/* Display bookings from bookings table */}
+              {/* Display bookings from bookings table (single source of truth) */}
               {bookings.map((booking) => {
                 const isCarWash = booking.service_type === 'car_wash'
                 return (
@@ -1325,34 +1281,7 @@ export default function ReservationsTab() {
                 )
               })}
 
-              {/* Display reservations from reservations table */}
-              {reservations.map((res) => (
-                <tr key={`reservation-${res.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
-                  <td className="px-4 py-3 text-sm text-white">{res.customers?.full_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-white">{res.customers?.email || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-white">{res.customers?.phone || '-'}</td>
-                  <td className="px-4 py-3 text-sm text-white">{res.vehicles?.display_name || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
-                    {new Date(res.start_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white whitespace-nowrap">
-                    {new Date(res.end_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false })}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      res.status === 'active' ? 'bg-green-900 text-green-300' :
-                      res.status === 'completed' ? 'bg-blue-900 text-blue-300' :
-                      res.status === 'cancelled' ? 'bg-red-900 text-red-300' :
-                      'bg-gray-700 text-gray-300'
-                    }`}>
-                      {res.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-white">{res.currency} {res.total_amount}</td>
-                </tr>
-              ))}
-
-              {bookings.length === 0 && reservations.length === 0 && (
+              {bookings.length === 0 && (
                 <tr>
                   <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                     Nessuna prenotazione trovata
