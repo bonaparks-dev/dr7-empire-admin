@@ -594,10 +594,13 @@ export default function ReservationsTab() {
           insertedData = data
           console.log('Car wash booking updated successfully:', insertedData)
         } else {
-          // Create new booking
+          // Create new booking - let Supabase generate UUID
           const { error: carWashError, data } = await supabase
             .from('bookings')
-            .insert([carWashBookingData])
+            .insert([{
+              ...carWashBookingData,
+              booked_at: new Date().toISOString()
+            }])
             .select()
 
           if (carWashError) {
