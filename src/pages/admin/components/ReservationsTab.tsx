@@ -538,46 +538,28 @@ export default function ReservationsTab() {
       if (bookingType === 'carwash') {
         // Create appointment datetime for car wash
         const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
-        const endDateTime = new Date(appointmentDateTime)
-        endDateTime.setHours(endDateTime.getHours() + 1) // 1 hour duration
 
-        // Create or update car wash booking - MATCH car rental structure exactly
+        // MATCH WEBSITE STRUCTURE EXACTLY - keep it simple!
         const carWashBookingData = {
           user_id: null,
-          guest_name: customerInfo?.full_name || 'N/A',
-          guest_email: customerInfo?.email || null,
-          guest_phone: customerInfo?.phone || null,
-          vehicle_type: 'service', // Different type for services
-          vehicle_name: carWashData.service_name || 'Car Wash',
-          vehicle_image_url: null,
+          vehicle_type: 'car', // MUST be 'car' not 'service'
+          vehicle_name: 'Car Wash Service',
           service_type: 'car_wash',
           service_name: carWashData.service_name,
-          appointment_date: carWashData.appointment_date, // Keep as date string
+          appointment_date: appointmentDateTime.toISOString(),
           appointment_time: carWashData.appointment_time,
-          pickup_date: appointmentDateTime.toISOString(), // Use appointment as pickup
-          dropoff_date: endDateTime.toISOString(), // End time as dropoff
-          pickup_location: 'Office', // Default location for car wash
-          dropoff_location: 'Office',
           price_total: Math.round(parseFloat(formData.total_amount) * 100),
           currency: formData.currency.toUpperCase(),
           status: formData.status,
-          payment_status: formData.status === 'confirmed' ? 'completed' : 'pending',
+          payment_status: formData.status === 'confirmed' ? 'paid' : 'pending',
           payment_method: 'agency',
           customer_name: customerInfo?.full_name || 'N/A',
           customer_email: customerInfo?.email || null,
           customer_phone: customerInfo?.phone || null,
           booked_at: editingId ? undefined : new Date().toISOString(),
-          booking_source: 'admin',
           booking_details: {
-            customer: {
-              fullName: customerInfo?.full_name || '',
-              email: customerInfo?.email || '',
-              phone: customerInfo?.phone || '',
-              customerId: customerId
-            },
             additionalService: carWashData.additional_service || null,
-            notes: carWashData.notes || null,
-            source: 'admin_manual'
+            notes: carWashData.notes || null
           }
         }
 
