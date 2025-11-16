@@ -385,6 +385,74 @@ export default function ReservationsTab() {
     }
   }
 
+  async function handleDeleteBooking(bookingId: string, bookingType: 'booking' | 'reservation') {
+    if (!confirm('⚠️ ATTENZIONE: Vuoi eliminare definitivamente questa prenotazione dal database?\n\nQuesta azione NON può essere annullata!\n\nSe vuoi solo annullare la prenotazione, usa il pulsante "Cancella" invece.')) {
+      return
+    }
+
+    try {
+      // Get booking details before deleting
+      let customerName = ''
+      let vehicleName = ''
+
+      if (bookingType === 'booking') {
+        const booking = bookings.find(b => b.id === bookingId)
+        customerName = booking?.customer_name || ''
+        vehicleName = booking?.vehicle_name || ''
+
+        // Delete booking from bookings table
+        const { error } = await supabase
+          .from('bookings')
+          .delete()
+          .eq('id', bookingId)
+
+        if (error) {
+          console.error('Failed to delete booking:', error)
+          throw new Error('Failed to delete booking')
+        }
+      } else {
+        const reservation = reservations.find(r => r.id === bookingId)
+        customerName = reservation?.customers?.full_name || ''
+        vehicleName = reservation?.vehicles?.display_name || ''
+
+        // Delete reservation via API
+        const res = await fetch(`${API_BASE}/reservations`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: bookingId })
+        })
+
+        if (!res.ok) throw new Error('Failed to delete reservation')
+      }
+
+      // Delete Google Calendar event
+      try {
+        await fetch('/.netlify/functions/delete-calendar-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            customerName,
+            vehicleName
+          })
+        })
+        console.log('✅ Calendar event deleted successfully')
+      } catch (calendarError) {
+        console.error('⚠️ Failed to delete calendar event:', calendarError)
+        // Don't fail the whole deletion if calendar delete fails
+      }
+
+      alert('✅ Prenotazione eliminata definitivamente')
+      loadData()
+    } catch (error) {
+      console.error('Failed to delete booking:', error)
+      alert('Errore durante l\'eliminazione: ' + (error as Error).message)
+    }
+  }
+
   function handleEditBooking(booking: Booking) {
     const isCarWash = booking.service_type === 'car_wash'
 
@@ -1173,32 +1241,43 @@ export default function ReservationsTab() {
                 }
               </div>
 
-              <div className="flex justify-between items-center mt-3">
+              <div className="flex justify-between items-start mt-3 gap-2">
                 <div className="text-lg font-bold text-white">
                   €{(booking.price_total / 100).toFixed(2)}
                 </div>
-                {booking.status !== 'cancelled' && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleEditBooking(booking)
-                      }}
-                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
-                    >
-                      Modifica
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleCancelBooking(booking.id, 'booking')
-                      }}
-                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
-                    >
-                      Cancella
-                    </button>
-                  </div>
-                )}
+                <div className="flex flex-col gap-2">
+                  {booking.status !== 'cancelled' && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEditBooking(booking)
+                        }}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors whitespace-nowrap"
+                      >
+                        Modifica
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCancelBooking(booking.id, 'booking')
+                        }}
+                        className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded transition-colors whitespace-nowrap"
+                      >
+                        Cancella
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteBooking(booking.id, 'booking')
+                    }}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors whitespace-nowrap w-full"
+                  >
+                    Elimina
+                  </button>
+                </div>
               </div>
             </div>
           )
@@ -1295,12 +1374,18 @@ export default function ReservationsTab() {
                             </button>
                             <button
                               onClick={() => handleCancelBooking(booking.id, 'booking')}
-                              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors whitespace-nowrap"
+                              className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors whitespace-nowrap"
                             >
                               Cancella
                             </button>
                           </>
                         )}
+                        <button
+                          onClick={() => handleDeleteBooking(booking.id, 'booking')}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors whitespace-nowrap"
+                        >
+                          Elimina
+                        </button>
                       </div>
                     </td>
                   </tr>
