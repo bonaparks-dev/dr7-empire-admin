@@ -540,6 +540,7 @@ export default function ReservationsTab() {
         const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
 
         // MATCH CAR RENTAL BOOKING STRUCTURE - same pattern for guest bookings
+        // Build timestamp: 2025-01-17 - Force rebuild to include guest fields
         const carWashBookingData = {
           user_id: null, // Set to null for admin-created bookings
           guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
