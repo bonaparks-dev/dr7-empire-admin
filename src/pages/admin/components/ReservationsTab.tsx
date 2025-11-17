@@ -1202,7 +1202,7 @@ export default function ReservationsTab() {
           return (
             <div
               key={`booking-card-${booking.id}`}
-              className="bg-dr7-dark rounded-lg border border-gray-800 p-4 cursor-pointer hover:border-dr7-gold transition-colors"
+              className="bg-dr7-dark rounded-lg p-4 cursor-pointer hover:bg-dr7-darker transition-colors"
               onClick={() => setSelectedBooking(booking)}
             >
               <div className="flex justify-between items-start mb-3">
@@ -1288,7 +1288,7 @@ export default function ReservationsTab() {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-dr7-dark rounded-lg border border-gray-800 overflow-hidden">
+      <div className="hidden lg:block bg-dr7-dark rounded-lg overflow-hidden">
         <div className="overflow-x-auto overflow-y-visible custom-scrollbar">
           <table className="w-full min-w-max">
             <thead className="bg-dr7-darker sticky top-0 z-10">
