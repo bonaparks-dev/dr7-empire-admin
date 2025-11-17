@@ -539,9 +539,12 @@ export default function ReservationsTab() {
         // Create appointment datetime for car wash
         const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
 
-        // MATCH WEBSITE STRUCTURE EXACTLY - keep it simple!
+        // MATCH CAR RENTAL BOOKING STRUCTURE - same pattern for guest bookings
         const carWashBookingData = {
-          user_id: null,
+          user_id: null, // Set to null for admin-created bookings
+          guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
+          guest_email: customerInfo?.email || null,
+          guest_phone: customerInfo?.phone || null,
           vehicle_type: 'car', // MUST be 'car' not 'service'
           vehicle_name: 'Car Wash Service',
           service_type: 'car_wash',
@@ -551,15 +554,23 @@ export default function ReservationsTab() {
           price_total: Math.round(parseFloat(formData.total_amount) * 100),
           currency: formData.currency.toUpperCase(),
           status: formData.status,
-          payment_status: formData.status === 'confirmed' ? 'paid' : 'pending',
+          payment_status: formData.status === 'confirmed' ? 'completed' : 'pending',
           payment_method: 'agency',
           customer_name: customerInfo?.full_name || 'N/A',
           customer_email: customerInfo?.email || null,
           customer_phone: customerInfo?.phone || null,
           booked_at: editingId ? undefined : new Date().toISOString(),
+          booking_source: 'admin', // Mark as admin booking
           booking_details: {
+            customer: {
+              fullName: customerInfo?.full_name || '',
+              email: customerInfo?.email || '',
+              phone: customerInfo?.phone || '',
+              customerId: customerId
+            },
             additionalService: carWashData.additional_service || null,
-            notes: carWashData.notes || null
+            notes: carWashData.notes || null,
+            source: 'admin_manual'
           }
         }
 
