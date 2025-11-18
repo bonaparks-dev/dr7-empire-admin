@@ -1318,7 +1318,7 @@ export default function ReservationsTab() {
               {bookings.map((booking) => {
                 const isCarWash = booking.service_type === 'car_wash'
                 return (
-                  <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
+                  <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50 cursor-pointer" onClick={() => setSelectedBooking(booking)}>
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
                     </td>
@@ -1367,22 +1367,16 @@ export default function ReservationsTab() {
                     </td>
                     <td className="px-3 py-3 text-sm whitespace-nowrap">
                       <div className="flex gap-2 items-center">
-                        <button
-                          onClick={() => setSelectedBooking(booking)}
-                          className="px-3 py-1 bg-dr7-gold hover:bg-yellow-600 text-black text-xs rounded transition-colors whitespace-nowrap"
-                        >
-                          Dettagli
-                        </button>
                         {booking.status !== 'cancelled' && (
                           <>
                             <button
-                              onClick={() => handleEditBooking(booking)}
+                              onClick={(e) => { e.stopPropagation(); handleEditBooking(booking) }}
                               className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors whitespace-nowrap"
                             >
                               Modifica
                             </button>
                             <button
-                              onClick={() => handleCancelBooking(booking.id, 'booking')}
+                              onClick={(e) => { e.stopPropagation(); handleCancelBooking(booking.id, 'booking') }}
                               className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-xs rounded transition-colors whitespace-nowrap"
                             >
                               Cancella
@@ -1390,7 +1384,7 @@ export default function ReservationsTab() {
                           </>
                         )}
                         <button
-                          onClick={() => handleDeleteBooking(booking.id, 'booking')}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteBooking(booking.id, 'booking') }}
                           className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors whitespace-nowrap"
                         >
                           Elimina
