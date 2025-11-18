@@ -616,8 +616,19 @@ export default function ReservationsTab() {
         // Create Google Calendar event for car wash
         try {
           const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
+
+          // Calculate proper end time based on service price
+          const priceInCents = Math.round(parseFloat(formData.total_amount) * 100)
+          const priceToDuration: Record<number, number> = {
+            2500: 0.75,  // 25€ = 30-45 min (use 45 min = 0.75hr)
+            4900: 1.25,  // 49€ = 1-1.5 hrs (use 1.5hr)
+            7500: 2.5,   // 75€ = 2-3 hrs (use 2.5hr)
+            9900: 3.5    // 99€ = 3-4 hrs (use 3.5hr)
+          }
+          const durationHours = priceToDuration[priceInCents] || 1
+
           const endDateTime = new Date(appointmentDateTime)
-          endDateTime.setHours(endDateTime.getHours() + 2) // Default 2 hour duration
+          endDateTime.setMinutes(endDateTime.getMinutes() + (durationHours * 60))
 
           await fetch('/.netlify/functions/create-calendar-event', {
             method: 'POST',
