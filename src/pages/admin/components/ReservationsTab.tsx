@@ -1210,7 +1210,6 @@ export default function ReservationsTab() {
                   <div className="font-semibold text-white mb-1">
                     {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
                   </div>
-                  <div className="text-sm text-gray-400">{booking.customer_email || '-'}</div>
                   <div className="text-sm text-gray-400">{booking.customer_phone || '-'}</div>
                 </div>
                 <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
@@ -1294,7 +1293,6 @@ export default function ReservationsTab() {
             <thead className="bg-dr7-darker sticky top-0 z-10">
               <tr>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Nome</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Email</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Telefono</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Servizio</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Inizio</th>
@@ -1312,9 +1310,6 @@ export default function ReservationsTab() {
                   <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50">
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {booking.booking_details?.customer?.fullName || booking.customer_name || 'N/A'}
-                    </td>
-                    <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
-                      {booking.customer_email || '-'}
                     </td>
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {booking.customer_phone || '-'}
@@ -1397,7 +1392,7 @@ export default function ReservationsTab() {
 
               {bookings.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                     Nessuna prenotazione trovata
                   </td>
                 </tr>
@@ -1431,7 +1426,6 @@ export default function ReservationsTab() {
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="text-gray-400">Nome:</span> <span className="text-white">{selectedBooking.booking_details?.customer?.fullName || selectedBooking.customer_name || 'N/A'}</span></div>
-                  <div><span className="text-gray-400">Email:</span> <span className="text-white">{selectedBooking.customer_email || '-'}</span></div>
                   <div><span className="text-gray-400">Telefono:</span> <span className="text-white">{selectedBooking.customer_phone || '-'}</span></div>
                 </div>
               </div>
