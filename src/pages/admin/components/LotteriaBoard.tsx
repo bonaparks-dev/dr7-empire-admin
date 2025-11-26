@@ -5,6 +5,7 @@ interface Ticket {
   ticket_number: number;
   email: string;
   full_name: string;
+  customer_phone?: string;
   purchase_date: string;
   payment_intent_id: string;
 }
@@ -12,17 +13,18 @@ interface Ticket {
 interface ManualSaleModalProps {
   ticketNumber: number;
   onClose: () => void;
-  onConfirm: (ticketNumber: number, email: string, fullName: string) => void;
+  onConfirm: (ticketNumber: number, email: string, fullName: string, phone: string) => void;
 }
 
 const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, onClose, onConfirm }) => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && fullName) {
-      onConfirm(ticketNumber, email, fullName);
+    if (email && fullName && phone) {
+      onConfirm(ticketNumber, email, fullName, phone);
     }
   };
 
@@ -49,6 +51,17 @@ const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, onClose
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border rounded px-3 py-2"
               required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Telefono</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              required
+              placeholder="+39 123 456 7890"
             />
           </div>
           <div className="flex justify-end gap-2">
@@ -83,7 +96,7 @@ const LotteriaBoard: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('commercial_operation_tickets')
-        .select('ticket_number, email, full_name, purchase_date, payment_intent_id')
+        .select('ticket_number, email, full_name, customer_phone, purchase_date, payment_intent_id')
         .order('ticket_number', { ascending: true });
 
       if (error) throw error;
@@ -105,7 +118,7 @@ const LotteriaBoard: React.FC = () => {
     fetchSoldTickets();
   }, []);
 
-  const handleManualSale = async (ticketNumber: number, email: string, fullName: string) => {
+  const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string) => {
     try {
       const { error } = await supabase
         .from('commercial_operation_tickets')
@@ -113,6 +126,7 @@ const LotteriaBoard: React.FC = () => {
           ticket_number: ticketNumber,
           email,
           full_name: fullName,
+          customer_phone: phone,
           payment_intent_id: `manual_${Date.now()}`,
           amount_paid: 2500, // 25€
           currency: 'eur',
@@ -214,6 +228,7 @@ const LotteriaBoard: React.FC = () => {
                   <div className="font-bold mb-1">Biglietto #{String(ticketNumber).padStart(4, '0')}</div>
                   <div><strong>Cliente:</strong> {ticket.full_name}</div>
                   <div><strong>Email:</strong> {ticket.email}</div>
+                  {ticket.customer_phone && <div><strong>Telefono:</strong> {ticket.customer_phone}</div>}
                   <div><strong>Data:</strong> {new Date(ticket.purchase_date).toLocaleDateString('it-IT')}</div>
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
                     <div className="border-8 border-transparent border-t-black"></div>
