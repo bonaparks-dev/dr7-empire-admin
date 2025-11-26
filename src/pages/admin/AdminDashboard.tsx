@@ -8,8 +8,9 @@ import FatturaTab from './components/FatturaTab'
 import TicketsTab from './components/TicketsTab'
 import CalendarTab from './components/CalendarTab'
 import CarWashTab from './components/CarWashTab'
+import LotteriaBoard from './components/LotteriaBoard'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'calendar' | 'carwash'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'lotteria' | 'calendar' | 'carwash'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -72,6 +73,7 @@ export default function AdminDashboard() {
                 { id: 'vehicles', label: 'Veicoli', icon: '🚗' },
                 { id: 'fattura', label: 'Fatture', icon: '📄' },
                 { id: 'tickets', label: 'Biglietti', icon: '🎫' },
+                { id: 'lotteria', label: 'Tabellone Lotteria', icon: '🎰' },
                 { id: 'calendar', label: 'Calendario', icon: '📅' },
                 { id: 'carwash', label: 'Autolavaggio', icon: '🚿' }
               ].map((tab) => (
@@ -152,6 +154,16 @@ export default function AdminDashboard() {
                 🎫 Biglietti
               </button>
               <button
+                onClick={() => setActiveTab('lotteria')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'lotteria'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🎰 Tabellone Lotteria
+              </button>
+              <button
                 onClick={() => setActiveTab('calendar')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'calendar'
@@ -183,6 +195,7 @@ export default function AdminDashboard() {
             {activeTab === 'vehicles' && '🚗 Veicoli'}
             {activeTab === 'fattura' && '📄 Fatture'}
             {activeTab === 'tickets' && '🎫 Biglietti'}
+            {activeTab === 'lotteria' && '🎰 Tabellone Lotteria'}
             {activeTab === 'calendar' && '📅 Calendario'}
             {activeTab === 'carwash' && '🚿 Autolavaggio'}
           </h2>
@@ -194,6 +207,7 @@ export default function AdminDashboard() {
           {activeTab === 'vehicles' && <VehiclesTab />}
           {activeTab === 'fattura' && <FatturaTab />}
           {activeTab === 'tickets' && <TicketsTab />}
+          {activeTab === 'lotteria' && <LotteriaBoard />}
           {activeTab === 'calendar' && <CalendarTab />}
           {activeTab === 'carwash' && <CarWashTab />}
         </div>
