@@ -19,6 +19,7 @@ interface CarWashBooking {
 export default function CarWashBookingsTab() {
   const [bookings, setBookings] = useState<CarWashBooking[]>([])
   const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
     loadBookings()
@@ -51,10 +52,32 @@ export default function CarWashBookingsTab() {
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-dr7-gold">Prenotazioni Lavaggio</h2>
-        <div className="text-sm text-gray-400">
-          {bookings.length} prenotazion{bookings.length !== 1 ? 'i' : 'e'}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-400">
+            {bookings.length} prenotazion{bookings.length !== 1 ? 'i' : 'e'}
+          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="px-4 py-2 bg-dr7-gold hover:bg-yellow-500 text-black font-semibold rounded-md transition-colors"
+          >
+            {showForm ? 'Chiudi' : '+ Nuova Prenotazione'}
+          </button>
         </div>
       </div>
+
+      {showForm && (
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Crea Nuova Prenotazione Lavaggio</h3>
+          <div className="text-center py-8">
+            <p className="text-gray-400 mb-4">
+              Per creare una nuova prenotazione lavaggio, vai alla tab <strong className="text-dr7-gold">"Prenotazioni Auto"</strong> e seleziona "Servizio Autolavaggio" nel modulo di prenotazione.
+            </p>
+            <p className="text-sm text-gray-500">
+              Oppure usa il sistema di prenotazione sul sito principale.
+            </p>
+          </div>
+        </div>
+      )}
 
       {bookings.length === 0 ? (
         <div className="bg-dr7-dark rounded-lg border border-gray-800 p-8 text-center text-gray-500">
@@ -106,7 +129,7 @@ export default function CarWashBookingsTab() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-white font-bold">
-                      ¬{(booking.price_total / 100).toFixed(2)}
+                      ï¿½{(booking.price_total / 100).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span
