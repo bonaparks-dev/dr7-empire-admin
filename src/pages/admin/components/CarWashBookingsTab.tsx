@@ -137,7 +137,6 @@ export default function CarWashBookingsTab() {
   const [showForm, setShowForm] = useState(false)
   const [newCustomerMode, setNewCustomerMode] = useState(false)
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
-  const [skipConflictCheck, setSkipConflictCheck] = useState(false)
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -371,16 +370,12 @@ export default function CarWashBookingsTab() {
         return
       }
 
-      // If skip conflict check is enabled, create booking immediately
-      if (skipConflictCheck) {
-        console.log('⚠️ ADMIN MODE: Skipping conflict check')
-        await createBooking(true)
-        return
-      }
+      // ADMIN PANEL: Always allow bookings, just show warning if there's a conflict
+      console.log('🔧 ADMIN PANEL: Checking for conflicts (informational only)')
 
       const newBookingDuration = selectedService.durationMinutes
 
-      // Check if there's already a booking that overlaps with this time slot
+      // Check if there's already a booking that overlaps with this time slot (informational only)
       const { data: existingBookings, error: checkError } = await supabase
         .from('bookings')
         .select('id, customer_name, appointment_date, appointment_time, service_name, booking_details')
@@ -420,32 +415,28 @@ export default function CarWashBookingsTab() {
         }
       }
 
-      // If there's a conflict, show Italian confirmation dialog
+      // If there's a conflict, show informational warning (but always proceed)
       if (hasConflict && conflictingBooking) {
         const bookingId = conflictingBooking.id.substring(0, 8).toUpperCase()
         const confirmed = confirm(
-          `⚠️ ATTENZIONE: Conflitto Orario\n\n` +
-          `Esiste già una prenotazione che si sovrappone con questo orario.\n\n` +
+          `ℹ️ INFO: Esiste già una prenotazione a quest'orario\n\n` +
           `Cliente esistente: ${conflictingBooking.customer_name}\n` +
           `Servizio: ${conflictingBooking.service_name}\n` +
           `Orario occupato: ${conflictDetails}\n` +
           `ID Prenotazione: DR7-${bookingId}\n\n` +
-          `Vuoi comunque creare questa prenotazione?\n\n` +
-          `• Clicca OK per procedere (doppia prenotazione)\n` +
+          `Stai per creare una doppia prenotazione.\n\n` +
+          `• Clicca OK per procedere\n` +
           `• Clicca ANNULLA per scegliere un altro orario`
         )
 
         if (!confirmed) {
           return // User cancelled
         }
-
-        // User confirmed, proceed with forced booking
-        console.log('🔧 ADMIN OVERRIDE: Creating forced double-booking for car wash')
-        await createBooking(true)
-      } else {
-        // No conflict, proceed normally
-        await createBooking(false)
       }
+
+      // Admin panel: ALWAYS create as forced booking (bypass all backend checks)
+      console.log('🔧 ADMIN PANEL: Creating booking with admin override')
+      await createBooking(true)
     } catch (error: any) {
       console.error('Failed to create booking:', error)
 
@@ -672,22 +663,6 @@ export default function CarWashBookingsTab() {
                   })()}
                 </select>
               </div>
-            </div>
-
-            {/* Admin Override Toggle */}
-            <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={skipConflictCheck}
-                  onChange={(e) => setSkipConflictCheck(e.target.checked)}
-                  className="w-5 h-5 cursor-pointer"
-                />
-                <div>
-                  <span className="text-yellow-400 font-semibold">⚠️ Modalità Admin: Ignora controllo conflitti</span>
-                  <p className="text-xs text-gray-400 mt-1">Attiva per creare prenotazioni anche su slot già occupati (doppia prenotazione)</p>
-                </div>
-              </label>
             </div>
 
             {/* Payment Status */}
