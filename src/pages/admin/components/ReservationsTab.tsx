@@ -638,7 +638,6 @@ export default function ReservationsTab() {
                   pickup_date: `${formData.pickup_date}T${formData.pickup_time}:00`,
                   dropoff_date: `${formData.return_date}T${formData.return_time}:00`,
                   pickup_location: pickupLocationLabel,
-                  insurance_option: formData.insurance_option || 'Nessuna',
                   price_total: parseFloat(formData.total_amount) * 100, // Convert to cents
                   payment_status: formData.payment_status || 'pending'
                 }
