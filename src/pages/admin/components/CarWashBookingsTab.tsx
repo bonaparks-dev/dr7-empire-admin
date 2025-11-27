@@ -76,6 +76,8 @@ export default function CarWashBookingsTab() {
     appointment_time: '',
     additional_service: '',
     price_total: 0,
+    payment_status: 'paid',
+    amount_paid: '0',
     notes: ''
   })
 
@@ -193,7 +195,8 @@ export default function CarWashBookingsTab() {
 
     const bookingDetails: any = {
       notes: formData.notes,
-      forceBooked: forceBooking
+      forceBooked: forceBooking,
+      amountPaid: Math.round(parseFloat(formData.amount_paid) * 100)
     }
 
     if (formData.additional_service) {
@@ -218,7 +221,7 @@ export default function CarWashBookingsTab() {
         price_total: totalPrice * 100, // Convert to cents
         currency: 'EUR',
         status: 'confirmed',
-        payment_status: 'paid',
+        payment_status: formData.payment_status,
         booking_details: bookingDetails,
         booked_at: new Date().toISOString()
       }])
@@ -236,6 +239,8 @@ export default function CarWashBookingsTab() {
       appointment_time: '',
       additional_service: '',
       price_total: 0,
+      payment_status: 'paid',
+      amount_paid: '0',
       notes: ''
     })
     setNewCustomerData({
@@ -542,6 +547,37 @@ export default function CarWashBookingsTab() {
                 </select>
               </div>
             </div>
+
+            {/* Payment Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Stato Pagamento</label>
+                <select
+                  required
+                  value={formData.payment_status}
+                  onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                >
+                  <option value="paid">Pagato</option>
+                  <option value="pending">Da Saldare</option>
+                  <option value="unpaid">Non Pagato</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Importo Pagato (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={formData.amount_paid}
+                  onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Note (opzionale)</label>
               <textarea
