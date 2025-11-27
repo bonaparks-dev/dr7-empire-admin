@@ -260,39 +260,6 @@ export default function CalendarTab() {
           </div>
         </div>
 
-        {/* Booking Details (if any) */}
-        {bookings.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-400 mb-3">PROSSIME PRENOTAZIONI</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {bookings.slice(0, 5).map(booking => (
-                <div key={booking.id} className="flex items-center justify-between text-sm bg-gray-800 p-2 rounded">
-                  <div>
-                    <span className="text-white font-medium">{booking.vehicle_name}</span>
-                    <span className="text-gray-400 ml-2">- {booking.customer_name}</span>
-                  </div>
-                  <div className="text-gray-400 text-xs">
-                    {new Date(booking.pickup_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
-                    {' → '}
-                    {new Date(booking.dropoff_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
-                  </div>
-                </div>
-              ))}
-              {bookings.length > 5 && (
-                <div className="text-center text-gray-500 text-xs pt-2">
-                  +{bookings.length - 5} altre prenotazioni
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {bookings.length === 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-700 text-center">
-            <p className="text-yellow-400 text-sm">⚠️ Nessuna prenotazione trovata nel database</p>
-            <p className="text-gray-400 text-xs mt-2">Crea prenotazioni nella tab Prenotazioni per vederle qui</p>
-          </div>
-        )}
       </div>
 
       {/* All Vehicles Grid - Combined */}
