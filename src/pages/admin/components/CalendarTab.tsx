@@ -191,7 +191,13 @@ export default function CalendarTab() {
       {/* Header Controls */}
       <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold text-white">Calendario Disponibilità Flotta</h2>
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-white">Calendario Disponibilità Flotta</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-400">Veicoli totali:</span>
+              <span className="text-dr7-gold font-bold text-lg">{vehicles.length}</span>
+            </div>
+          </div>
 
           <div className="flex items-center gap-4">
             <button
