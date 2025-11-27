@@ -149,6 +149,9 @@ const LotteriaBoard: React.FC = () => {
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searchResults, setSearchResults] = useState<Ticket[]>([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchSoldTickets = async () => {
     try {
@@ -387,6 +390,61 @@ const LotteriaBoard: React.FC = () => {
     }
   };
 
+  const handleSearchTickets = async () => {
+    if (!searchEmail.trim()) {
+      alert('Inserisci un indirizzo email per cercare');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('commercial_operation_tickets')
+        .select('*')
+        .eq('email', searchEmail.trim().toLowerCase())
+        .order('ticket_number', { ascending: true });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        alert(`Nessun biglietto trovato per: ${searchEmail}`);
+        return;
+      }
+
+      setSearchResults(data);
+      setShowSearchModal(true);
+    } catch (error: any) {
+      console.error('Error searching tickets:', error);
+      alert(`Errore nella ricerca: ${error.message}`);
+    }
+  };
+
+  const handleCancelTicket = async (ticketNumber: number, email: string, fullName: string) => {
+    if (!confirm(`Sei sicuro di voler cancellare il biglietto #${String(ticketNumber).padStart(4, '0')} di ${fullName}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('commercial_operation_tickets')
+        .delete()
+        .eq('ticket_number', ticketNumber)
+        .eq('email', email);
+
+      if (error) throw error;
+
+      alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} cancellato con successo!`);
+
+      // Refresh tickets and search results
+      await fetchSoldTickets();
+      if (searchResults.length > 0) {
+        handleSearchTickets();
+      }
+    } catch (error: any) {
+      console.error('Error canceling ticket:', error);
+      alert(`❌ Errore nella cancellazione: ${error.message}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -417,6 +475,27 @@ const LotteriaBoard: React.FC = () => {
             <div className="text-2xl font-bold text-green-600">{availableCount}</div>
           </div>
         </div>
+        {/* Search and Cancel Section */}
+        <div className="mb-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
+          <h3 className="text-white font-semibold mb-3">🔍 Cerca e Cancella Biglietti</h3>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              placeholder="Inserisci email cliente..."
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearchTickets()}
+              className="flex-1 px-3 py-2 rounded border border-gray-600 bg-gray-900 text-white"
+            />
+            <button
+              onClick={handleSearchTickets}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+            >
+              Cerca
+            </button>
+          </div>
+        </div>
+
         <div className="flex gap-4 items-center flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-green-500 rounded"></div>
@@ -541,6 +620,80 @@ const LotteriaBoard: React.FC = () => {
             <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
             <h3 className="text-xl font-bold mb-2">Generazione PDF in corso...</h3>
             <p className="text-gray-600">Invio email al cliente</p>
+          </div>
+        </div>
+      )}
+
+      {/* Search Results Modal */}
+      {showSearchModal && searchResults.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">
+                Biglietti Trovati ({searchResults.length})
+              </h3>
+              <button
+                onClick={() => {
+                  setShowSearchModal(false);
+                  setSearchResults([]);
+                  setSearchEmail('');
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {searchResults.map((ticket) => (
+                <div key={ticket.ticket_number} className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl font-bold text-blue-600">
+                          #{String(ticket.ticket_number).padStart(4, '0')}
+                        </span>
+                        <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">
+                          VENDUTO
+                        </span>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <div><strong>Cliente:</strong> {ticket.full_name}</div>
+                        <div><strong>Email:</strong> {ticket.email}</div>
+                        {ticket.customer_phone && (
+                          <div><strong>Telefono:</strong> {ticket.customer_phone}</div>
+                        )}
+                        <div><strong>Data Acquisto:</strong> {new Date(ticket.purchase_date).toLocaleString('it-IT')}</div>
+                        <div className="text-xs text-gray-500">
+                          <strong>ID Pagamento:</strong> {ticket.payment_intent_id}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleCancelTicket(ticket.ticket_number, ticket.email, ticket.full_name)}
+                      className="ml-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold"
+                    >
+                      🗑️ Cancella
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowSearchModal(false);
+                  setSearchResults([]);
+                  setSearchEmail('');
+                }}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Chiudi
+              </button>
+            </div>
           </div>
         </div>
       )}
