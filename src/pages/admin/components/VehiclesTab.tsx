@@ -8,7 +8,7 @@ interface Vehicle {
   id: string
   display_name: string
   plate: string | null
-  status: 'available' | 'rented' | 'maintenance' | 'retired'
+  status: 'available' | 'unavailable' | 'rented' | 'maintenance' | 'retired'
   daily_rate: number
   category: 'exotic' | 'urban' | null
   metadata: Record<string, any> | null
@@ -294,8 +294,7 @@ export default function VehiclesTab() {
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               options={[
                 { value: 'available', label: 'Disponibile' },
-                { value: 'rented', label: 'Noleggiato' },
-                { value: 'maintenance', label: 'Manutenzione' }
+                { value: 'unavailable', label: 'Non Disponibile' }
               ]}
             />
             <Input
@@ -345,11 +344,13 @@ export default function VehiclesTab() {
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
                         vehicle.status === 'available' ? 'bg-green-900 text-green-200' :
+                        vehicle.status === 'unavailable' ? 'bg-red-900 text-red-200' :
                         vehicle.status === 'rented' ? 'bg-blue-900 text-blue-200' :
                         vehicle.status === 'maintenance' ? 'bg-yellow-900 text-yellow-200' :
                         'bg-gray-700 text-gray-200'
                       }`}>
                         {vehicle.status === 'available' ? 'Disponibile' :
+                         vehicle.status === 'unavailable' ? 'Non Disponibile' :
                          vehicle.status === 'rented' ? 'Noleggiato' :
                          vehicle.status === 'maintenance' ? 'Manutenzione' : 'Ritirato'}
                       </span>
@@ -414,11 +415,13 @@ export default function VehiclesTab() {
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
                         vehicle.status === 'available' ? 'bg-green-900 text-green-200' :
+                        vehicle.status === 'unavailable' ? 'bg-red-900 text-red-200' :
                         vehicle.status === 'rented' ? 'bg-blue-900 text-blue-200' :
                         vehicle.status === 'maintenance' ? 'bg-yellow-900 text-yellow-200' :
                         'bg-gray-700 text-gray-200'
                       }`}>
                         {vehicle.status === 'available' ? 'Disponibile' :
+                         vehicle.status === 'unavailable' ? 'Non Disponibile' :
                          vehicle.status === 'rented' ? 'Noleggiato' :
                          vehicle.status === 'maintenance' ? 'Manutenzione' : 'Ritirato'}
                       </span>
