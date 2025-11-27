@@ -223,36 +223,69 @@ export default function CarWashBookingsTab() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
     try {
-      await createBooking(false)
+      // Check if there's already a booking at this time slot
+      const appointmentDateTime = `${formData.appointment_date}T${formData.appointment_time}:00`
+
+      const { data: existingBookings, error: checkError } = await supabase
+        .from('bookings')
+        .select('id, customer_name, appointment_date, appointment_time')
+        .eq('service_type', 'car_wash')
+        .neq('status', 'cancelled')
+        .gte('appointment_date', formData.appointment_date)
+        .lte('appointment_date', `${formData.appointment_date}T23:59:59`)
+
+      if (checkError) {
+        console.error('Error checking existing bookings:', checkError)
+      }
+
+      // Check if there's a conflict at this exact time
+      let hasConflict = false
+      let conflictingBooking = null
+
+      if (existingBookings && existingBookings.length > 0) {
+        for (const booking of existingBookings) {
+          const bookingTime = booking.appointment_time || new Date(booking.appointment_date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', hour12: false })
+          if (bookingTime === formData.appointment_time) {
+            hasConflict = true
+            conflictingBooking = booking
+            break
+          }
+        }
+      }
+
+      // If there's a conflict, show Italian confirmation dialog
+      if (hasConflict && conflictingBooking) {
+        const bookingId = conflictingBooking.id.substring(0, 8).toUpperCase()
+        const confirmed = confirm(
+          `⚠️ ATTENZIONE: Slot già Occupato\n\n` +
+          `Esiste già una prenotazione per l'orario ${formData.appointment_time} in questa data.\n\n` +
+          `Cliente esistente: ${conflictingBooking.customer_name}\n` +
+          `ID Prenotazione: DR7-${bookingId}\n\n` +
+          `Vuoi comunque creare questa prenotazione?\n\n` +
+          `• Clicca OK per procedere (doppia prenotazione)\n` +
+          `• Clicca ANNULLA per scegliere un altro orario`
+        )
+
+        if (!confirmed) {
+          return // User cancelled
+        }
+
+        // User confirmed, proceed with forced booking
+        await createBooking(true)
+      } else {
+        // No conflict, proceed normally
+        await createBooking(false)
+      }
     } catch (error: any) {
       console.error('Failed to create booking:', error)
 
-      // Check if it's a time slot conflict error
+      // Handle any remaining errors in Italian
       const errorMessage = error.message || ''
       if (errorMessage.includes('Car wash slot already booked') || errorMessage.includes('already booked')) {
-        // Extract time from error message
-        const timeMatch = errorMessage.match(/at (\d{2}:\d{2})/)
-        const time = timeMatch ? timeMatch[1] : formData.appointment_time
-
-        // Show confirmation dialog in Italian
-        const confirmed = confirm(
-          `⚠️ ATTENZIONE: Slot Occupato\n\n` +
-          `Esiste già una prenotazione per l'orario ${time} in questa data.\n\n` +
-          `Vuoi comunque creare questa prenotazione?\n\n` +
-          `• SI = Crea prenotazione ugualmente (doppia prenotazione)\n` +
-          `• NO = Annulla e scegli un altro orario`
-        )
-
-        if (confirmed) {
-          try {
-            await createBooking(true)
-          } catch (retryError: any) {
-            alert(`❌ Errore nella creazione della prenotazione: ${retryError.message}`)
-          }
-        }
+        alert(`❌ Errore: Lo slot è già occupato. Si prega di scegliere un altro orario.`)
       } else {
-        // Other errors
         alert(`❌ Errore nella creazione della prenotazione: ${errorMessage}`)
       }
     }
