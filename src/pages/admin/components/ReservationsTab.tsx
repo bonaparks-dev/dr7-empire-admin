@@ -621,6 +621,36 @@ export default function ReservationsTab() {
           // Don't fail the whole booking if calendar fails
         }
 
+        // Send WhatsApp notification for car rental
+        if (!editingId) { // Only for new bookings
+          try {
+            await fetch('/.netlify/functions/send-whatsapp-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                booking: {
+                  id: insertedBooking?.id || '',
+                  service_type: 'car_rental',
+                  customer_name: customerInfo?.full_name || '',
+                  customer_email: customerInfo?.email || '',
+                  customer_phone: customerInfo?.phone || '',
+                  vehicle_name: vehicle?.display_name || '',
+                  pickup_date: `${formData.pickup_date}T${formData.pickup_time}:00`,
+                  dropoff_date: `${formData.return_date}T${formData.return_time}:00`,
+                  pickup_location: pickupLocationLabel,
+                  insurance_option: formData.insurance_option || 'Nessuna',
+                  price_total: parseFloat(formData.total_amount) * 100, // Convert to cents
+                  payment_status: formData.payment_status || 'pending'
+                }
+              })
+            })
+            console.log('✅ WhatsApp notification sent')
+          } catch (whatsappError) {
+            console.error('⚠️ Failed to send WhatsApp notification:', whatsappError)
+            // Don't fail the whole booking if WhatsApp fails
+          }
+        }
+
         // Note: Removed duplicate reservation creation - bookings table is the single source of truth
 
 

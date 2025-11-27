@@ -24,10 +24,50 @@ interface CarWashBooking {
 }
 
 const CAR_WASH_SERVICES = [
-  { id: 'full-clean', name: 'Lavaggio Completo', price: 25, duration: '1 ora', durationMinutes: 60 },
-  { id: 'top-shine', name: 'Lavaggio Top', price: 49, duration: '2 ore', durationMinutes: 120 },
-  { id: 'vip', name: 'Lavaggio VIP', price: 75, duration: '3 ore', durationMinutes: 180 },
-  { id: 'dr7-luxury', name: 'Lavaggio DR7 Luxury', price: 99, duration: '4 ore', durationMinutes: 240 }
+  {
+    id: 'full-clean',
+    name: 'Lavaggio Completo',
+    price: 25,
+    duration: '1 ora',
+    durationMinutes: 60,
+    allowedTimeRanges: [
+      { start: '09:00', end: '12:00' },
+      { start: '15:00', end: '18:00' }
+    ]
+  },
+  {
+    id: 'top-shine',
+    name: 'Lavaggio Top',
+    price: 49,
+    duration: '2 ore',
+    durationMinutes: 120,
+    allowedTimeRanges: [
+      { start: '09:00', end: '11:00' },
+      { start: '15:00', end: '17:00' }
+    ]
+  },
+  {
+    id: 'vip',
+    name: 'Lavaggio VIP',
+    price: 75,
+    duration: '3 ore',
+    durationMinutes: 180,
+    allowedTimeRanges: [
+      { start: '09:00', end: '10:00' },
+      { start: '15:00', end: '16:00' }
+    ]
+  },
+  {
+    id: 'dr7-luxury',
+    name: 'Lavaggio DR7 Luxury',
+    price: 99,
+    duration: '4 ore',
+    durationMinutes: 240,
+    allowedTimeRanges: [
+      { start: '09:00', end: '09:00' },
+      { start: '15:00', end: '15:00' }
+    ]
+  }
 ]
 
 const ADDITIONAL_SERVICES = [
@@ -60,6 +100,26 @@ const generateTimeSlots = () => {
 }
 
 const CAR_WASH_TIME_SLOTS = generateTimeSlots()
+
+// Filter time slots based on selected service
+const getAvailableTimeSlotsForService = (serviceName: string): string[] => {
+  const service = CAR_WASH_SERVICES.find(s => s.name === serviceName)
+  if (!service) return []
+
+  return CAR_WASH_TIME_SLOTS.filter(timeSlot => {
+    const [hours, minutes] = timeSlot.split(':').map(Number)
+    const slotMinutes = hours * 60 + minutes
+
+    return service.allowedTimeRanges.some(range => {
+      const [startHours, startMinutes] = range.start.split(':').map(Number)
+      const [endHours, endMinutes] = range.end.split(':').map(Number)
+      const startMinutesTotal = startHours * 60 + startMinutes
+      const endMinutesTotal = endHours * 60 + endMinutes
+
+      return slotMinutes >= startMinutesTotal && slotMinutes <= endMinutesTotal
+    })
+  })
+}
 
 export default function CarWashBookingsTab() {
   const [bookings, setBookings] = useState<CarWashBooking[]>([])
@@ -196,7 +256,9 @@ export default function CarWashBookingsTab() {
     const bookingDetails: any = {
       notes: formData.notes,
       forceBooked: forceBooking,
-      amountPaid: Math.round(parseFloat(formData.amount_paid) * 100)
+      amountPaid: Math.round(parseFloat(formData.amount_paid) * 100),
+      adminOverride: forceBooking, // Mark as admin override for backend
+      createdBy: 'admin_panel'
     }
 
     if (formData.additional_service) {
@@ -204,29 +266,48 @@ export default function CarWashBookingsTab() {
       bookingDetails.additionalService = additionalService?.label || formData.additional_service
     }
 
-    const { error } = await supabase
-      .from('bookings')
-      .insert([{
-        user_id: null, // Admin-created booking
-        guest_name: customerName,
-        guest_email: customerEmail,
-        guest_phone: customerPhone,
-        service_type: 'car_wash',
-        service_name: formData.service_name,
-        customer_name: customerName,
-        customer_email: customerEmail,
-        customer_phone: customerPhone,
-        appointment_date: appointmentDateTime,
-        appointment_time: formData.appointment_time,
-        price_total: totalPrice * 100, // Convert to cents
-        currency: 'EUR',
-        status: 'confirmed',
-        payment_status: formData.payment_status,
-        booking_details: bookingDetails,
-        booked_at: new Date().toISOString()
-      }])
+    // Build payload carefully to match database schema
+    const bookingPayload: any = {
+      service_type: 'car_wash',
+      service_name: formData.service_name,
+      vehicle_name: 'Car Wash Service', // Required field with placeholder for car wash
+      customer_name: customerName,
+      customer_email: customerEmail || null,
+      customer_phone: customerPhone || null,
+      guest_name: customerName,
+      guest_email: customerEmail || null,
+      guest_phone: customerPhone || null,
+      appointment_date: appointmentDateTime,
+      appointment_time: formData.appointment_time,
+      pickup_date: appointmentDateTime, // Use appointment date for compatibility
+      dropoff_date: appointmentDateTime, // Use appointment date for compatibility
+      pickup_location: 'DR7 Empire - Car Wash',
+      dropoff_location: 'DR7 Empire - Car Wash',
+      price_total: totalPrice * 100, // Convert to cents
+      currency: 'EUR',
+      status: 'confirmed',
+      payment_status: formData.payment_status,
+      booking_details: bookingDetails
+    }
 
-    if (error) throw error
+    console.log('📤 Attempting to insert car wash booking:', JSON.stringify(bookingPayload, null, 2))
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert([bookingPayload])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('❌ Supabase insert error:', error)
+      console.error('Error code:', error.code)
+      console.error('Error message:', error.message)
+      console.error('Error details:', error.details)
+      console.error('Error hint:', error.hint)
+      throw error
+    }
+
+    console.log('✅ Booking created successfully:', data)
 
     alert('✅ Prenotazione creata con successo!')
     setShowForm(false)
@@ -342,6 +423,7 @@ export default function CarWashBookingsTab() {
         }
 
         // User confirmed, proceed with forced booking
+        console.log('🔧 ADMIN OVERRIDE: Creating forced double-booking for car wash')
         await createBooking(true)
       } else {
         // No conflict, proceed normally
@@ -352,8 +434,19 @@ export default function CarWashBookingsTab() {
 
       // Handle any remaining errors in Italian
       const errorMessage = error.message || ''
-      if (errorMessage.includes('Car wash slot already booked') || errorMessage.includes('already booked') || errorMessage.includes('Slot già occupato')) {
-        alert(`❌ Errore: Lo slot è già occupato. Si prega di scegliere un altro orario.`)
+
+      // If it's a conflict error even after admin override, show more details
+      if (errorMessage.includes('Car wash slot already booked') ||
+          errorMessage.includes('already booked') ||
+          errorMessage.includes('Slot già occupato') ||
+          errorMessage.includes('duplicate') ||
+          errorMessage.includes('constraint')) {
+        alert(
+          `❌ ERRORE: Impossibile creare la prenotazione\n\n` +
+          `Dettaglio tecnico: ${errorMessage}\n\n` +
+          `Possibile causa: Database constraint o trigger che blocca le doppie prenotazioni.\n\n` +
+          `Soluzione: Controlla i constraint del database 'bookings' table.`
+        )
       } else {
         alert(`❌ Errore nella creazione della prenotazione: ${errorMessage}`)
       }
@@ -487,7 +580,8 @@ export default function CarWashBookingsTab() {
                     setFormData({
                       ...formData,
                       service_name: e.target.value,
-                      price_total: service?.price || 0
+                      price_total: service?.price || 0,
+                      appointment_time: '' // Reset time when service changes
                     })
                   }}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
@@ -532,18 +626,33 @@ export default function CarWashBookingsTab() {
                   value={formData.appointment_time}
                   onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  disabled={!formData.service_name}
                 >
-                  <option value="">Seleziona orario</option>
-                  <optgroup label="Mattina (9:00 - 13:00)">
-                    {CAR_WASH_TIME_SLOTS.filter(t => t.startsWith('09') || t.startsWith('10') || t.startsWith('11') || t.startsWith('12')).map(time => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Pomeriggio (15:00 - 18:00)">
-                    {CAR_WASH_TIME_SLOTS.filter(t => t.startsWith('15') || t.startsWith('16') || t.startsWith('17')).map(time => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </optgroup>
+                  <option value="">{formData.service_name ? 'Seleziona orario' : 'Seleziona prima il servizio'}</option>
+                  {formData.service_name && (() => {
+                    const availableSlots = getAvailableTimeSlotsForService(formData.service_name)
+                    const morningSlots = availableSlots.filter(t => t.startsWith('09') || t.startsWith('10') || t.startsWith('11') || t.startsWith('12'))
+                    const afternoonSlots = availableSlots.filter(t => t.startsWith('15') || t.startsWith('16') || t.startsWith('17'))
+
+                    return (
+                      <>
+                        {morningSlots.length > 0 && (
+                          <optgroup label="Mattina">
+                            {morningSlots.map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {afternoonSlots.length > 0 && (
+                          <optgroup label="Pomeriggio">
+                            {afternoonSlots.map(time => (
+                              <option key={time} value={time}>{time}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </>
+                    )
+                  })()}
                 </select>
               </div>
             </div>
