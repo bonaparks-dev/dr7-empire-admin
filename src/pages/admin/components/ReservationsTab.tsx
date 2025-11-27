@@ -141,6 +141,8 @@ export default function ReservationsTab() {
     status: 'pending',
     source: 'admin',
     total_amount: '0',
+    amount_paid: '0',
+    payment_status: 'pending',
     currency: 'EUR'
   })
 
@@ -536,7 +538,7 @@ export default function ReservationsTab() {
           price_total: Math.round(parseFloat(formData.total_amount) * 100), // Convert to cents
           currency: formData.currency.toUpperCase(),
           status: formData.status,
-          payment_status: formData.status === 'confirmed' ? 'completed' : 'pending',
+          payment_status: formData.payment_status,
           payment_method: 'agency',
           customer_name: customerInfo?.full_name || 'N/A',
           customer_email: customerInfo?.email || null,
@@ -552,6 +554,7 @@ export default function ReservationsTab() {
             },
             pickupLocation: formData.pickup_location,
             dropoffLocation: formData.dropoff_location,
+            amountPaid: Math.round(parseFloat(formData.amount_paid) * 100), // Store amount paid in cents
             source: 'admin_manual'
           }
         }
@@ -647,6 +650,8 @@ export default function ReservationsTab() {
       status: 'pending',
       source: 'admin',
       total_amount: '0',
+      amount_paid: '0',
+      payment_status: 'pending',
       currency: 'EUR'
     })
     setCustomerSearchQuery('')
@@ -880,16 +885,21 @@ export default function ReservationsTab() {
                 />
               </div>
               <Select
-                label="Stato"
+                label="Stato Pagamento"
                 required
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                value={formData.payment_status}
+                onChange={(e) => {
+                  const newStatus = e.target.value
+                  setFormData({
+                    ...formData,
+                    payment_status: newStatus,
+                    status: newStatus === 'paid' ? 'confirmed' : 'pending'
+                  })
+                }}
                 options={[
-                  { value: 'pending', label: 'In Attesa' },
-                  { value: 'confirmed', label: 'Confermata' },
-                  { value: 'active', label: 'Attiva' },
-                  { value: 'completed', label: 'Completata' },
-                  { value: 'cancelled', label: 'Cancellata' }
+                  { value: 'paid', label: 'Pagato' },
+                  { value: 'pending', label: 'Da Saldare' },
+                  { value: 'unpaid', label: 'Non Pagato' }
                 ]}
               />
               <Input
@@ -899,6 +909,14 @@ export default function ReservationsTab() {
                 required
                 value={formData.total_amount}
                 onChange={(e) => setFormData({ ...formData, total_amount: e.target.value })}
+              />
+              <Input
+                label="Importo Pagato (€)"
+                type="number"
+                step="0.01"
+                required
+                value={formData.amount_paid}
+                onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
               />
               <Input
                 label="Valuta"
