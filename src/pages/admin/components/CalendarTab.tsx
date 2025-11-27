@@ -52,15 +52,27 @@ export default function CalendarTab() {
   async function loadData() {
     setLoading(true)
     try {
-      // Load vehicles - Exotic first, then Urban
+      // Load vehicles - Custom order: Exotic → Urban → Aziendali
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
         .select('id, display_name, status, category')
         .neq('status', 'retired')
-        .order('category', { ascending: true })
-        .order('display_name')
 
       if (vehiclesError) throw vehiclesError
+
+      // Sort vehicles by category: exotic first, then urban, then aziendali
+      const sortedVehicles = vehiclesData?.sort((a, b) => {
+        const categoryOrder: Record<string, number> = {
+          'exotic': 1,
+          'urban': 2,
+          'aziendali': 3
+        }
+        const orderA = categoryOrder[a.category || ''] || 999
+        const orderB = categoryOrder[b.category || ''] || 999
+
+        if (orderA !== orderB) return orderA - orderB
+        return a.display_name.localeCompare(b.display_name)
+      })
 
       // Load bookings (only car rentals, not car wash) - include ALL statuses except cancelled
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -85,10 +97,10 @@ export default function CalendarTab() {
       }
 
       // Log vehicle names for debugging matching
-      console.log('📅 CALENDARIO - Nomi veicoli:', vehiclesData?.map(v => v.display_name))
+      console.log('📅 CALENDARIO - Nomi veicoli:', sortedVehicles?.map(v => v.display_name))
       console.log('📅 CALENDARIO - Nomi nelle prenotazioni:', [...new Set(bookingsData?.map(b => b.vehicle_name))])
 
-      setVehicles(vehiclesData || [])
+      setVehicles(sortedVehicles || [])
       setBookings(bookingsData || [])
     } catch (error) {
       console.error('Failed to load data:', error)
