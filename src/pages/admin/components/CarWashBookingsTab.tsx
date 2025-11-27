@@ -129,7 +129,7 @@ export default function CarWashBookingsTab() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-white font-bold">
-                      �{(booking.price_total / 100).toFixed(2)}
+                      EUR {(booking.price_total / 100).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <span
