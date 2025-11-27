@@ -177,10 +177,6 @@ export default function CalendarTab() {
                          today.getFullYear() === currentDate.getFullYear()
   const todayDay = isCurrentMonth ? today.getDate() : null
 
-  // Separate vehicles by category
-  const exoticVehicles = vehicles.filter(v => v.category === 'exotic')
-  const urbanVehicles = vehicles.filter(v => v.category === 'urban')
-
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -220,26 +216,90 @@ export default function CalendarTab() {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="bg-gray-900 rounded-lg p-4">
-        <div className="flex items-center justify-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-green-500 rounded"></div>
-            <span className="text-sm text-white font-medium">Disponibile</span>
+      {/* Statistics & Legend */}
+      <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Statistics */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-400 mb-3">STATISTICHE PRENOTAZIONI</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-white text-sm">Veicoli totali:</span>
+                <span className="text-dr7-gold font-bold text-lg">{vehicles.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-white text-sm">Prenotazioni attive:</span>
+                <span className="text-dr7-gold font-bold text-lg">{bookings.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-white text-sm">Veicoli con prenotazioni:</span>
+                <span className="text-dr7-gold font-bold text-lg">
+                  {new Set(bookings.map(b => b.vehicle_name?.trim().toLowerCase())).size}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-red-500 rounded"></div>
-            <span className="text-sm text-white font-medium">Noleggiato</span>
+
+          {/* Legend */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-400 mb-3">LEGENDA</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-500 rounded"></div>
+                <span className="text-sm text-white font-medium">Disponibile</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-red-500 rounded"></div>
+                <span className="text-sm text-white font-medium">Noleggiato</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-900 border-2 border-dr7-gold rounded"></div>
+                <span className="text-sm text-white font-medium">Giorno corrente</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Booking Details (if any) */}
+        {bookings.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-400 mb-3">PROSSIME PRENOTAZIONI</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {bookings.slice(0, 5).map(booking => (
+                <div key={booking.id} className="flex items-center justify-between text-sm bg-gray-800 p-2 rounded">
+                  <div>
+                    <span className="text-white font-medium">{booking.vehicle_name}</span>
+                    <span className="text-gray-400 ml-2">- {booking.customer_name}</span>
+                  </div>
+                  <div className="text-gray-400 text-xs">
+                    {new Date(booking.pickup_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+                    {' → '}
+                    {new Date(booking.dropoff_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+                  </div>
+                </div>
+              ))}
+              {bookings.length > 5 && (
+                <div className="text-center text-gray-500 text-xs pt-2">
+                  +{bookings.length - 5} altre prenotazioni
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {bookings.length === 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+            <p className="text-yellow-400 text-sm">⚠️ Nessuna prenotazione trovata nel database</p>
+            <p className="text-gray-400 text-xs mt-2">Crea prenotazioni nella tab Prenotazioni per vederle qui</p>
+          </div>
+        )}
       </div>
 
-      {/* Exotic Vehicles Grid */}
-      {exoticVehicles.length > 0 && (
+      {/* All Vehicles Grid - Combined */}
+      {vehicles.length > 0 && (
         <div className="bg-gray-900 rounded-lg p-4 lg:p-6 overflow-x-auto">
-          <h3 className="text-lg font-bold text-purple-400 mb-4 flex items-center gap-2">
-            <span className="px-3 py-1 bg-purple-900 text-purple-200 rounded text-sm">Exotic Supercars</span>
-            <span className="text-sm text-gray-400">({exoticVehicles.length} veicoli)</span>
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-sm text-gray-400">Tutti i Veicoli ({vehicles.length})</span>
           </h3>
 
           <div className="min-w-max">
@@ -262,71 +322,21 @@ export default function CalendarTab() {
                 </tr>
               </thead>
               <tbody>
-                {exoticVehicles.map(vehicle => (
+                {vehicles.map(vehicle => (
                   <tr key={vehicle.id}>
                     <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 p-2 text-white font-medium text-sm">
-                      {vehicle.display_name}
-                    </td>
-                    {daysInMonth.map(day => {
-                      const status = getCellStatus(vehicle, day)
-                      const cellBookings = getCellBookings(vehicle, day)
-                      return (
-                        <td
-                          key={day}
-                          onClick={() => cellBookings.length > 0 && setSelectedCell({
-                            vehicle: vehicle.display_name,
-                            date: `${day}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`,
-                            bookings: cellBookings
-                          })}
-                          className={`border border-gray-700 p-1 min-w-[32px] h-10 transition-all ${
-                            status === 'rented'
-                              ? 'bg-red-500 hover:bg-red-600 cursor-pointer'
-                              : 'bg-green-500 hover:bg-green-600'
-                          } ${day === todayDay ? 'ring-2 ring-dr7-gold ring-inset' : ''}`}
-                          title={status === 'rented' ? `${vehicle.display_name} - Noleggiato` : `${vehicle.display_name} - Disponibile`}
-                        />
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Urban Vehicles Grid */}
-      {urbanVehicles.length > 0 && (
-        <div className="bg-gray-900 rounded-lg p-4 lg:p-6 overflow-x-auto">
-          <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2">
-            <span className="px-3 py-1 bg-cyan-900 text-cyan-200 rounded text-sm">Urban</span>
-            <span className="text-sm text-gray-400">({urbanVehicles.length} veicoli)</span>
-          </h3>
-
-          <div className="min-w-max">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-10 bg-gray-900 border border-gray-700 p-2 text-left text-white font-bold min-w-[180px]">
-                    Veicolo
-                  </th>
-                  {daysInMonth.map(day => (
-                    <th
-                      key={day}
-                      className={`border border-gray-700 p-2 text-center text-xs font-semibold min-w-[32px] ${
-                        day === todayDay ? 'bg-dr7-gold/20 text-dr7-gold' : 'text-gray-400'
-                      }`}
-                    >
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {urbanVehicles.map(vehicle => (
-                  <tr key={vehicle.id}>
-                    <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 p-2 text-white font-medium text-sm">
-                      {vehicle.display_name}
+                      <div className="flex items-center gap-2">
+                        <span>{vehicle.display_name}</span>
+                        {vehicle.category && (
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            vehicle.category === 'exotic'
+                              ? 'bg-purple-900 text-purple-200'
+                              : 'bg-cyan-900 text-cyan-200'
+                          }`}>
+                            {vehicle.category}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {daysInMonth.map(day => {
                       const status = getCellStatus(vehicle, day)
