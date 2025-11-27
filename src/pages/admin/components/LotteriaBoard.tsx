@@ -153,6 +153,96 @@ const LotteriaBoard: React.FC = () => {
     fetchSoldTickets();
   }, []);
 
+  const handleBulkManualSale = async (ticketNumbers: number[], email: string, fullName: string, phone: string) => {
+    try {
+      setGeneratingPdf(true);
+      let successCount = 0;
+      let failedTickets: number[] = [];
+
+      for (const ticketNumber of ticketNumbers) {
+        try {
+          // Check ticket is still available
+          const { data: existingTicket } = await supabase
+            .from('commercial_operation_tickets')
+            .select('ticket_number')
+            .eq('ticket_number', ticketNumber)
+            .single();
+
+          if (existingTicket) {
+            failedTickets.push(ticketNumber);
+            continue;
+          }
+
+          const uuid = generateTicketUuid(ticketNumber);
+
+          const { error } = await supabase
+            .from('commercial_operation_tickets')
+            .insert([{
+              uuid: uuid,
+              ticket_number: ticketNumber,
+              email,
+              full_name: fullName,
+              customer_phone: phone,
+              payment_intent_id: `manual_bulk_${Date.now()}_${ticketNumber}`,
+              amount_paid: 2500,
+              currency: 'eur',
+              purchase_date: new Date().toISOString(),
+              quantity: 1
+            }]);
+
+          if (error) {
+            if (error.code === '23505') {
+              failedTickets.push(ticketNumber);
+            } else {
+              throw error;
+            }
+          } else {
+            successCount++;
+
+            // Generate and send PDF for this ticket
+            try {
+              await fetch('https://dr7empire.com/.netlify/functions/send-manual-ticket-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ticketNumber,
+                  email,
+                  fullName,
+                  phone
+                })
+              });
+            } catch (pdfError) {
+              console.error(`Error sending PDF for ticket ${ticketNumber}:`, pdfError);
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing ticket ${ticketNumber}:`, error);
+          failedTickets.push(ticketNumber);
+        }
+      }
+
+      setGeneratingPdf(false);
+
+      if (successCount > 0 && failedTickets.length === 0) {
+        alert(`✅ ${successCount} biglietti venduti con successo!\n\nPDF inviati a: ${email}`);
+      } else if (successCount > 0 && failedTickets.length > 0) {
+        alert(`⚠️ ${successCount} biglietti venduti.\n\n❌ ${failedTickets.length} biglietti già venduti:\n${failedTickets.map(n => '#' + String(n).padStart(4, '0')).join(', ')}`);
+      } else {
+        alert(`❌ Nessun biglietto venduto. Tutti i biglietti selezionati sono già stati venduti.`);
+      }
+
+      await fetchSoldTickets();
+      setSelectedTicket(null);
+      setSelectedTickets([]);
+      setMultiSelectMode(false);
+    } catch (error: any) {
+      setGeneratingPdf(false);
+      console.error('Error in bulk sale:', error);
+      alert(`❌ Errore: ${error.message || 'Errore durante la vendita multipla.'}`);
+      await fetchSoldTickets();
+    }
+  };
+
   const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string) => {
     try {
       // Double-check ticket is still available before attempting sale
@@ -241,7 +331,21 @@ const LotteriaBoard: React.FC = () => {
   };
 
   const handleTicketClick = (ticketNumber: number) => {
-    if (!soldTickets.has(ticketNumber)) {
+    if (soldTickets.has(ticketNumber)) {
+      return; // Can't select sold tickets
+    }
+
+    if (multiSelectMode) {
+      // Toggle selection in multi-select mode
+      setSelectedTickets(prev => {
+        if (prev.includes(ticketNumber)) {
+          return prev.filter(num => num !== ticketNumber);
+        } else {
+          return [...prev, ticketNumber];
+        }
+      });
+    } else {
+      // Single ticket sale
       setSelectedTicket(ticketNumber);
     }
   };
@@ -276,7 +380,7 @@ const LotteriaBoard: React.FC = () => {
             <div className="text-2xl font-bold text-green-600">{availableCount}</div>
           </div>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-4 items-center flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-green-500 rounded"></div>
             <span className="text-sm text-white font-medium">Disponibile</span>
@@ -285,12 +389,49 @@ const LotteriaBoard: React.FC = () => {
             <div className="w-6 h-6 bg-red-500 rounded"></div>
             <span className="text-sm text-white font-medium">Venduto</span>
           </div>
-          <button
-            onClick={fetchSoldTickets}
-            className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            🔄 Aggiorna
-          </button>
+          {multiSelectMode && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-blue-600 rounded"></div>
+              <span className="text-sm text-white font-medium">Selezionato</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={() => {
+                setMultiSelectMode(!multiSelectMode)
+                setSelectedTickets([])
+              }}
+              className={`px-4 py-2 rounded font-semibold transition-colors ${
+                multiSelectMode
+                  ? 'bg-orange-600 text-white hover:bg-orange-700'
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+            >
+              {multiSelectMode ? '✓ Selezione Multipla ON' : 'Selezione Multipla'}
+            </button>
+            {multiSelectMode && selectedTickets.length > 0 && (
+              <>
+                <button
+                  onClick={() => setSelectedTickets([])}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  Pulisci ({selectedTickets.length})
+                </button>
+                <button
+                  onClick={() => setSelectedTicket(-1)}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
+                >
+                  Vendi {selectedTickets.length} Biglietti
+                </button>
+              </>
+            )}
+            <button
+              onClick={fetchSoldTickets}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              🔄 Aggiorna
+            </button>
+          </div>
         </div>
       </div>
 
@@ -299,6 +440,7 @@ const LotteriaBoard: React.FC = () => {
           const isSold = soldTickets.has(ticketNumber);
           const ticket = soldTickets.get(ticketNumber);
           const isHovered = hoveredTicket === ticketNumber;
+          const isSelected = selectedTickets.includes(ticketNumber);
 
           return (
             <div key={ticketNumber} className="relative">
@@ -308,6 +450,8 @@ const LotteriaBoard: React.FC = () => {
                   transition-all duration-200 border-2
                   ${isSold
                     ? 'bg-red-500 text-white border-red-700 hover:bg-red-600'
+                    : isSelected
+                    ? 'bg-blue-600 text-white border-blue-800 scale-105'
                     : 'bg-green-500 text-white border-green-700 hover:bg-green-600 hover:scale-110'
                   }
                 `}
@@ -335,11 +479,22 @@ const LotteriaBoard: React.FC = () => {
         })}
       </div>
 
-      {selectedTicket && (
+      {selectedTicket && selectedTicket !== -1 && (
         <ManualSaleModal
           ticketNumber={selectedTicket}
           onClose={() => setSelectedTicket(null)}
-          onConfirm={handleManualSale}
+          onConfirm={(tickets, email, fullName, phone) => handleManualSale(tickets[0], email, fullName, phone)}
+        />
+      )}
+
+      {selectedTicket === -1 && selectedTickets.length > 0 && (
+        <ManualSaleModal
+          ticketNumbers={selectedTickets}
+          onClose={() => {
+            setSelectedTicket(null);
+            setSelectedTickets([]);
+          }}
+          onConfirm={handleBulkManualSale}
         />
       )}
 
