@@ -158,6 +158,10 @@ export default function CarWashBookingsTab() {
       const { error } = await supabase
         .from('bookings')
         .insert([{
+          user_id: null, // Admin-created booking
+          guest_name: customerName,
+          guest_email: customerEmail,
+          guest_phone: customerPhone,
           service_type: 'car_wash',
           service_name: formData.service_name,
           customer_name: customerName,
