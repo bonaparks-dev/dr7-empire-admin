@@ -24,10 +24,10 @@ interface CarWashBooking {
 }
 
 const CAR_WASH_SERVICES = [
-  { id: 'full-clean', name: 'Lavaggio Completo', price: 25, duration: '45 min' },
-  { id: 'top-shine', name: 'Lavaggio Top', price: 49, duration: '1.5 ore' },
-  { id: 'vip', name: 'Lavaggio VIP', price: 75, duration: '3 ore' },
-  { id: 'dr7-luxury', name: 'Lavaggio DR7 Luxury', price: 99, duration: '4 ore' }
+  { id: 'full-clean', name: 'Lavaggio Completo', price: 25, duration: '1 ora', durationMinutes: 60 },
+  { id: 'top-shine', name: 'Lavaggio Top', price: 49, duration: '2 ore', durationMinutes: 120 },
+  { id: 'vip', name: 'Lavaggio VIP', price: 75, duration: '3 ore', durationMinutes: 180 },
+  { id: 'dr7-luxury', name: 'Lavaggio DR7 Luxury', price: 99, duration: '4 ore', durationMinutes: 240 }
 ]
 
 const ADDITIONAL_SERVICES = [
@@ -246,16 +246,41 @@ export default function CarWashBookingsTab() {
     loadData()
   }
 
+  // Helper function to check if two time ranges overlap
+  function checkTimeOverlap(
+    start1: string, duration1Minutes: number,
+    start2: string, duration2Minutes: number
+  ): boolean {
+    // Parse time strings (HH:MM format)
+    const [h1, m1] = start1.split(':').map(Number)
+    const [h2, m2] = start2.split(':').map(Number)
+
+    const start1Minutes = h1 * 60 + m1
+    const end1Minutes = start1Minutes + duration1Minutes
+    const start2Minutes = h2 * 60 + m2
+    const end2Minutes = start2Minutes + duration2Minutes
+
+    // Check if ranges overlap
+    return start1Minutes < end2Minutes && end1Minutes > start2Minutes
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     try {
-      // Check if there's already a booking at this time slot
-      const appointmentDateTime = `${formData.appointment_date}T${formData.appointment_time}:00`
+      // Get the selected service duration
+      const selectedService = CAR_WASH_SERVICES.find(s => s.name === formData.service_name)
+      if (!selectedService) {
+        alert('❌ Errore: Seleziona un servizio valido')
+        return
+      }
 
+      const newBookingDuration = selectedService.durationMinutes
+
+      // Check if there's already a booking that overlaps with this time slot
       const { data: existingBookings, error: checkError } = await supabase
         .from('bookings')
-        .select('id, customer_name, appointment_date, appointment_time')
+        .select('id, customer_name, appointment_date, appointment_time, service_name, booking_details')
         .eq('service_type', 'car_wash')
         .neq('status', 'cancelled')
         .gte('appointment_date', formData.appointment_date)
@@ -265,16 +290,28 @@ export default function CarWashBookingsTab() {
         console.error('Error checking existing bookings:', checkError)
       }
 
-      // Check if there's a conflict at this exact time
+      // Check if there's a time conflict considering service durations
       let hasConflict = false
       let conflictingBooking = null
+      let conflictDetails = ''
 
       if (existingBookings && existingBookings.length > 0) {
         for (const booking of existingBookings) {
           const bookingTime = booking.appointment_time || new Date(booking.appointment_date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', hour12: false })
-          if (bookingTime === formData.appointment_time) {
+
+          // Get the service duration of the existing booking
+          const existingService = CAR_WASH_SERVICES.find(s => s.name === booking.service_name)
+          const existingDuration = existingService ? existingService.durationMinutes : 60 // Default to 1 hour if not found
+
+          // Check if time ranges overlap
+          if (checkTimeOverlap(formData.appointment_time, newBookingDuration, bookingTime, existingDuration)) {
             hasConflict = true
             conflictingBooking = booking
+            const endTime = bookingTime.split(':').map(Number)
+            const endMinutes = endTime[0] * 60 + endTime[1] + existingDuration
+            const endHour = Math.floor(endMinutes / 60)
+            const endMin = endMinutes % 60
+            conflictDetails = `${bookingTime} - ${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`
             break
           }
         }
@@ -284,9 +321,11 @@ export default function CarWashBookingsTab() {
       if (hasConflict && conflictingBooking) {
         const bookingId = conflictingBooking.id.substring(0, 8).toUpperCase()
         const confirmed = confirm(
-          `⚠️ ATTENZIONE: Slot già Occupato\n\n` +
-          `Esiste già una prenotazione per l'orario ${formData.appointment_time} in questa data.\n\n` +
+          `⚠️ ATTENZIONE: Conflitto Orario\n\n` +
+          `Esiste già una prenotazione che si sovrappone con questo orario.\n\n` +
           `Cliente esistente: ${conflictingBooking.customer_name}\n` +
+          `Servizio: ${conflictingBooking.service_name}\n` +
+          `Orario occupato: ${conflictDetails}\n` +
           `ID Prenotazione: DR7-${bookingId}\n\n` +
           `Vuoi comunque creare questa prenotazione?\n\n` +
           `• Clicca OK per procedere (doppia prenotazione)\n` +
@@ -308,7 +347,7 @@ export default function CarWashBookingsTab() {
 
       // Handle any remaining errors in Italian
       const errorMessage = error.message || ''
-      if (errorMessage.includes('Car wash slot already booked') || errorMessage.includes('already booked')) {
+      if (errorMessage.includes('Car wash slot already booked') || errorMessage.includes('already booked') || errorMessage.includes('Slot già occupato')) {
         alert(`❌ Errore: Lo slot è già occupato. Si prega di scegliere un altro orario.`)
       } else {
         alert(`❌ Errore nella creazione della prenotazione: ${errorMessage}`)
