@@ -9,7 +9,7 @@ function generateTicketUuid(ticketNumber: number): string {
 }
 
 // Send WhatsApp notification to admin
-async function sendWhatsAppNotification(ticketNumbers: number[], fullName: string, email: string, phone: string, isManual: boolean = false): Promise<{ success: boolean; error?: string }> {
+async function sendWhatsAppNotification(ticketNumbers: number[], fullName: string, email: string, phone: string): Promise<{ success: boolean; error?: string }> {
   try {
     const ticketList = ticketNumbers.map(n => `#${String(n).padStart(4, '0')}`).join(', ');
 
@@ -266,10 +266,10 @@ const LotteriaBoard: React.FC = () => {
       setGeneratingPdf(false);
 
       // Send WhatsApp notification for successfully sold tickets
-      let whatsappResult = { success: true, error: '' };
+      let whatsappResult: { success: boolean; error?: string } = { success: true };
       if (successCount > 0) {
         const soldTicketNumbers = ticketNumbers.filter(n => !failedTickets.includes(n));
-        whatsappResult = await sendWhatsAppNotification(soldTicketNumbers, fullName, email, phone, true);
+        whatsappResult = await sendWhatsAppNotification(soldTicketNumbers, fullName, email, phone);
         if (!whatsappResult.success) {
           console.warn('[WhatsApp] Failed to send notification:', whatsappResult.error);
         }
@@ -353,7 +353,7 @@ const LotteriaBoard: React.FC = () => {
         setGeneratingPdf(true);
 
         // Send WhatsApp notification to admin
-        const whatsappResult = await sendWhatsAppNotification([ticketNumber], fullName, email, phone, true);
+        const whatsappResult = await sendWhatsAppNotification([ticketNumber], fullName, email, phone);
         if (!whatsappResult.success) {
           console.warn('[WhatsApp] Failed to send notification:', whatsappResult.error);
         }
