@@ -18,27 +18,48 @@ interface Ticket {
 }
 
 interface ManualSaleModalProps {
-  ticketNumber: number;
+  ticketNumber?: number;
+  ticketNumbers?: number[];
   onClose: () => void;
-  onConfirm: (ticketNumber: number, email: string, fullName: string, phone: string) => void;
+  onConfirm: (ticketNumbers: number[], email: string, fullName: string, phone: string) => void;
 }
 
-const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, onClose, onConfirm }) => {
+const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, ticketNumbers, onClose, onConfirm }) => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
 
+  const tickets = ticketNumbers || (ticketNumber ? [ticketNumber] : []);
+  const isBulkSale = tickets.length > 1;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && fullName && phone) {
-      onConfirm(ticketNumber, email, fullName, phone);
+      onConfirm(tickets, email, fullName, phone);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96">
-        <h3 className="text-xl font-bold mb-4">Vendita Manuale - Biglietto #{String(ticketNumber).padStart(4, '0')}</h3>
+        <h3 className="text-xl font-bold mb-4">
+          {isBulkSale
+            ? `Vendita Multipla - ${tickets.length} Biglietti`
+            : `Vendita Manuale - Biglietto #${String(tickets[0]).padStart(4, '0')}`
+          }
+        </h3>
+        {isBulkSale && (
+          <div className="mb-4 p-3 bg-gray-100 rounded">
+            <p className="text-sm font-medium mb-2">Biglietti selezionati:</p>
+            <div className="flex flex-wrap gap-2">
+              {tickets.map(num => (
+                <span key={num} className="px-2 py-1 bg-blue-600 text-white text-xs rounded">
+                  #{String(num).padStart(4, '0')}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">Nome Completo</label>
@@ -97,6 +118,8 @@ const LotteriaBoard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [hoveredTicket, setHoveredTicket] = useState<number | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
+  const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const fetchSoldTickets = async () => {
