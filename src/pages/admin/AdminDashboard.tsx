@@ -67,13 +67,13 @@ export default function AdminDashboard() {
             </div>
             <nav className="p-2">
               {[
-                { id: 'reservations', label: 'Prenotazioni', icon: '📋' },
+                { id: 'reservations', label: 'Prenotazioni Auto', icon: '🚗' },
+                { id: 'carwash', label: 'Prenotazioni Lavaggio', icon: '🚿' },
                 { id: 'customers', label: 'Clienti', icon: '👥' },
-                { id: 'vehicles', label: 'Veicoli', icon: '🚗' },
-                { id: 'fattura', label: 'Fatture', icon: '📄' },
-                { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
+                { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
                 { id: 'calendar', label: 'Calendario', icon: '📅' },
-                { id: 'carwash', label: 'Autolavaggio', icon: '🚿' }
+                { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
+                { id: 'fattura', label: 'Fatture', icon: '📄' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -109,7 +109,17 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                📋 Prenotazioni
+                🚗 Prenotazioni Auto
+              </button>
+              <button
+                onClick={() => setActiveTab('carwash')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'carwash'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🚿 Prenotazioni Lavaggio
               </button>
               <button
                 onClick={() => setActiveTab('customers')}
@@ -129,27 +139,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🚗 Veicoli
-              </button>
-              <button
-                onClick={() => setActiveTab('fattura')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'fattura'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                📄 Fatture
-              </button>
-              <button
-                onClick={() => setActiveTab('lotteria')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'lotteria'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🎰 Biglietti Lotteria
+                🚙 Veicoli
               </button>
               <button
                 onClick={() => setActiveTab('calendar')}
@@ -162,14 +152,24 @@ export default function AdminDashboard() {
                 📅 Calendario
               </button>
               <button
-                onClick={() => setActiveTab('carwash')}
+                onClick={() => setActiveTab('lotteria')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'carwash'
+                  activeTab === 'lotteria'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🚿 Autolavaggio
+                🎰 Biglietti Lotteria
+              </button>
+              <button
+                onClick={() => setActiveTab('fattura')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'fattura'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                📄 Fatture
               </button>
             </nav>
           </div>
@@ -178,13 +178,13 @@ export default function AdminDashboard() {
         {/* Mobile Tab Indicator */}
         <div className="mb-4 lg:hidden">
           <h2 className="text-xl font-bold text-white">
-            {activeTab === 'reservations' && '📋 Prenotazioni'}
+            {activeTab === 'reservations' && '🚗 Prenotazioni Auto'}
+            {activeTab === 'carwash' && '🚿 Prenotazioni Lavaggio'}
             {activeTab === 'customers' && '👥 Clienti'}
-            {activeTab === 'vehicles' && '🚗 Veicoli'}
-            {activeTab === 'fattura' && '📄 Fatture'}
-            {activeTab === 'lotteria' && '🎰 Biglietti Lotteria'}
+            {activeTab === 'vehicles' && '🚙 Veicoli'}
             {activeTab === 'calendar' && '📅 Calendario'}
-            {activeTab === 'carwash' && '🚿 Autolavaggio'}
+            {activeTab === 'lotteria' && '🎰 Biglietti Lotteria'}
+            {activeTab === 'fattura' && '📄 Fatture'}
           </h2>
         </div>
 
