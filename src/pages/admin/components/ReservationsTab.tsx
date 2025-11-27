@@ -1143,7 +1143,19 @@ export default function ReservationsTab() {
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="text-gray-400">Nome:</span> <span className="text-white">{selectedBooking.booking_details?.customer?.fullName || selectedBooking.customer_name || 'N/A'}</span></div>
-                  <div><span className="text-gray-400">Telefono:</span> <span className="text-white">{selectedBooking.customer_phone || '-'}</span></div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-gray-400">Telefono:</span> <span className="text-white">{selectedBooking.customer_phone || '-'}</span>
+                    </div>
+                    {selectedBooking.customer_phone && (
+                      <a
+                        href={`tel:${selectedBooking.customer_phone}`}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors"
+                      >
+                        📞 Chiama
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1180,11 +1192,27 @@ export default function ReservationsTab() {
                 <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
                   <span>💳</span> Pagamento
                 </h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="text-gray-400">Importo:</span> <span className="text-white font-bold text-lg">€{(selectedBooking.price_total / 100).toFixed(2)}</span></div>
-                  <div><span className="text-gray-400">Stato Pagamento:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.payment_status === 'completed' || selectedBooking.payment_status === 'paid' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>{selectedBooking.payment_status === 'completed' || selectedBooking.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}</span></div>
-                  <div><span className="text-gray-400">Metodo:</span> <span className="text-white">{selectedBooking.payment_method || 'N/A'}</span></div>
-                  <div><span className="text-gray-400">Stato Prenotazione:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.status === 'confirmed' ? 'bg-green-900 text-green-300' : selectedBooking.status === 'cancelled' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>{selectedBooking.status}</span></div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Importo:</span>
+                    <span className="text-white font-bold text-xl">€{(selectedBooking.price_total / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Stato:</span>
+                    <span className={`px-3 py-1.5 rounded text-sm font-medium ${
+                      selectedBooking.payment_status === 'completed' || selectedBooking.payment_status === 'paid'
+                        ? 'bg-green-900 text-green-300'
+                        : selectedBooking.payment_status === 'pending'
+                        ? 'bg-yellow-900 text-yellow-300'
+                        : 'bg-red-900 text-red-300'
+                    }`}>
+                      {selectedBooking.payment_status === 'completed' || selectedBooking.payment_status === 'paid'
+                        ? 'Pagato'
+                        : selectedBooking.payment_status === 'pending'
+                        ? 'Da Saldare'
+                        : 'Non Pagato'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
