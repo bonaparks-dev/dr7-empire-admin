@@ -281,11 +281,11 @@ export default function CalendarTab() {
               <tbody>
                 {vehicles.map(vehicle => (
                   <tr key={vehicle.id}>
-                    <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-medium text-xs">
-                      <div className="flex items-center gap-1">
+                    <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-semibold text-sm">
+                      <div className="flex items-center gap-1.5">
                         <span className="truncate">{vehicle.display_name}</span>
                         {vehicle.category && (
-                          <span className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap ${
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
                             vehicle.category === 'exotic'
                               ? 'bg-purple-900 text-purple-200'
                               : 'bg-cyan-900 text-cyan-200'
