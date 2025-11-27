@@ -40,7 +40,7 @@ export default function Login() {
             <img src="/DR7logo1.png" alt="DR7 Empire" className="h-20" />
           </div>
           <h1 className="text-3xl font-bold text-white text-center mb-8">
-            Pannello Admin
+            DR7 Control Room
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
