@@ -32,7 +32,7 @@ const CAR_WASH_SERVICES = [
     durationMinutes: 60,
     allowedTimeRanges: [
       { start: '09:00', end: '12:00' },
-      { start: '15:00', end: '18:00' }
+      { start: '15:00', end: '19:00' }
     ]
   },
   {
@@ -85,7 +85,7 @@ const ADDITIONAL_SERVICES = [
   { value: 'lamborghini-ferrari-3h', label: 'Lamborghini & Ferrari Experience - 3 ore (+€299)', price: 299 }
 ]
 
-// Generate time slots for car wash: 9h-13h and 15h-18h, every 15 minutes
+// Generate time slots for car wash: 9h-13h and 15h-19h, every 15 minutes
 const generateTimeSlots = () => {
   const slots: string[] = []
 
@@ -97,12 +97,9 @@ const generateTimeSlots = () => {
     }
   }
 
-  // Afternoon slots: 15h-18h (including 18:00)
-  for (let hour = 15; hour <= 18; hour++) {
+  // Afternoon slots: 15h-19h (up to 18:45 for services starting)
+  for (let hour = 15; hour < 19; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
-      // Stop at 18:00 exactly
-      if (hour === 18 && minute > 0) break
-
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
       slots.push(time)
     }
