@@ -78,8 +78,8 @@ function calculateCarWashEndTime(appointmentDate: string, appointmentTime: strin
   const priceToDuration: Record<number, number> = {
     2500: 0.75,  // 25€ = 30-45 min (use 45 min = 0.75hr)
     4900: 1.25,  // 49€ = 1-1.5 hrs (use 1.5hr)
-    7500: 2.5,   // 75€ = 2-3 hrs (use 2.5hr)
-    9900: 3.5    // 99€ = 3-4 hrs (use 3.5hr)
+    7500: 3,     // 75€ VIP = 3 hours
+    9900: 4      // 99€ DR7 LUXURY = 4 hours
   };
 
   const durationHours = priceToDuration[priceTotal] || 1;
@@ -636,8 +636,8 @@ export default function ReservationsTab() {
           const priceToDuration: Record<number, number> = {
             2500: 0.75,  // 25€ = 30-45 min (use 45 min = 0.75hr)
             4900: 1.25,  // 49€ = 1-1.5 hrs (use 1.5hr)
-            7500: 2.5,   // 75€ = 2-3 hrs (use 2.5hr)
-            9900: 3.5    // 99€ = 3-4 hrs (use 3.5hr)
+            7500: 3,     // 75€ VIP = 3 hours
+            9900: 4      // 99€ DR7 LUXURY = 4 hours
           }
           const durationHours = priceToDuration[priceInCents] || 1
 
