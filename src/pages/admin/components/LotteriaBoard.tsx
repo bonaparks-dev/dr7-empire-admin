@@ -314,7 +314,7 @@ const LotteriaBoard: React.FC = () => {
         .single();
 
       if (existingTicket) {
-        alert(`❌ Ticket #${String(ticketNumber).padStart(4, '0')} has already been sold!`);
+        alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è già stato venduto!`);
         await fetchSoldTickets(); // Refresh to show current state
         setSelectedTicket(null);
         return;
@@ -340,7 +340,7 @@ const LotteriaBoard: React.FC = () => {
       if (error) {
         // Check if it's a duplicate key error (ticket was just sold)
         if (error.code === '23505') {
-          alert(`❌ Ticket #${String(ticketNumber).padStart(4, '0')} has already been sold by someone else!`);
+          alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
           await fetchSoldTickets(); // Refresh to show current state
           setSelectedTicket(null);
           return; // Stop execution here
