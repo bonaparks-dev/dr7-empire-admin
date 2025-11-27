@@ -32,7 +32,7 @@ const CAR_WASH_SERVICES = [
     durationMinutes: 60,
     allowedTimeRanges: [
       { start: '09:00', end: '12:00' },
-      { start: '15:00', end: '19:00' }
+      { start: '15:00', end: '18:00' }
     ]
   },
   {
@@ -97,8 +97,8 @@ const generateTimeSlots = () => {
     }
   }
 
-  // Afternoon slots: 15h-19h (up to 18:45 for services starting)
-  for (let hour = 15; hour < 19; hour++) {
+  // Afternoon slots: 15h-18h (includes 18:00 as last slot for Lavaggio Completo)
+  for (let hour = 15; hour <= 18; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
       slots.push(time)
