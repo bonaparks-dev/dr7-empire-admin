@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
 
+interface Customer {
+  id: string
+  full_name: string
+  email: string | null
+  phone: string | null
+}
+
 interface CarWashBooking {
   id: string
   customer_name: string
@@ -23,64 +30,148 @@ const CAR_WASH_SERVICES = [
   { id: 'dr7-luxury', name: 'Lavaggio DR7 Luxury', price: 99, duration: '4 ore' }
 ]
 
+const ADDITIONAL_SERVICES = [
+  { value: 'interior-sanification', label: 'Sanificazione interni (+€30)', price: 30 },
+  { value: 'engine-cleaning', label: 'Pulizia motore (+€50)', price: 50 },
+  { value: 'headlight-polish', label: 'Lucidatura fari (+€40)', price: 40 }
+]
+
 export default function CarWashBookingsTab() {
   const [bookings, setBookings] = useState<CarWashBooking[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [newCustomerMode, setNewCustomerMode] = useState(false)
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('')
+
   const [formData, setFormData] = useState({
-    customer_name: '',
-    customer_email: '',
-    customer_phone: '',
+    customer_id: '',
     service_name: '',
     appointment_date: '',
     appointment_time: '',
+    additional_service: '',
     price_total: 0,
     notes: ''
   })
 
+  const [newCustomerData, setNewCustomerData] = useState({
+    full_name: '',
+    email: '',
+    phone: ''
+  })
+
   useEffect(() => {
-    loadBookings()
+    loadData()
   }, [])
 
-  async function loadBookings() {
+  async function loadData() {
     setLoading(true)
     try {
-      const { data, error} = await supabase
+      // Load bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
         .eq('service_type', 'car_wash')
         .order('appointment_date', { ascending: false })
 
-      if (error) throw error
+      if (bookingsError) throw bookingsError
 
-      setBookings(data || [])
+      // Load customers
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('id, full_name, email, phone')
+        .order('full_name')
+
+      if (customersError) throw customersError
+
+      setBookings(bookingsData || [])
+      setCustomers(customersData || [])
     } catch (error) {
-      console.error('Failed to load car wash bookings:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setLoading(false)
     }
   }
 
+  const filteredCustomers = customers.filter(c =>
+    c.full_name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+    c.email?.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+    c.phone?.includes(customerSearchQuery)
+  )
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
+      let customerId = formData.customer_id
+      let customerName = ''
+      let customerEmail = ''
+      let customerPhone = ''
+
+      // If new customer mode, create the customer first
+      if (newCustomerMode) {
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert([{
+            full_name: newCustomerData.full_name,
+            email: newCustomerData.email || null,
+            phone: newCustomerData.phone || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select()
+          .single()
+
+        if (customerError) throw customerError
+
+        customerId = newCustomer.id
+        customerName = newCustomer.full_name
+        customerEmail = newCustomer.email || ''
+        customerPhone = newCustomer.phone || ''
+      } else {
+        // Get customer details from selected customer
+        const customer = customers.find(c => c.id === formData.customer_id)
+        if (!customer) throw new Error('Cliente non trovato')
+
+        customerName = customer.full_name
+        customerEmail = customer.email || ''
+        customerPhone = customer.phone || ''
+      }
+
       const appointmentDateTime = `${formData.appointment_date}T${formData.appointment_time}:00`
+
+      // Calculate total price
+      let totalPrice = formData.price_total
+      if (formData.additional_service) {
+        const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
+        if (additionalService) {
+          totalPrice += additionalService.price
+        }
+      }
+
+      const bookingDetails: any = {
+        notes: formData.notes
+      }
+
+      if (formData.additional_service) {
+        const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
+        bookingDetails.additionalService = additionalService?.label || formData.additional_service
+      }
 
       const { error } = await supabase
         .from('bookings')
         .insert([{
           service_type: 'car_wash',
           service_name: formData.service_name,
-          customer_name: formData.customer_name,
-          customer_email: formData.customer_email,
-          customer_phone: formData.customer_phone,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          customer_phone: customerPhone,
           appointment_date: appointmentDateTime,
           appointment_time: formData.appointment_time,
-          price_total: formData.price_total * 100,
+          price_total: totalPrice * 100, // Convert to cents
           currency: 'EUR',
           status: 'confirmed',
           payment_status: 'paid',
-          booking_details: { notes: formData.notes },
+          booking_details: bookingDetails,
           booked_at: new Date().toISOString()
         }])
 
@@ -88,20 +179,26 @@ export default function CarWashBookingsTab() {
 
       alert('✅ Prenotazione creata con successo!')
       setShowForm(false)
+      setNewCustomerMode(false)
+      setCustomerSearchQuery('')
       setFormData({
-        customer_name: '',
-        customer_email: '',
-        customer_phone: '',
+        customer_id: '',
         service_name: '',
         appointment_date: '',
         appointment_time: '',
+        additional_service: '',
         price_total: 0,
         notes: ''
       })
-      loadBookings()
-    } catch (error) {
+      setNewCustomerData({
+        full_name: '',
+        email: '',
+        phone: ''
+      })
+      loadData()
+    } catch (error: any) {
       console.error('Failed to create booking:', error)
-      alert('❌ Errore nella creazione della prenotazione')
+      alert(`❌ Errore nella creazione della prenotazione: ${error.message}`)
     }
   }
 
@@ -130,37 +227,98 @@ export default function CarWashBookingsTab() {
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
           <h3 className="text-lg font-semibold text-white mb-4">Crea Nuova Prenotazione Lavaggio</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Customer Selection */}
+            <div className="border-b border-gray-700 pb-4">
+              <div className="flex items-center gap-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewCustomerMode(false)
+                    setCustomerSearchQuery('')
+                  }}
+                  className={`px-4 py-2 rounded ${
+                    !newCustomerMode
+                      ? 'bg-dr7-gold text-black font-semibold'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Seleziona Cliente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewCustomerMode(true)}
+                  className={`px-4 py-2 rounded ${
+                    newCustomerMode
+                      ? 'bg-dr7-gold text-black font-semibold'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Nuovo Cliente
+                </button>
+              </div>
+
+              {!newCustomerMode ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Cerca Cliente</label>
+                  <input
+                    type="text"
+                    value={customerSearchQuery}
+                    onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                    placeholder="Nome, email o telefono..."
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white mb-2"
+                  />
+                  <select
+                    required
+                    value={formData.customer_id}
+                    onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  >
+                    <option value="">Seleziona un cliente</option>
+                    {filteredCustomers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.full_name} - {customer.email || customer.phone || 'N/A'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo</label>
+                    <input
+                      type="text"
+                      required
+                      value={newCustomerData.full_name}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, full_name: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={newCustomerData.email}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
+                    <input
+                      type="tel"
+                      required
+                      value={newCustomerData.phone}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Service Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Nome Cliente</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.customer_name}
-                  onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.customer_email}
-                  onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.customer_phone}
-                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Servizio</label>
                 <select
@@ -180,6 +338,21 @@ export default function CarWashBookingsTab() {
                   {CAR_WASH_SERVICES.map(service => (
                     <option key={service.id} value={service.name}>
                       {service.name} - EUR {service.price} ({service.duration})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Servizio Aggiuntivo (opzionale)</label>
+                <select
+                  value={formData.additional_service}
+                  onChange={(e) => setFormData({ ...formData, additional_service: e.target.value })}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                >
+                  <option value="">Nessuno</option>
+                  {ADDITIONAL_SERVICES.map(service => (
+                    <option key={service.value} value={service.value}>
+                      {service.label}
                     </option>
                   ))}
                 </select>
@@ -217,7 +390,7 @@ export default function CarWashBookingsTab() {
             {formData.price_total > 0 && (
               <div className="text-right">
                 <span className="text-lg font-bold text-dr7-gold">
-                  Totale: EUR {formData.price_total.toFixed(2)}
+                  Totale: EUR {(formData.price_total + (formData.additional_service ? ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)?.price || 0 : 0)).toFixed(2)}
                 </span>
               </div>
             )}
