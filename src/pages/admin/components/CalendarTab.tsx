@@ -216,28 +216,6 @@ export default function CalendarTab() {
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
-        <div className="flex items-center justify-center gap-8">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-green-500 rounded"></div>
-            <span className="text-sm text-white font-medium">Disponibile</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-red-500 rounded"></div>
-            <span className="text-sm text-white font-medium">Noleggiato</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-900 border-2 border-dr7-gold rounded"></div>
-            <span className="text-sm text-white font-medium">Giorno corrente</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Veicoli totali:</span>
-            <span className="text-dr7-gold font-bold text-lg">{vehicles.length}</span>
-          </div>
-        </div>
-      </div>
-
       {/* All Vehicles Grid - Combined */}
       {vehicles.length > 0 && (
         <div className="bg-gray-900 rounded-lg p-4 lg:p-6 overflow-x-auto">
