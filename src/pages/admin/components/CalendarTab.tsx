@@ -52,12 +52,12 @@ export default function CalendarTab() {
   async function loadData() {
     setLoading(true)
     try {
-      // Load vehicles
+      // Load vehicles - Exotic first, then Urban
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
         .select('id, display_name, status, category')
         .neq('status', 'retired')
-        .order('category', { ascending: false })
+        .order('category', { ascending: true })
         .order('display_name')
 
       if (vehiclesError) throw vehiclesError
@@ -273,13 +273,13 @@ export default function CalendarTab() {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 bg-gray-900 border border-gray-700 p-2 text-left text-white font-bold min-w-[180px]">
+                  <th className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-left text-white font-bold text-xs min-w-[140px]">
                     Veicolo
                   </th>
                   {daysInMonth.map(day => (
                     <th
                       key={day}
-                      className={`border border-gray-700 p-2 text-center text-xs font-semibold min-w-[32px] ${
+                      className={`border border-gray-700 px-1 py-1 text-center text-[10px] font-semibold min-w-[24px] ${
                         day === todayDay ? 'bg-dr7-gold/20 text-dr7-gold' : 'text-gray-400'
                       }`}
                     >
@@ -291,11 +291,11 @@ export default function CalendarTab() {
               <tbody>
                 {vehicles.map(vehicle => (
                   <tr key={vehicle.id}>
-                    <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 p-2 text-white font-medium text-sm">
-                      <div className="flex items-center gap-2">
-                        <span>{vehicle.display_name}</span>
+                    <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-medium text-xs">
+                      <div className="flex items-center gap-1">
+                        <span className="truncate">{vehicle.display_name}</span>
                         {vehicle.category && (
-                          <span className={`px-2 py-0.5 rounded text-xs ${
+                          <span className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap ${
                             vehicle.category === 'exotic'
                               ? 'bg-purple-900 text-purple-200'
                               : 'bg-cyan-900 text-cyan-200'
@@ -316,11 +316,11 @@ export default function CalendarTab() {
                             date: `${day}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`,
                             bookings: cellBookings
                           })}
-                          className={`border border-gray-700 p-1 min-w-[32px] h-10 transition-all ${
+                          className={`border border-gray-700 p-0.5 min-w-[24px] h-6 transition-all ${
                             status === 'rented'
                               ? 'bg-red-500 hover:bg-red-600 cursor-pointer'
                               : 'bg-green-500 hover:bg-green-600'
-                          } ${day === todayDay ? 'ring-2 ring-dr7-gold ring-inset' : ''}`}
+                          } ${day === todayDay ? 'ring-1 ring-dr7-gold ring-inset' : ''}`}
                           title={status === 'rented' ? `${vehicle.display_name} - Noleggiato` : `${vehicle.display_name} - Disponibile`}
                         />
                       )
