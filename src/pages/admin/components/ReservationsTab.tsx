@@ -199,10 +199,11 @@ export default function ReservationsTab() {
   async function loadData() {
     setLoading(true)
     try {
-      // Fetch bookings directly from Supabase
+      // Fetch bookings directly from Supabase (only car rentals, not car wash)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
+        .or('service_type.is.null,service_type.eq.car_rental')
         .order('created_at', { ascending: false })
 
       if (bookingsError) {
