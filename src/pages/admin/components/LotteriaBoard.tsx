@@ -9,30 +9,41 @@ function generateTicketUuid(ticketNumber: number): string {
 }
 
 // Send WhatsApp notification to admin
-async function sendWhatsAppNotification(ticketNumbers: number[], fullName: string, email: string, phone: string, isManual: boolean = false) {
+async function sendWhatsAppNotification(ticketNumbers: number[], fullName: string, email: string, phone: string, isManual: boolean = false): Promise<{ success: boolean; error?: string }> {
   try {
     const ticketList = ticketNumbers.map(n => `#${String(n).padStart(4, '0')}`).join(', ');
-    const message = `🎰 NUOVO BIGLIETTO LOTTERIA!\n\n` +
-      `Biglietto${ticketNumbers.length > 1 ? 'i' : ''}: ${ticketList}\n` +
-      `Cliente: ${fullName}\n` +
-      `Email: ${email}\n` +
-      `Telefono: ${phone}\n` +
-      `Tipo: ${isManual ? 'Vendita Manuale (Admin)' : 'Acquisto Online'}\n` +
-      `Data: ${new Date().toLocaleString('it-IT')}`;
 
-    await fetch('/.netlify/functions/send-whatsapp-notification', {
+    console.log('[WhatsApp] Sending notification for tickets:', ticketList);
+
+    const response = await fetch('/.netlify/functions/send-whatsapp-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message,
         type: 'lottery_ticket',
         ticketNumbers,
         customerInfo: { fullName, email, phone }
       })
     });
-  } catch (error) {
-    console.error('Error sending WhatsApp notification:', error);
-    // Don't throw - notification failure shouldn't block ticket sale
+
+    console.log('[WhatsApp] Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[WhatsApp] Error response:', errorText);
+      return { success: false, error: `HTTP ${response.status}: ${errorText}` };
+    }
+
+    const result = await response.json();
+    console.log('[WhatsApp] Success:', result);
+
+    if (result.success) {
+      return { success: true };
+    } else {
+      return { success: false, error: result.message || 'Unknown error' };
+    }
+  } catch (error: any) {
+    console.error('[WhatsApp] Exception:', error);
+    return { success: false, error: error.message || 'Network error' };
   }
 }
 
@@ -255,18 +266,31 @@ const LotteriaBoard: React.FC = () => {
       setGeneratingPdf(false);
 
       // Send WhatsApp notification for successfully sold tickets
+      let whatsappResult = { success: true, error: '' };
       if (successCount > 0) {
         const soldTicketNumbers = ticketNumbers.filter(n => !failedTickets.includes(n));
-        await sendWhatsAppNotification(soldTicketNumbers, fullName, email, phone, true);
+        whatsappResult = await sendWhatsAppNotification(soldTicketNumbers, fullName, email, phone, true);
+        if (!whatsappResult.success) {
+          console.warn('[WhatsApp] Failed to send notification:', whatsappResult.error);
+        }
       }
 
+      // Build alert message
+      let message = '';
       if (successCount > 0 && failedTickets.length === 0) {
-        alert(`✅ ${successCount} biglietti venduti con successo!\n\nPDF inviati a: ${email}`);
+        message = `✅ ${successCount} biglietti venduti con successo!\n\nPDF inviati a: ${email}`;
       } else if (successCount > 0 && failedTickets.length > 0) {
-        alert(`⚠️ ${successCount} biglietti venduti.\n\n❌ ${failedTickets.length} biglietti già venduti:\n${failedTickets.map(n => '#' + String(n).padStart(4, '0')).join(', ')}`);
+        message = `⚠️ ${successCount} biglietti venduti.\n\n❌ ${failedTickets.length} biglietti già venduti:\n${failedTickets.map(n => '#' + String(n).padStart(4, '0')).join(', ')}`;
       } else {
-        alert(`❌ Nessun biglietto venduto. Tutti i biglietti selezionati sono già stati venduti.`);
+        message = `❌ Nessun biglietto venduto. Tutti i biglietti selezionati sono già stati venduti.`;
       }
+
+      // Add WhatsApp warning if failed
+      if (successCount > 0 && !whatsappResult.success) {
+        message += `\n\n⚠️ ATTENZIONE: Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
+      }
+
+      alert(message);
 
       await fetchSoldTickets();
       setSelectedTicket(null);
@@ -326,7 +350,10 @@ const LotteriaBoard: React.FC = () => {
         setGeneratingPdf(true);
 
         // Send WhatsApp notification to admin
-        await sendWhatsAppNotification([ticketNumber], fullName, email, phone, true);
+        const whatsappResult = await sendWhatsAppNotification([ticketNumber], fullName, email, phone, true);
+        if (!whatsappResult.success) {
+          console.warn('[WhatsApp] Failed to send notification:', whatsappResult.error);
+        }
 
         try {
           console.log('[Lottery] Calling PDF generation function...');
@@ -347,15 +374,31 @@ const LotteriaBoard: React.FC = () => {
 
           setGeneratingPdf(false);
 
+          // Build success message with WhatsApp warning if needed
+          let message = `✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto!\n\n`;
+
           if (pdfResult.success) {
-            alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto!\n\nPDF inviato con successo a:\n${email}`);
+            message += `PDF inviato con successo a:\n${email}`;
           } else {
-            alert(`⚠️ Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: PDF non inviato automaticamente.\nMotivo: ${pdfResult.error}\n\nEmail: ${email}\nContatta il supporto per reinviare il PDF.`);
+            message += `⚠️ PDF non inviato automaticamente.\nMotivo: ${pdfResult.error}\n\nEmail: ${email}`;
           }
+
+          if (!whatsappResult.success) {
+            message += `\n\n⚠️ ATTENZIONE: Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
+          }
+
+          alert(message);
         } catch (pdfError: any) {
           setGeneratingPdf(false);
           console.error('Error sending PDF:', pdfError);
-          alert(`⚠️ Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: Errore nell'invio del PDF.\nErrore: ${pdfError.message || 'Network error'}\n\nEmail: ${email}\nContatta il supporto per reinviare il PDF.`);
+
+          let message = `⚠️ Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: Errore nell'invio del PDF.\nErrore: ${pdfError.message || 'Network error'}\n\nEmail: ${email}`;
+
+          if (!whatsappResult.success) {
+            message += `\n\n⚠️ Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
+          }
+
+          alert(message);
         }
       }
 
