@@ -71,9 +71,18 @@ const CAR_WASH_SERVICES = [
 ]
 
 const ADDITIONAL_SERVICES = [
-  { value: 'interior-sanification', label: 'Sanificazione interni (+€30)', price: 30 },
-  { value: 'engine-cleaning', label: 'Pulizia motore (+€50)', price: 50 },
-  { value: 'headlight-polish', label: 'Lucidatura fari (+€40)', price: 40 }
+  // Utilitaria di Cortesia
+  { value: 'courtesy-car-1h', label: 'Utilitaria di Cortesia - 1 ora (+€15)', price: 15 },
+  { value: 'courtesy-car-2h', label: 'Utilitaria di Cortesia - 2 ore (+€25)', price: 25 },
+  { value: 'courtesy-car-3h', label: 'Utilitaria di Cortesia - 3 ore (+€35)', price: 35 },
+  // Supercar Experience
+  { value: 'supercar-1h', label: 'Supercar Experience - 1 ora (+€59)', price: 59 },
+  { value: 'supercar-2h', label: 'Supercar Experience - 2 ore (+€99)', price: 99 },
+  { value: 'supercar-3h', label: 'Supercar Experience - 3 ore (+€139)', price: 139 },
+  // Lamborghini & Ferrari Experience
+  { value: 'lamborghini-ferrari-1h', label: 'Lamborghini & Ferrari Experience - 1 ora (+€149)', price: 149 },
+  { value: 'lamborghini-ferrari-2h', label: 'Lamborghini & Ferrari Experience - 2 ore (+€249)', price: 249 },
+  { value: 'lamborghini-ferrari-3h', label: 'Lamborghini & Ferrari Experience - 3 ore (+€299)', price: 299 }
 ]
 
 // Generate time slots for car wash: 9h-13h and 15h-18h, every 15 minutes
