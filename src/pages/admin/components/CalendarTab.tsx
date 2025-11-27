@@ -201,36 +201,36 @@ export default function CalendarTab() {
   return (
     <div className="space-y-6">
       {/* Header Controls */}
-      <div className="bg-gray-900 rounded-lg p-4 lg:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-white">Calendario Disponibilità Flotta</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Veicoli totali:</span>
-              <span className="text-dr7-gold font-bold text-lg">{vehicles.length}</span>
+      <div className="bg-gray-900 rounded-lg p-3 lg:p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-white">Calendario Flotta</h2>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400">Veicoli:</span>
+              <span className="text-dr7-gold font-bold text-sm">{vehicles.length}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => navigateMonth('prev')}
-              className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-xl font-bold"
+              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
               aria-label="Mese precedente"
             >
-              ← Mese Precedente
+              ← Precedente
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-xl font-bold"
+              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
               aria-label="Mese successivo"
             >
-              Mese Successivo →
+              Successivo →
             </button>
           </div>
         </div>
 
-        <div className="mt-4 text-center">
-          <h3 className="text-xl text-white capitalize font-semibold">{monthName}</h3>
+        <div className="mt-2 text-center">
+          <h3 className="text-base text-white capitalize font-semibold">{monthName}</h3>
         </div>
       </div>
 
