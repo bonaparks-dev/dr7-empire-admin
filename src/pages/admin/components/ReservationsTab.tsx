@@ -517,23 +517,37 @@ export default function ReservationsTab() {
     try {
       let customerId = formData.customer_id
 
-      // If creating new customer, create them first
+      // If creating new customer, create them first in the customers table
       if (newCustomerMode) {
-        const customerRes = await fetch(`${API_BASE}/customers`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${API_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(newCustomerData)
-        })
+        try {
+          const { data: newCustomer, error: customerError } = await supabase
+            .from('customers')
+            .insert([{
+              full_name: newCustomerData.full_name,
+              email: newCustomerData.email || null,
+              phone: newCustomerData.phone || null,
+              driver_license_number: newCustomerData.driver_license_number || null,
+              notes: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }])
+            .select()
+            .single()
 
-        if (!customerRes.ok) throw new Error('Failed to create customer')
-        const customerResult = await customerRes.json()
-        customerId = customerResult.data.id
+          if (customerError) {
+            console.error('Failed to create customer:', customerError)
+            throw new Error(`Failed to create customer: ${customerError.message}`)
+          }
+
+          customerId = newCustomer.id
+          console.log('✅ New customer created in customers table:', newCustomer)
+        } catch (error) {
+          console.error('Error creating customer:', error)
+          throw new Error('Failed to create customer: ' + (error as Error).message)
+        }
       }
 
-      const customerInfo = newCustomerMode ? newCustomerData : customers.find(c => c.id === customerId)
+      const customerInfo = newCustomerMode ? { ...newCustomerData, id: customerId } : customers.find(c => c.id === customerId)
 
       if (bookingType === 'carwash') {
         // Create appointment datetime for car wash
