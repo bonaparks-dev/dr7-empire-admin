@@ -279,11 +279,11 @@ const LotteriaBoard: React.FC = () => {
         <div className="flex gap-4 items-center">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-green-500 rounded"></div>
-            <span className="text-sm">Disponibile</span>
+            <span className="text-sm text-white font-medium">Disponibile</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-red-500 rounded"></div>
-            <span className="text-sm">Venduto</span>
+            <span className="text-sm text-white font-medium">Venduto</span>
           </div>
           <button
             onClick={fetchSoldTickets}
