@@ -131,6 +131,20 @@ const LotteriaBoard: React.FC = () => {
 
   const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string) => {
     try {
+      // Double-check ticket is still available before attempting sale
+      const { data: existingTicket } = await supabase
+        .from('commercial_operation_tickets')
+        .select('ticket_number')
+        .eq('ticket_number', ticketNumber)
+        .single();
+
+      if (existingTicket) {
+        alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è già stato venduto!`);
+        await fetchSoldTickets(); // Refresh to show current state
+        setSelectedTicket(null);
+        return;
+      }
+
       const uuid = generateTicketUuid(ticketNumber);
 
       const { error } = await supabase
@@ -148,15 +162,50 @@ const LotteriaBoard: React.FC = () => {
           quantity: 1
         }]);
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a duplicate key error (ticket was just sold)
+        if (error.code === '23505') {
+          alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
+        } else {
+          throw error;
+        }
+      } else {
+        // Successfully inserted ticket, now generate and send PDF
+        alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto! Generazione PDF...`);
 
-      // Refresh the board
+        try {
+          const pdfResponse = await fetch('https://dr7empire.com/.netlify/functions/send-manual-ticket-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ticketNumber,
+              email,
+              fullName,
+              phone
+            })
+          });
+
+          const pdfResult = await pdfResponse.json();
+
+          if (pdfResult.success) {
+            alert(`✅ PDF inviato con successo a ${email}!`);
+          } else {
+            alert(`⚠️ Biglietto salvato ma PDF non inviato: ${pdfResult.error}\nContatta il supporto per reinviare il PDF.`);
+          }
+        } catch (pdfError) {
+          console.error('Error sending PDF:', pdfError);
+          alert(`⚠️ Biglietto salvato ma errore nell'invio del PDF.\nContatta il supporto per reinviare il PDF a ${email}.`);
+        }
+      }
+
+      // Always refresh the board after attempt
       await fetchSoldTickets();
       setSelectedTicket(null);
-      alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto con successo a ${fullName}!`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving manual sale:', error);
-      alert('❌ Errore durante il salvataggio. Il biglietto potrebbe essere già venduto.');
+      alert(`❌ Errore: ${error.message || 'Errore durante il salvataggio.'}`);
+      await fetchSoldTickets(); // Refresh to show current state
+      setSelectedTicket(null);
     }
   };
 
