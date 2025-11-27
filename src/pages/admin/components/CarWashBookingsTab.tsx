@@ -67,11 +67,12 @@ export default function CarWashBookingsTab() {
   async function loadData() {
     setLoading(true)
     try {
-      // Load bookings
+      // Load bookings (exclude cancelled)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
         .eq('service_type', 'car_wash')
+        .neq('status', 'cancelled')
         .order('appointment_date', { ascending: false })
 
       if (bookingsError) throw bookingsError
@@ -99,108 +100,161 @@ export default function CarWashBookingsTab() {
     c.phone?.includes(customerSearchQuery)
   )
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleCancelBooking(bookingId: string, customerName: string) {
+    if (!confirm(`Sei sicuro di voler annullare la prenotazione di ${customerName}?`)) {
+      return
+    }
+
     try {
-      let customerName = ''
-      let customerEmail = ''
-      let customerPhone = ''
-
-      // If new customer mode, create the customer first
-      if (newCustomerMode) {
-        const { data: newCustomer, error: customerError } = await supabase
-          .from('customers')
-          .insert([{
-            full_name: newCustomerData.full_name,
-            email: newCustomerData.email || null,
-            phone: newCustomerData.phone || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single()
-
-        if (customerError) throw customerError
-
-        customerName = newCustomer.full_name
-        customerEmail = newCustomer.email || ''
-        customerPhone = newCustomer.phone || ''
-      } else {
-        // Get customer details from selected customer
-        const customer = customers.find(c => c.id === formData.customer_id)
-        if (!customer) throw new Error('Cliente non trovato')
-
-        customerName = customer.full_name
-        customerEmail = customer.email || ''
-        customerPhone = customer.phone || ''
-      }
-
-      const appointmentDateTime = `${formData.appointment_date}T${formData.appointment_time}:00`
-
-      // Calculate total price
-      let totalPrice = formData.price_total
-      if (formData.additional_service) {
-        const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
-        if (additionalService) {
-          totalPrice += additionalService.price
-        }
-      }
-
-      const bookingDetails: any = {
-        notes: formData.notes
-      }
-
-      if (formData.additional_service) {
-        const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
-        bookingDetails.additionalService = additionalService?.label || formData.additional_service
-      }
-
       const { error } = await supabase
         .from('bookings')
-        .insert([{
-          user_id: null, // Admin-created booking
-          guest_name: customerName,
-          guest_email: customerEmail,
-          guest_phone: customerPhone,
-          service_type: 'car_wash',
-          service_name: formData.service_name,
-          customer_name: customerName,
-          customer_email: customerEmail,
-          customer_phone: customerPhone,
-          appointment_date: appointmentDateTime,
-          appointment_time: formData.appointment_time,
-          price_total: totalPrice * 100, // Convert to cents
-          currency: 'EUR',
-          status: 'confirmed',
-          payment_status: 'paid',
-          booking_details: bookingDetails,
-          booked_at: new Date().toISOString()
-        }])
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId)
 
       if (error) throw error
 
-      alert('✅ Prenotazione creata con successo!')
-      setShowForm(false)
-      setNewCustomerMode(false)
-      setCustomerSearchQuery('')
-      setFormData({
-        customer_id: '',
-        service_name: '',
-        appointment_date: '',
-        appointment_time: '',
-        additional_service: '',
-        price_total: 0,
-        notes: ''
-      })
-      setNewCustomerData({
-        full_name: '',
-        email: '',
-        phone: ''
-      })
+      alert('✅ Prenotazione annullata con successo!')
       loadData()
     } catch (error: any) {
+      console.error('Failed to cancel booking:', error)
+      alert(`❌ Errore nell'annullamento: ${error.message}`)
+    }
+  }
+
+  async function createBooking(forceBooking: boolean = false) {
+    let customerName = ''
+    let customerEmail = ''
+    let customerPhone = ''
+
+    // If new customer mode, create the customer first
+    if (newCustomerMode) {
+      const { data: newCustomer, error: customerError } = await supabase
+        .from('customers')
+        .insert([{
+          full_name: newCustomerData.full_name,
+          email: newCustomerData.email || null,
+          phone: newCustomerData.phone || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single()
+
+      if (customerError) throw customerError
+
+      customerName = newCustomer.full_name
+      customerEmail = newCustomer.email || ''
+      customerPhone = newCustomer.phone || ''
+    } else {
+      // Get customer details from selected customer
+      const customer = customers.find(c => c.id === formData.customer_id)
+      if (!customer) throw new Error('Cliente non trovato')
+
+      customerName = customer.full_name
+      customerEmail = customer.email || ''
+      customerPhone = customer.phone || ''
+    }
+
+    const appointmentDateTime = `${formData.appointment_date}T${formData.appointment_time}:00`
+
+    // Calculate total price
+    let totalPrice = formData.price_total
+    if (formData.additional_service) {
+      const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
+      if (additionalService) {
+        totalPrice += additionalService.price
+      }
+    }
+
+    const bookingDetails: any = {
+      notes: formData.notes,
+      forceBooked: forceBooking
+    }
+
+    if (formData.additional_service) {
+      const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
+      bookingDetails.additionalService = additionalService?.label || formData.additional_service
+    }
+
+    const { error } = await supabase
+      .from('bookings')
+      .insert([{
+        user_id: null, // Admin-created booking
+        guest_name: customerName,
+        guest_email: customerEmail,
+        guest_phone: customerPhone,
+        service_type: 'car_wash',
+        service_name: formData.service_name,
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+        appointment_date: appointmentDateTime,
+        appointment_time: formData.appointment_time,
+        price_total: totalPrice * 100, // Convert to cents
+        currency: 'EUR',
+        status: 'confirmed',
+        payment_status: 'paid',
+        booking_details: bookingDetails,
+        booked_at: new Date().toISOString()
+      }])
+
+    if (error) throw error
+
+    alert('✅ Prenotazione creata con successo!')
+    setShowForm(false)
+    setNewCustomerMode(false)
+    setCustomerSearchQuery('')
+    setFormData({
+      customer_id: '',
+      service_name: '',
+      appointment_date: '',
+      appointment_time: '',
+      additional_service: '',
+      price_total: 0,
+      notes: ''
+    })
+    setNewCustomerData({
+      full_name: '',
+      email: '',
+      phone: ''
+    })
+    loadData()
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      await createBooking(false)
+    } catch (error: any) {
       console.error('Failed to create booking:', error)
-      alert(`❌ Errore nella creazione della prenotazione: ${error.message}`)
+
+      // Check if it's a time slot conflict error
+      const errorMessage = error.message || ''
+      if (errorMessage.includes('Car wash slot already booked') || errorMessage.includes('already booked')) {
+        // Extract time from error message
+        const timeMatch = errorMessage.match(/at (\d{2}:\d{2})/)
+        const time = timeMatch ? timeMatch[1] : formData.appointment_time
+
+        // Show confirmation dialog in Italian
+        const confirmed = confirm(
+          `⚠️ ATTENZIONE: Slot Occupato\n\n` +
+          `Esiste già una prenotazione per l'orario ${time} in questa data.\n\n` +
+          `Vuoi comunque creare questa prenotazione?\n\n` +
+          `• SI = Crea prenotazione ugualmente (doppia prenotazione)\n` +
+          `• NO = Annulla e scegli un altro orario`
+        )
+
+        if (confirmed) {
+          try {
+            await createBooking(true)
+          } catch (retryError: any) {
+            alert(`❌ Errore nella creazione della prenotazione: ${retryError.message}`)
+          }
+        }
+      } else {
+        // Other errors
+        alert(`❌ Errore nella creazione della prenotazione: ${errorMessage}`)
+      }
     }
   }
 
@@ -430,6 +484,7 @@ export default function CarWashBookingsTab() {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Data & Ora</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Prezzo</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Pagamento</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Azioni</th>
                 </tr>
               </thead>
               <tbody>
@@ -476,6 +531,20 @@ export default function CarWashBookingsTab() {
                       >
                         {booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {booking.status !== 'cancelled' ? (
+                        <button
+                          onClick={() => handleCancelBooking(booking.id, booking.customer_name)}
+                          className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
+                        >
+                          Annulla
+                        </button>
+                      ) : (
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-400">
+                          Annullata
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

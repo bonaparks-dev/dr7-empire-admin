@@ -28,6 +28,8 @@ export default function CustomersTab() {
   const [viewingDocuments, setViewingDocuments] = useState<Customer | null>(null)
   const [documentsUrls, setDocumentsUrls] = useState<{ license: string | null; id: string | null }>({ license: null, id: null })
   const [loadingDocuments, setLoadingDocuments] = useState(false)
+  const [uploadingLicense, setUploadingLicense] = useState(false)
+  const [uploadingId, setUploadingId] = useState(false)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -278,6 +280,62 @@ export default function CustomersTab() {
     }
   }
 
+  async function handleUploadLicense(file: File, userId: string) {
+    if (!file) return
+
+    setUploadingLicense(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `${userId}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('driver-licenses')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) throw uploadError
+
+      alert('Patente caricata con successo!')
+      await fetchCustomerDocuments(userId)
+    } catch (error: any) {
+      console.error('Error uploading license:', error)
+      alert('Errore nel caricamento della patente: ' + (error.message || JSON.stringify(error)))
+    } finally {
+      setUploadingLicense(false)
+    }
+  }
+
+  async function handleUploadId(file: File, userId: string) {
+    if (!file) return
+
+    setUploadingId(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `${userId}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('driver-ids')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) throw uploadError
+
+      alert('Documento d\'identità caricato con successo!')
+      await fetchCustomerDocuments(userId)
+    } catch (error: any) {
+      console.error('Error uploading ID:', error)
+      alert('Errore nel caricamento del documento: ' + (error.message || JSON.stringify(error)))
+    } finally {
+      setUploadingId(false)
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
   }
@@ -402,10 +460,37 @@ export default function CustomersTab() {
                         <img
                           src={documentsUrls.license}
                           alt="Patente di guida"
-                          className="w-full rounded border border-gray-600"
+                          className="w-full rounded border border-gray-600 mb-3"
                         />
                       ) : (
-                        <p className="text-sm text-gray-500 italic">Nessun documento caricato</p>
+                        <p className="text-sm text-gray-500 italic mb-3">Nessun documento caricato</p>
+                      )}
+                      {/* Upload Section */}
+                      {viewingDocuments.id && viewingDocuments.id.length > 10 && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <label className="block">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file && viewingDocuments.id) {
+                                  handleUploadLicense(file, viewingDocuments.id)
+                                }
+                              }}
+                              className="hidden"
+                              disabled={uploadingLicense}
+                              id="license-upload"
+                            />
+                            <span className={`inline-block px-4 py-2 rounded text-sm font-medium text-center w-full cursor-pointer ${
+                              uploadingLicense
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-dr7-gold text-black hover:bg-dr7-gold/90'
+                            }`}>
+                              {uploadingLicense ? 'Caricamento...' : '📤 Carica Nuova Patente'}
+                            </span>
+                          </label>
+                        </div>
                       )}
                     </div>
 
@@ -428,10 +513,37 @@ export default function CustomersTab() {
                         <img
                           src={documentsUrls.id}
                           alt="Carta d'identità"
-                          className="w-full rounded border border-gray-600"
+                          className="w-full rounded border border-gray-600 mb-3"
                         />
                       ) : (
-                        <p className="text-sm text-gray-500 italic">Nessun documento caricato</p>
+                        <p className="text-sm text-gray-500 italic mb-3">Nessun documento caricato</p>
+                      )}
+                      {/* Upload Section */}
+                      {viewingDocuments.id && viewingDocuments.id.length > 10 && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <label className="block">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file && viewingDocuments.id) {
+                                  handleUploadId(file, viewingDocuments.id)
+                                }
+                              }}
+                              className="hidden"
+                              disabled={uploadingId}
+                              id="id-upload"
+                            />
+                            <span className={`inline-block px-4 py-2 rounded text-sm font-medium text-center w-full cursor-pointer ${
+                              uploadingId
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-dr7-gold text-black hover:bg-dr7-gold/90'
+                            }`}>
+                              {uploadingId ? 'Caricamento...' : '📤 Carica Nuovo Documento'}
+                            </span>
+                          </label>
+                        </div>
                       )}
                     </div>
                   </div>

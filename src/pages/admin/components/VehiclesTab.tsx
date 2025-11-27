@@ -60,8 +60,11 @@ export default function VehiclesTab() {
     e.preventDefault()
     try {
       const dataToSave = {
-        ...formData,
-        daily_rate: parseFloat(formData.daily_rate)
+        display_name: formData.display_name,
+        plate: formData.plate || null,
+        status: formData.status,
+        daily_rate: parseFloat(formData.daily_rate),
+        category: formData.category
       }
 
       if (editingId) {
@@ -83,9 +86,9 @@ export default function VehiclesTab() {
       setEditingId(null)
       resetForm()
       loadVehicles()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save vehicle:', error)
-      alert('Impossibile salvare il veicolo')
+      alert('Impossibile salvare il veicolo: ' + (error.message || JSON.stringify(error)))
     }
   }
 

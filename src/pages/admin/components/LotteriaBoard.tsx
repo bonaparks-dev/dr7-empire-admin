@@ -8,6 +8,34 @@ function generateTicketUuid(ticketNumber: number): string {
   return `manual-${ticketNumber}-${timestamp}-${random}`;
 }
 
+// Send WhatsApp notification to admin
+async function sendWhatsAppNotification(ticketNumbers: number[], fullName: string, email: string, phone: string, isManual: boolean = false) {
+  try {
+    const ticketList = ticketNumbers.map(n => `#${String(n).padStart(4, '0')}`).join(', ');
+    const message = `🎰 NUOVO BIGLIETTO LOTTERIA!\n\n` +
+      `Biglietto${ticketNumbers.length > 1 ? 'i' : ''}: ${ticketList}\n` +
+      `Cliente: ${fullName}\n` +
+      `Email: ${email}\n` +
+      `Telefono: ${phone}\n` +
+      `Tipo: ${isManual ? 'Vendita Manuale (Admin)' : 'Acquisto Online'}\n` +
+      `Data: ${new Date().toLocaleString('it-IT')}`;
+
+    await fetch('/.netlify/functions/send-whatsapp-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        type: 'lottery_ticket',
+        ticketNumbers,
+        customerInfo: { fullName, email, phone }
+      })
+    });
+  } catch (error) {
+    console.error('Error sending WhatsApp notification:', error);
+    // Don't throw - notification failure shouldn't block ticket sale
+  }
+}
+
 interface Ticket {
   ticket_number: number;
   email: string;
@@ -223,6 +251,12 @@ const LotteriaBoard: React.FC = () => {
 
       setGeneratingPdf(false);
 
+      // Send WhatsApp notification for successfully sold tickets
+      if (successCount > 0) {
+        const soldTicketNumbers = ticketNumbers.filter(n => !failedTickets.includes(n));
+        await sendWhatsAppNotification(soldTicketNumbers, fullName, email, phone, true);
+      }
+
       if (successCount > 0 && failedTickets.length === 0) {
         alert(`✅ ${successCount} biglietti venduti con successo!\n\nPDF inviati a: ${email}`);
       } else if (successCount > 0 && failedTickets.length > 0) {
@@ -287,6 +321,9 @@ const LotteriaBoard: React.FC = () => {
         // Successfully inserted ticket, now generate and send PDF
         console.log(`[Lottery] Ticket ${ticketNumber} inserted, generating PDF...`);
         setGeneratingPdf(true);
+
+        // Send WhatsApp notification to admin
+        await sendWhatsAppNotification([ticketNumber], fullName, email, phone, true);
 
         try {
           console.log('[Lottery] Calling PDF generation function...');
