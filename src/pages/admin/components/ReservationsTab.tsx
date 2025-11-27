@@ -138,11 +138,11 @@ export default function ReservationsTab() {
     return_time: '',
     pickup_location: 'dr7_office',
     dropoff_location: 'dr7_office',
-    status: 'pending',
+    status: 'confirmed',
     source: 'admin',
     total_amount: '0',
     amount_paid: '0',
-    payment_status: 'pending',
+    payment_status: 'paid',
     currency: 'EUR'
   })
 
