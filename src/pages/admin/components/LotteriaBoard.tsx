@@ -97,6 +97,7 @@ const LotteriaBoard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [hoveredTicket, setHoveredTicket] = useState<number | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<number | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const fetchSoldTickets = async () => {
     try {
@@ -171,9 +172,11 @@ const LotteriaBoard: React.FC = () => {
         }
       } else {
         // Successfully inserted ticket, now generate and send PDF
-        alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto! Generazione PDF...`);
+        console.log(`[Lottery] Ticket ${ticketNumber} inserted, generating PDF...`);
+        setGeneratingPdf(true);
 
         try {
+          console.log('[Lottery] Calling PDF generation function...');
           const pdfResponse = await fetch('https://dr7empire.com/.netlify/functions/send-manual-ticket-pdf', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -185,16 +188,21 @@ const LotteriaBoard: React.FC = () => {
             })
           });
 
+          console.log('[Lottery] PDF function response status:', pdfResponse.status);
           const pdfResult = await pdfResponse.json();
+          console.log('[Lottery] PDF function result:', pdfResult);
+
+          setGeneratingPdf(false);
 
           if (pdfResult.success) {
-            alert(`✅ PDF inviato con successo a ${email}!`);
+            alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto!\n\nPDF inviato con successo a:\n${email}`);
           } else {
-            alert(`⚠️ Biglietto salvato ma PDF non inviato: ${pdfResult.error}\nContatta il supporto per reinviare il PDF.`);
+            alert(`⚠️ Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: PDF non inviato automaticamente.\nMotivo: ${pdfResult.error}\n\nEmail: ${email}\nContatta il supporto per reinviare il PDF.`);
           }
-        } catch (pdfError) {
+        } catch (pdfError: any) {
+          setGeneratingPdf(false);
           console.error('Error sending PDF:', pdfError);
-          alert(`⚠️ Biglietto salvato ma errore nell'invio del PDF.\nContatta il supporto per reinviare il PDF a ${email}.`);
+          alert(`⚠️ Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: Errore nell'invio del PDF.\nErrore: ${pdfError.message || 'Network error'}\n\nEmail: ${email}\nContatta il supporto per reinviare il PDF.`);
         }
       }
 
@@ -310,6 +318,16 @@ const LotteriaBoard: React.FC = () => {
           onClose={() => setSelectedTicket(null)}
           onConfirm={handleManualSale}
         />
+      )}
+
+      {generatingPdf && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <h3 className="text-xl font-bold mb-2">Generazione PDF in corso...</h3>
+            <p className="text-gray-600">Invio email al cliente</p>
+          </div>
+        </div>
       )}
     </div>
   );
