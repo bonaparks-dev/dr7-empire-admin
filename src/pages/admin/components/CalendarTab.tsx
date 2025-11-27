@@ -166,10 +166,6 @@ export default function CalendarTab() {
     })
   }
 
-  const goToToday = () => {
-    setCurrentDate(new Date())
-  }
-
   const monthName = currentDate.toLocaleDateString('it-IT', {
     month: 'long',
     year: 'numeric'
@@ -201,26 +197,20 @@ export default function CalendarTab() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <h2 className="text-2xl font-bold text-white">Calendario Disponibilità Flotta</h2>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => navigateMonth('prev')}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-xl"
+              className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-xl font-bold"
               aria-label="Mese precedente"
             >
-              ←
-            </button>
-            <button
-              onClick={goToToday}
-              className="px-6 py-2 bg-dr7-gold hover:bg-yellow-500 text-black font-semibold rounded-md transition-colors"
-            >
-              Oggi
+              ← Mese Precedente
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-xl"
+              className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-xl font-bold"
               aria-label="Mese successivo"
             >
-              →
+              Mese Successivo →
             </button>
           </div>
         </div>
