@@ -227,16 +227,6 @@ export default function CalendarTab() {
                 <span className="text-white text-sm">Veicoli totali:</span>
                 <span className="text-dr7-gold font-bold text-lg">{vehicles.length}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white text-sm">Prenotazioni attive:</span>
-                <span className="text-dr7-gold font-bold text-lg">{bookings.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white text-sm">Veicoli con prenotazioni:</span>
-                <span className="text-dr7-gold font-bold text-lg">
-                  {new Set(bookings.map(b => b.vehicle_name?.trim().toLowerCase())).size}
-                </span>
-              </div>
             </div>
           </div>
 
