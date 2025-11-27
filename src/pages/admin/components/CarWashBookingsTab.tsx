@@ -425,7 +425,6 @@ export default function CarWashBookingsTab() {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Servizio</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Data & Ora</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Prezzo</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Stato</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-300">Pagamento</th>
                 </tr>
               </thead>
@@ -466,27 +465,12 @@ export default function CarWashBookingsTab() {
                     <td className="px-4 py-3 text-sm">
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-900 text-green-300'
-                            : booking.status === 'pending'
-                            ? 'bg-yellow-900 text-yellow-300'
-                            : booking.status === 'cancelled'
-                            ? 'bg-red-900 text-red-300'
-                            : 'bg-gray-700 text-gray-300'
-                        }`}
-                      >
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
                           booking.payment_status === 'completed' || booking.payment_status === 'paid'
                             ? 'bg-green-900 text-green-300'
-                            : 'bg-yellow-900 text-yellow-300'
+                            : 'bg-red-900 text-red-300'
                         }`}
                       >
-                        {booking.payment_status}
+                        {booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}
                       </span>
                     </td>
                   </tr>

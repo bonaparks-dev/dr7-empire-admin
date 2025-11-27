@@ -637,7 +637,7 @@ export default function ReservationsTab() {
         }
 
         // Note: Removed duplicate reservation creation - bookings table is the single source of truth
-      }
+
 
       setShowForm(false)
       setEditingId(null)
