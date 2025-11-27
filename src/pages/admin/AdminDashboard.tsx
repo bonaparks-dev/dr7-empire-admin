@@ -73,7 +73,7 @@ export default function AdminDashboard() {
                 { id: 'carwash-calendar', label: 'Calendario Lavaggi', icon: '🧼' },
                 { id: 'customers', label: 'Clienti', icon: '👥' },
                 { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
-                { id: 'calendar', label: 'Calendario', icon: '📅' },
+                { id: 'calendar', label: 'Calendario Noleggio', icon: '📅' },
                 { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
                 { id: 'fattura', label: 'Fatture', icon: '📄' }
               ].map((tab) => (
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                📅 Calendario
+                📅 Calendario Noleggio
               </button>
               <button
                 onClick={() => setActiveTab('lotteria')}
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
             {activeTab === 'carwash-calendar' && '🧼 Calendario Lavaggi'}
             {activeTab === 'customers' && '👥 Clienti'}
             {activeTab === 'vehicles' && '🚙 Veicoli'}
-            {activeTab === 'calendar' && '📅 Calendario'}
+            {activeTab === 'calendar' && '📅 Calendario Noleggio'}
             {activeTab === 'lotteria' && '🎰 Biglietti Lotteria'}
             {activeTab === 'fattura' && '📄 Fatture'}
           </h2>
