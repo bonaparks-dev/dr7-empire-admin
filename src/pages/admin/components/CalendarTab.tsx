@@ -5,7 +5,7 @@ interface Vehicle {
   id: string
   display_name: string
   status: string
-  category: 'exotic' | 'urban' | null
+  category: 'exotic' | 'urban' | 'aziendali' | null
 }
 
 interface Booking {
@@ -258,7 +258,9 @@ export default function CalendarTab() {
                           <span className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
                             vehicle.category === 'exotic'
                               ? 'bg-purple-900 text-purple-200'
-                              : 'bg-cyan-900 text-cyan-200'
+                              : vehicle.category === 'urban'
+                              ? 'bg-cyan-900 text-cyan-200'
+                              : 'bg-orange-900 text-orange-200'
                           }`}>
                             {vehicle.category}
                           </span>

@@ -10,7 +10,7 @@ interface Vehicle {
   plate: string | null
   status: 'available' | 'unavailable' | 'rented' | 'maintenance' | 'retired'
   daily_rate: number
-  category: 'exotic' | 'urban' | null
+  category: 'exotic' | 'urban' | 'aziendali' | null
   metadata: Record<string, any> | null
   created_at: string
   updated_at: string
@@ -185,9 +185,11 @@ export default function VehiclesTab() {
   // Separate vehicles by category
   const exoticVehicles = vehicles.filter(v => v.category === 'exotic')
   const urbanVehicles = vehicles.filter(v => v.category === 'urban')
+  const aziendaliVehicles = vehicles.filter(v => v.category === 'aziendali')
 
   const exoticCount = exoticVehicles.length
   const urbanCount = urbanVehicles.length
+  const aziendaliCount = aziendaliVehicles.length
 
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
@@ -199,7 +201,7 @@ export default function VehiclesTab() {
         <div>
           <h2 className="text-2xl font-bold text-white">Veicoli</h2>
           <p className="text-sm text-gray-400 mt-1">
-            Exotic Supercars: {exoticCount} | Urban: {urbanCount} | Totale: {vehicles.length}
+            Exotic Supercars: {exoticCount} | Urban: {urbanCount} | Aziendali: {aziendaliCount} | Totale: {vehicles.length}
           </p>
         </div>
         <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
@@ -287,7 +289,8 @@ export default function VehiclesTab() {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               options={[
                 { value: 'exotic', label: 'Exotic Supercars' },
-                { value: 'urban', label: 'Urban' }
+                { value: 'urban', label: 'Urban' },
+                { value: 'aziendali', label: 'Aziendali' }
               ]}
             />
             <Select
