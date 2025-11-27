@@ -97,10 +97,12 @@ const generateTimeSlots = () => {
     }
   }
 
-  // Afternoon slots: 15h-18h (includes 18:00 as last slot for Lavaggio Completo)
-  for (let hour = 15; hour <= 18; hour++) {
+  // Afternoon slots: 15h-18h (18:00 is the maximum/last slot)
+  for (let hour = 15; hour < 19; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+      // Stop at 18:00 - no slots after
+      if (hour === 18 && minute > 0) break
       slots.push(time)
     }
   }
