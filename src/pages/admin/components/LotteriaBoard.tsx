@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 
 // Generate UUID for ticket
-function generateTicketUuid(ticketNumber: number, email: string): string {
+function generateTicketUuid(ticketNumber: number): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
   return `manual-${ticketNumber}-${timestamp}-${random}`;
@@ -131,7 +131,7 @@ const LotteriaBoard: React.FC = () => {
 
   const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string) => {
     try {
-      const uuid = generateTicketUuid(ticketNumber, email);
+      const uuid = generateTicketUuid(ticketNumber);
 
       const { error } = await supabase
         .from('commercial_operation_tickets')
