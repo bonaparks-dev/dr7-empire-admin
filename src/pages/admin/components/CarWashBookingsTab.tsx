@@ -102,7 +102,6 @@ export default function CarWashBookingsTab() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      let customerId = formData.customer_id
       let customerName = ''
       let customerEmail = ''
       let customerPhone = ''
@@ -123,7 +122,6 @@ export default function CarWashBookingsTab() {
 
         if (customerError) throw customerError
 
-        customerId = newCustomer.id
         customerName = newCustomer.full_name
         customerEmail = newCustomer.email || ''
         customerPhone = newCustomer.phone || ''

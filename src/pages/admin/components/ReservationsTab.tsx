@@ -127,7 +127,6 @@ export default function ReservationsTab() {
     }
   `
 
-  const [bookingType, setBookingType] = useState<'rental' | 'carwash'>('rental')
   const [formData, setFormData] = useState({
     customer_id: '',
     vehicle_id: '',
@@ -145,15 +144,6 @@ export default function ReservationsTab() {
     currency: 'EUR'
   })
 
-  const [carWashData, setCarWashData] = useState({
-    service_name: '',
-    appointment_date: '',
-    appointment_time: '',
-    additional_service: '',
-    additional_service_hours: '1',
-    notes: ''
-  })
-
   const [newCustomerMode, setNewCustomerMode] = useState(false)
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
   const [newCustomerData, setNewCustomerData] = useState({
@@ -162,18 +152,6 @@ export default function ReservationsTab() {
     phone: '',
     driver_license_number: ''
   })
-
-  const CAR_WASH_SERVICES = [
-    { id: 'full-clean', name: 'LAVAGGIO COMPLETO', price: 25 },
-    { id: 'top-shine', name: 'LAVAGGIO TOP', price: 49 },
-    { id: 'vip', name: 'LAVAGGIO VIP', price: 75 },
-    { id: 'dr7-luxury', name: 'LAVAGGIO DR7 LUXURY', price: 99 }
-  ]
-
-  const TIME_SLOTS = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
-    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'
-  ]
 
   // Auto-calculate return time (pickup time - 1h30 like main website)
   const calculateReturnTime = (pickupTime: string): string => {
@@ -550,137 +528,18 @@ export default function ReservationsTab() {
 
       const customerInfo = newCustomerMode ? { ...newCustomerData, id: customerId } : customers.find(c => c.id === customerId)
 
-      if (bookingType === 'carwash') {
-        // Create appointment datetime for car wash
-        const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
+      // Create or update vehicle rental booking in bookings table (for website availability blocking)
+      const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
 
-        // MATCH CAR RENTAL BOOKING STRUCTURE - same pattern for guest bookings
-        // Build timestamp: 2025-01-17 - Force rebuild to include guest fields
-        const carWashBookingData = {
-          user_id: null, // Set to null for admin-created bookings
-          guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
-          guest_email: customerInfo?.email || null,
-          guest_phone: customerInfo?.phone || null,
-          vehicle_type: 'car', // MUST be 'car' not 'service'
-          vehicle_name: 'Car Wash Service',
-          service_type: 'car_wash',
-          service_name: carWashData.service_name,
-          appointment_date: appointmentDateTime.toISOString(),
-          appointment_time: carWashData.appointment_time,
-          price_total: Math.round(parseFloat(formData.total_amount) * 100),
-          currency: formData.currency.toUpperCase(),
-          status: formData.status,
-          payment_status: formData.status === 'confirmed' ? 'completed' : 'pending',
-          payment_method: 'agency',
-          customer_name: customerInfo?.full_name || 'N/A',
-          customer_email: customerInfo?.email || null,
-          customer_phone: customerInfo?.phone || null,
-          booked_at: editingId ? undefined : new Date().toISOString(),
-          booking_source: 'admin', // Mark as admin booking
-          booking_details: {
-            customer: {
-              fullName: customerInfo?.full_name || '',
-              email: customerInfo?.email || '',
-              phone: customerInfo?.phone || '',
-              customerId: customerId
-            },
-            additionalService: carWashData.additional_service || null,
-            notes: carWashData.notes || null,
-            source: 'admin_manual'
-          }
-        }
+      // Get location labels
+      const pickupLocationLabel = LOCATIONS.find(l => l.value === formData.pickup_location)?.label || formData.pickup_location
+      const dropoffLocationLabel = LOCATIONS.find(l => l.value === formData.dropoff_location)?.label || formData.dropoff_location
 
-        console.log(editingId ? 'Updating car wash booking' : 'Creating car wash booking', 'with data:', carWashBookingData)
+      // Combine date and time
+      const pickupDateTime = `${formData.pickup_date}T${formData.pickup_time}:00`
+      const returnDateTime = `${formData.return_date}T${formData.return_time}:00`
 
-        let insertedData
-        if (editingId) {
-          // Update existing booking
-          const { error: carWashError, data } = await supabase
-            .from('bookings')
-            .update(carWashBookingData)
-            .eq('id', editingId)
-            .select()
-            .single()
-
-          if (carWashError) {
-            console.error('Failed to update car wash booking:', carWashError)
-            console.error('Error details:', JSON.stringify(carWashError, null, 2))
-            alert(`Failed to update car wash booking: ${carWashError.message || JSON.stringify(carWashError)}`)
-            throw new Error('Failed to update car wash booking')
-          }
-          insertedData = data
-          console.log('Car wash booking updated successfully:', insertedData)
-        } else {
-          // Create new booking - same pattern as car rental
-          const { error: carWashError, data } = await supabase
-            .from('bookings')
-            .insert([carWashBookingData])
-            .select()
-            .single()
-
-          if (carWashError) {
-            console.error('Failed to create car wash booking:', carWashError)
-            console.error('Error details:', JSON.stringify(carWashError, null, 2))
-            alert(`Failed to create car wash booking: ${carWashError.message || JSON.stringify(carWashError)}`)
-            throw new Error('Failed to create car wash booking')
-          }
-          insertedData = data
-          console.log('Car wash booking created successfully:', insertedData)
-        }
-
-        // Create Google Calendar event for car wash
-        try {
-          const appointmentDateTime = new Date(`${carWashData.appointment_date}T${carWashData.appointment_time}:00`)
-
-          // Calculate proper end time based on service price
-          const priceInCents = Math.round(parseFloat(formData.total_amount) * 100)
-          const priceToDuration: Record<number, number> = {
-            2500: 0.75,  // 25€ = 30-45 min (use 45 min = 0.75hr)
-            4900: 1.25,  // 49€ = 1-1.5 hrs (use 1.5hr)
-            7500: 3,     // 75€ VIP = 3 hours
-            9900: 4      // 99€ DR7 LUXURY = 4 hours
-          }
-          const durationHours = priceToDuration[priceInCents] || 1
-
-          const endDateTime = new Date(appointmentDateTime)
-          endDateTime.setMinutes(endDateTime.getMinutes() + (durationHours * 60))
-
-          await fetch('/.netlify/functions/create-calendar-event', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              vehicleName: `🚿 LUXURY WASH - ${carWashData.service_name}`,
-              customerName: customerInfo?.full_name || '',
-              customerEmail: customerInfo?.email || '',
-              customerPhone: customerInfo?.phone || '',
-              pickupDate: appointmentDateTime.toISOString().split('T')[0],
-              pickupTime: appointmentDateTime.toTimeString().substring(0, 5),
-              returnDate: endDateTime.toISOString().split('T')[0],
-              returnTime: endDateTime.toTimeString().substring(0, 5),
-              pickupLocation: 'DR7 Office - Car Wash',
-              returnLocation: 'DR7 Office - Car Wash',
-              totalPrice: parseFloat(formData.total_amount),
-              bookingId: insertedData?.[0]?.id?.substring(0, 8)
-            })
-          })
-          console.log('✅ Car wash calendar event created successfully')
-        } catch (calendarError) {
-          console.error('⚠️ Failed to create car wash calendar event:', calendarError)
-          // Don't fail the whole booking if calendar fails
-        }
-      } else {
-        // Create or update vehicle rental booking in bookings table (for website availability blocking)
-        const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
-
-        // Get location labels
-        const pickupLocationLabel = LOCATIONS.find(l => l.value === formData.pickup_location)?.label || formData.pickup_location
-        const dropoffLocationLabel = LOCATIONS.find(l => l.value === formData.dropoff_location)?.label || formData.dropoff_location
-
-        // Combine date and time
-        const pickupDateTime = `${formData.pickup_date}T${formData.pickup_time}:00`
-        const returnDateTime = `${formData.return_date}T${formData.return_time}:00`
-
-        const bookingData = {
+      const bookingData = {
           user_id: null, // Set to null for admin-created bookings
           guest_name: customerInfo?.full_name || 'N/A', // Required for guest bookings
           guest_email: customerInfo?.email || null,
@@ -877,26 +736,6 @@ export default function ReservationsTab() {
           </h3>
 
           {/* Booking Type Selection - Mobile Optimized */}
-          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-dr7-darker rounded-lg border border-gray-700">
-            <label className="block text-white font-semibold mb-3 text-sm sm:text-base">Tipo Prenotazione:</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setBookingType('rental')}
-                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'rental' ? 'bg-dr7-gold text-dr7-darker' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
-              >
-                🚗 Noleggio
-              </button>
-              <button
-                type="button"
-                onClick={() => setBookingType('carwash')}
-                className={`px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${bookingType === 'carwash' ? 'bg-dr7-gold text-dr7-darker' : 'bg-gray-700 text-white hover:bg-gray-600'}`}
-              >
-                🚿 Lavaggio
-              </button>
-            </div>
-          </div>
-
           {/* Customer Selection - Mobile Optimized */}
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-dr7-darker rounded-lg border border-gray-700">
             <label className="block text-white font-semibold mb-3 text-sm sm:text-base">Cliente:</label>
@@ -998,9 +837,8 @@ export default function ReservationsTab() {
             )}
           </div>
 
-          {/* Service Details - Different for rental vs car wash */}
-          {bookingType === 'rental' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Service Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
                 label="Veicolo"
                 required
@@ -1095,114 +933,6 @@ export default function ReservationsTab() {
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
               />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select
-                label="Servizio Autolavaggio"
-                required
-                value={carWashData.service_name}
-                onChange={(e) => {
-                  const selectedService = CAR_WASH_SERVICES.find(s => s.name === e.target.value)
-                  setCarWashData({ ...carWashData, service_name: e.target.value })
-                  if (selectedService) {
-                    setFormData({ ...formData, total_amount: selectedService.price.toString() })
-                  }
-                }}
-                options={[
-                  { value: '', label: 'Seleziona servizio...' },
-                  ...CAR_WASH_SERVICES.map(s => ({ value: s.name, label: `${s.name} - €${s.price}` }))
-                ]}
-              />
-              <Input
-                label="📅 Data Appuntamento"
-                type="date"
-                required
-                value={carWashData.appointment_date}
-                onChange={(e) => setCarWashData({ ...carWashData, appointment_date: e.target.value })}
-              />
-              <Select
-                label="🕐 Ora Appuntamento"
-                required
-                value={carWashData.appointment_time}
-                onChange={(e) => setCarWashData({ ...carWashData, appointment_time: e.target.value })}
-                options={[
-                  { value: '', label: 'Seleziona orario...' },
-                  ...TIME_SLOTS.map(slot => ({ value: slot, label: slot }))
-                ]}
-              />
-              <Select
-                label="Servizio Aggiuntivo"
-                value={carWashData.additional_service}
-                onChange={(e) => {
-                  setCarWashData({ ...carWashData, additional_service: e.target.value })
-                  // Reset hours when changing service
-                  if (!e.target.value) {
-                    setCarWashData(prev => ({ ...prev, additional_service_hours: '1' }))
-                  }
-                }}
-                options={[
-                  { value: '', label: 'Nessuno' },
-                  { value: 'courtesy-car', label: 'Utilitaria di Cortesia (€15/h - €25/2h - €35/3h)' },
-                  { value: 'supercar', label: 'Supercar Experience (€59/h - €99/2h - €139/3h)' },
-                  { value: 'lambo-ferrari', label: 'Lamborghini & Ferrari Experience (€149/h - €249/2h - €299/3h)' }
-                ]}
-              />
-              {carWashData.additional_service && (
-                <Select
-                  label="Durata Servizio Aggiuntivo"
-                  value={carWashData.additional_service_hours}
-                  onChange={(e) => {
-                    setCarWashData({ ...carWashData, additional_service_hours: e.target.value })
-                    // Update total based on service and hours
-                    const servicePrices: Record<string, number[]> = {
-                      'courtesy-car': [15, 25, 35],
-                      'supercar': [59, 99, 139],
-                      'lambo-ferrari': [149, 249, 299]
-                    }
-                    const hourIndex = parseInt(e.target.value) - 1
-                    const additionalPrice = servicePrices[carWashData.additional_service]?.[hourIndex] || 0
-                    const basePrice = parseFloat(formData.total_amount) || 0
-                    setFormData({ ...formData, total_amount: (basePrice + additionalPrice).toString() })
-                  }}
-                  options={[
-                    { value: '1', label: '1 ora' },
-                    { value: '2', label: '2 ore' },
-                    { value: '3', label: '3 ore' }
-                  ]}
-                />
-              )}
-              <Select
-                label="Stato"
-                required
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                options={[
-                  { value: 'pending', label: 'In Attesa' },
-                  { value: 'confirmed', label: 'Confermata' },
-                  { value: 'completed', label: 'Completata' },
-                  { value: 'cancelled', label: 'Cancellata' }
-                ]}
-              />
-              <Input
-                label="Importo Totale (€)"
-                type="number"
-                step="0.01"
-                required
-                value={formData.total_amount}
-                onChange={(e) => setFormData({ ...formData, total_amount: e.target.value })}
-              />
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-white mb-2">Note</label>
-                <textarea
-                  value={carWashData.notes}
-                  onChange={(e) => setCarWashData({ ...carWashData, notes: e.target.value })}
-                  className="w-full px-4 py-2 bg-black border border-gray-600 rounded-lg text-white focus:outline-none focus:border-dr7-gold transition-colors"
-                  rows={3}
-                  placeholder="Note aggiuntive sulla prenotazione..."
-                />
-              </div>
-            </div>
-          )}
           <div className="flex gap-3 mt-4">
             <Button type="submit">
               Salva
