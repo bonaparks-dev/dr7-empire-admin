@@ -137,6 +137,7 @@ export default function CarWashBookingsTab() {
   const [showForm, setShowForm] = useState(false)
   const [newCustomerMode, setNewCustomerMode] = useState(false)
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
+  const [skipConflictCheck, setSkipConflictCheck] = useState(false)
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -367,6 +368,13 @@ export default function CarWashBookingsTab() {
       const selectedService = CAR_WASH_SERVICES.find(s => s.name === formData.service_name)
       if (!selectedService) {
         alert('❌ Errore: Seleziona un servizio valido')
+        return
+      }
+
+      // If skip conflict check is enabled, create booking immediately
+      if (skipConflictCheck) {
+        console.log('⚠️ ADMIN MODE: Skipping conflict check')
+        await createBooking(true)
         return
       }
 
@@ -664,6 +672,22 @@ export default function CarWashBookingsTab() {
                   })()}
                 </select>
               </div>
+            </div>
+
+            {/* Admin Override Toggle */}
+            <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={skipConflictCheck}
+                  onChange={(e) => setSkipConflictCheck(e.target.checked)}
+                  className="w-5 h-5 cursor-pointer"
+                />
+                <div>
+                  <span className="text-yellow-400 font-semibold">⚠️ Modalità Admin: Ignora controllo conflitti</span>
+                  <p className="text-xs text-gray-400 mt-1">Attiva per creare prenotazioni anche su slot già occupati (doppia prenotazione)</p>
+                </div>
+              </label>
             </div>
 
             {/* Payment Status */}
