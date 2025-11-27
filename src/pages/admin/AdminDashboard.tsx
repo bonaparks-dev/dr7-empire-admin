@@ -41,7 +41,7 @@ export default function AdminDashboard() {
                 </svg>
               </button>
               <img src="/DR7logo.png" alt="DR7 Empire" className="h-8 sm:h-10" />
-              <h1 className="text-lg sm:text-2xl font-bold text-white">Pannello Admin</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-white">DR7 Control Room</h1>
             </div>
             <button
               onClick={handleSignOut}
