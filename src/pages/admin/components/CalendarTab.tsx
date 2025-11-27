@@ -62,14 +62,31 @@ export default function CalendarTab() {
 
       if (vehiclesError) throw vehiclesError
 
-      // Load bookings (only car rentals, not car wash)
+      // Load bookings (only car rentals, not car wash) - include ALL statuses except cancelled
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('id, vehicle_name, pickup_date, dropoff_date, status, customer_name, customer_email, price_total')
-        .eq('service_type', 'car_rental')
-        .in('status', ['confirmed', 'active', 'pending'])
+        .select('id, vehicle_name, pickup_date, dropoff_date, status, customer_name, customer_email, price_total, service_type')
+        .or('service_type.is.null,service_type.eq.car_rental')
+        .neq('status', 'cancelled')
+        .order('pickup_date', { ascending: true })
 
       if (bookingsError) throw bookingsError
+
+      console.log('📅 CALENDARIO - Veicoli caricati:', vehiclesData?.length || 0)
+      console.log('📅 CALENDARIO - Prenotazioni caricate:', bookingsData?.length || 0)
+
+      if (bookingsData && bookingsData.length > 0) {
+        console.log('📅 CALENDARIO - Prima prenotazione:', {
+          vehicle: bookingsData[0].vehicle_name,
+          pickup: bookingsData[0].pickup_date,
+          dropoff: bookingsData[0].dropoff_date,
+          status: bookingsData[0].status
+        })
+      }
+
+      // Log vehicle names for debugging matching
+      console.log('📅 CALENDARIO - Nomi veicoli:', vehiclesData?.map(v => v.display_name))
+      console.log('📅 CALENDARIO - Nomi nelle prenotazioni:', [...new Set(bookingsData?.map(b => b.vehicle_name))])
 
       setVehicles(vehiclesData || [])
       setBookings(bookingsData || [])
@@ -94,8 +111,12 @@ export default function CalendarTab() {
     checkDate.setHours(0, 0, 0, 0)
 
     // Find bookings for this vehicle on this day
+    // Use case-insensitive and trimmed comparison to handle any formatting differences
     const vehicleBookings = bookings.filter(booking => {
-      if (booking.vehicle_name !== vehicle.display_name) return false
+      const bookingVehicle = booking.vehicle_name?.trim().toLowerCase()
+      const vehicleDisplay = vehicle.display_name?.trim().toLowerCase()
+
+      if (bookingVehicle !== vehicleDisplay) return false
 
       const pickupDate = new Date(booking.pickup_date)
       const dropoffDate = new Date(booking.dropoff_date)
@@ -118,7 +139,10 @@ export default function CalendarTab() {
     checkDate.setHours(0, 0, 0, 0)
 
     return bookings.filter(booking => {
-      if (booking.vehicle_name !== vehicle.display_name) return false
+      const bookingVehicle = booking.vehicle_name?.trim().toLowerCase()
+      const vehicleDisplay = vehicle.display_name?.trim().toLowerCase()
+
+      if (bookingVehicle !== vehicleDisplay) return false
 
       const pickupDate = new Date(booking.pickup_date)
       const dropoffDate = new Date(booking.dropoff_date)
