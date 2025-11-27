@@ -321,8 +321,8 @@ export default function VehiclesTab() {
         </form>
       )}
 
-      {/* Two Column Layout: Urban and Exotic */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {/* Three Column Layout: Urban, Exotic, and Aziendali */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Urban Vehicles Column */}
         <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
           <div className="bg-cyan-900/30 px-4 py-3 border-b border-gray-700">
@@ -457,6 +457,77 @@ export default function VehiclesTab() {
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
                       Nessun veicolo Exotic trovato
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Aziendali Vehicles Column */}
+        <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+          <div className="bg-orange-900/30 px-4 py-3 border-b border-gray-700">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <span className="px-3 py-1 bg-orange-900 text-orange-200 rounded text-sm">Aziendali</span>
+              <span className="text-sm text-gray-400">({aziendaliCount} veicoli)</span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-black">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Targa</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Stato</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tariffa</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {aziendaliVehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="border-t border-gray-700 hover:bg-gray-800">
+                    <td className="px-4 py-3 text-sm text-white font-semibold">{vehicle.display_name}</td>
+                    <td className="px-4 py-3 text-sm text-white">{vehicle.plate || '-'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        vehicle.status === 'available' ? 'bg-green-900 text-green-200' :
+                        vehicle.status === 'unavailable' ? 'bg-red-900 text-red-200' :
+                        vehicle.status === 'rented' ? 'bg-blue-900 text-blue-200' :
+                        vehicle.status === 'maintenance' ? 'bg-yellow-900 text-yellow-200' :
+                        'bg-gray-700 text-gray-200'
+                      }`}>
+                        {vehicle.status === 'available' ? 'Disponibile' :
+                         vehicle.status === 'unavailable' ? 'Non Disponibile' :
+                         vehicle.status === 'rented' ? 'Noleggiato' :
+                         vehicle.status === 'maintenance' ? 'Manutenzione' : 'Ritirato'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-white">€{vehicle.daily_rate}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleEdit(vehicle)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3"
+                        >
+                          Modifica
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(vehicle.id)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-red-900 hover:bg-red-800"
+                        >
+                          Elimina
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {aziendaliVehicles.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                      Nessun veicolo Aziendale trovato
                     </td>
                   </tr>
                 )}
