@@ -969,12 +969,9 @@ export default function ReservationsTab() {
                   <div className="text-sm text-gray-400">{booking.customer_phone || '-'}</div>
                 </div>
                 <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                  booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
-                  booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
-                  booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
-                  'bg-gray-700 text-gray-300'
+                  booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
                 }`}>
-                  {booking.status}
+                  {booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}
                 </span>
               </div>
 
@@ -1053,7 +1050,7 @@ export default function ReservationsTab() {
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Servizio</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Inizio</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Fine</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Stato</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Pagamento</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Totale</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Azioni</th>
               </tr>
@@ -1099,12 +1096,9 @@ export default function ReservationsTab() {
                     </td>
                     <td className="px-3 py-3 text-sm whitespace-nowrap">
                       <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                        booking.status === 'confirmed' ? 'bg-green-900 text-green-300' :
-                        booking.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
-                        booking.status === 'cancelled' ? 'bg-red-900 text-red-300' :
-                        'bg-gray-700 text-gray-300'
+                        booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
                       }`}>
-                        {booking.status}
+                        {booking.payment_status === 'completed' || booking.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
@@ -1215,7 +1209,7 @@ export default function ReservationsTab() {
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="text-gray-400">Importo:</span> <span className="text-white font-bold text-lg">€{(selectedBooking.price_total / 100).toFixed(2)}</span></div>
-                  <div><span className="text-gray-400">Stato Pagamento:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.payment_status === 'completed' ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}`}>{selectedBooking.payment_status}</span></div>
+                  <div><span className="text-gray-400">Stato Pagamento:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.payment_status === 'completed' || selectedBooking.payment_status === 'paid' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>{selectedBooking.payment_status === 'completed' || selectedBooking.payment_status === 'paid' ? 'Pagato' : 'Non Pagato'}</span></div>
                   <div><span className="text-gray-400">Metodo:</span> <span className="text-white">{selectedBooking.payment_method || 'N/A'}</span></div>
                   <div><span className="text-gray-400">Stato Prenotazione:</span> <span className={`px-2 py-1 rounded text-xs ${selectedBooking.status === 'confirmed' ? 'bg-green-900 text-green-300' : selectedBooking.status === 'cancelled' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>{selectedBooking.status}</span></div>
                 </div>
