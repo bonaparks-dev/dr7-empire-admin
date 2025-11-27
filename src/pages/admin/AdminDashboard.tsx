@@ -6,7 +6,6 @@ import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
 import CalendarTab from './components/CalendarTab'
-import CarWashTab from './components/CarWashTab'
 import CarWashBookingsTab from './components/CarWashBookingsTab'
 import LotteriaBoard from './components/LotteriaBoard'
 
