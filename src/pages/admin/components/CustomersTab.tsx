@@ -130,6 +130,70 @@ export default function CustomersTab() {
         })
       }
 
+      // Get users who have uploaded documents to storage
+      const usersWithDocuments = new Set<string>()
+
+      // Check driver-licenses bucket
+      try {
+        const { data: licenseFiles, error: licenseError } = await supabase.storage
+          .from('driver-licenses')
+          .list()
+
+        if (!licenseError && licenseFiles) {
+          licenseFiles.forEach(folder => {
+            if (folder.name && folder.name.length > 10) { // Folders are user IDs
+              usersWithDocuments.add(folder.name)
+            }
+          })
+        }
+      } catch (e) {
+        console.error('Error listing driver-licenses:', e)
+      }
+
+      // Check driver-ids bucket
+      try {
+        const { data: idFiles, error: idError } = await supabase.storage
+          .from('driver-ids')
+          .list()
+
+        if (!idError && idFiles) {
+          idFiles.forEach(folder => {
+            if (folder.name && folder.name.length > 10) { // Folders are user IDs
+              usersWithDocuments.add(folder.name)
+            }
+          })
+        }
+      } catch (e) {
+        console.error('Error listing driver-ids:', e)
+      }
+
+      // Fetch user data for users with documents who aren't already in customerMap
+      for (const userId of usersWithDocuments) {
+        if (!customerMap.has(userId)) {
+          try {
+            const { data, error } = await supabase.auth.admin.getUserById(userId)
+            if (!error && data?.user) {
+              const metadata = data.user.user_metadata || {}
+              customerMap.set(userId, {
+                id: userId,
+                full_name: metadata.full_name || metadata.fullName || data.user.email?.split('@')[0] || 'Cliente',
+                email: data.user.email || metadata.email || null,
+                phone: metadata.phone || null,
+                driver_license_number: null,
+                notes: null,
+                created_at: data.user.created_at || new Date().toISOString(),
+                updated_at: data.user.updated_at || new Date().toISOString(),
+                verification: metadata.verification
+              })
+            }
+          } catch (e) {
+            console.error('Error fetching user with documents:', userId, e)
+          }
+        }
+      }
+
+      console.log('Users with uploaded documents:', usersWithDocuments.size)
+
       // Get verification status, phone, and documents from auth.users metadata
       const customersArray = Array.from(customerMap.values())
       const enrichedCustomers = await Promise.all(
