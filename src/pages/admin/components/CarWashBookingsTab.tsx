@@ -36,6 +36,31 @@ const ADDITIONAL_SERVICES = [
   { value: 'headlight-polish', label: 'Lucidatura fari (+€40)', price: 40 }
 ]
 
+// Generate time slots for car wash: 9h-13h and 15h-18h, every 15 minutes
+const generateTimeSlots = () => {
+  const slots: string[] = []
+
+  // Morning slots: 9h-13h
+  for (let hour = 9; hour < 13; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+      slots.push(time)
+    }
+  }
+
+  // Afternoon slots: 15h-18h
+  for (let hour = 15; hour < 18; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+      slots.push(time)
+    }
+  }
+
+  return slots
+}
+
+const CAR_WASH_TIME_SLOTS = generateTimeSlots()
+
 export default function CarWashBookingsTab() {
   const [bookings, setBookings] = useState<CarWashBooking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -458,13 +483,24 @@ export default function CarWashBookingsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Ora</label>
-                <input
-                  type="time"
+                <select
                   required
                   value={formData.appointment_time}
                   onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
+                >
+                  <option value="">Seleziona orario</option>
+                  <optgroup label="Mattina (9:00 - 13:00)">
+                    {CAR_WASH_TIME_SLOTS.filter(t => t.startsWith('09') || t.startsWith('10') || t.startsWith('11') || t.startsWith('12')).map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Pomeriggio (15:00 - 18:00)">
+                    {CAR_WASH_TIME_SLOTS.filter(t => t.startsWith('15') || t.startsWith('16') || t.startsWith('17')).map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </optgroup>
+                </select>
               </div>
             </div>
             <div>
