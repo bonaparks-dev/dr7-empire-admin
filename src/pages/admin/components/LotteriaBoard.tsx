@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 
+// Generate UUID for ticket
+function generateTicketUuid(ticketNumber: number, email: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `manual-${ticketNumber}-${timestamp}-${random}`;
+}
+
 interface Ticket {
   ticket_number: number;
   email: string;
@@ -96,10 +103,13 @@ const LotteriaBoard: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('commercial_operation_tickets')
-        .select('ticket_number, email, full_name, customer_phone, purchase_date, payment_intent_id')
+        .select('*')
         .order('ticket_number', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching tickets:', error);
+        throw error;
+      }
 
       const ticketMap = new Map<number, Ticket>();
       data?.forEach((ticket) => {
@@ -109,6 +119,7 @@ const LotteriaBoard: React.FC = () => {
       setSoldTickets(ticketMap);
     } catch (error) {
       console.error('Error fetching tickets:', error);
+      alert('Errore nel caricamento dei biglietti. Controlla i permessi del database.');
     } finally {
       setLoading(false);
     }
@@ -120,9 +131,12 @@ const LotteriaBoard: React.FC = () => {
 
   const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string) => {
     try {
+      const uuid = generateTicketUuid(ticketNumber, email);
+
       const { error } = await supabase
         .from('commercial_operation_tickets')
         .insert([{
+          uuid: uuid,
           ticket_number: ticketNumber,
           email,
           full_name: fullName,
@@ -139,9 +153,10 @@ const LotteriaBoard: React.FC = () => {
       // Refresh the board
       await fetchSoldTickets();
       setSelectedTicket(null);
+      alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto con successo a ${fullName}!`);
     } catch (error) {
       console.error('Error saving manual sale:', error);
-      alert('Errore durante il salvataggio. Il biglietto potrebbe essere già venduto.');
+      alert('❌ Errore durante il salvataggio. Il biglietto potrebbe essere già venduto.');
     }
   };
 

@@ -5,12 +5,11 @@ import ReservationsTab from './components/ReservationsTab'
 import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
-import TicketsTab from './components/TicketsTab'
 import CalendarTab from './components/CalendarTab'
 import CarWashTab from './components/CarWashTab'
 import LotteriaBoard from './components/LotteriaBoard'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'tickets' | 'lotteria' | 'calendar' | 'carwash'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'lotteria' | 'calendar' | 'carwash'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -72,8 +71,7 @@ export default function AdminDashboard() {
                 { id: 'customers', label: 'Clienti', icon: '👥' },
                 { id: 'vehicles', label: 'Veicoli', icon: '🚗' },
                 { id: 'fattura', label: 'Fatture', icon: '📄' },
-                { id: 'tickets', label: 'Biglietti', icon: '🎫' },
-                { id: 'lotteria', label: 'Tabellone Lotteria', icon: '🎰' },
+                { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
                 { id: 'calendar', label: 'Calendario', icon: '📅' },
                 { id: 'carwash', label: 'Autolavaggio', icon: '🚿' }
               ].map((tab) => (
@@ -144,16 +142,6 @@ export default function AdminDashboard() {
                 📄 Fatture
               </button>
               <button
-                onClick={() => setActiveTab('tickets')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'tickets'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🎫 Biglietti
-              </button>
-              <button
                 onClick={() => setActiveTab('lotteria')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'lotteria'
@@ -161,7 +149,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🎰 Tabellone Lotteria
+                🎰 Biglietti Lotteria
               </button>
               <button
                 onClick={() => setActiveTab('calendar')}
@@ -194,8 +182,7 @@ export default function AdminDashboard() {
             {activeTab === 'customers' && '👥 Clienti'}
             {activeTab === 'vehicles' && '🚗 Veicoli'}
             {activeTab === 'fattura' && '📄 Fatture'}
-            {activeTab === 'tickets' && '🎫 Biglietti'}
-            {activeTab === 'lotteria' && '🎰 Tabellone Lotteria'}
+            {activeTab === 'lotteria' && '🎰 Biglietti Lotteria'}
             {activeTab === 'calendar' && '📅 Calendario'}
             {activeTab === 'carwash' && '🚿 Autolavaggio'}
           </h2>
@@ -206,7 +193,6 @@ export default function AdminDashboard() {
           {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'vehicles' && <VehiclesTab />}
           {activeTab === 'fattura' && <FatturaTab />}
-          {activeTab === 'tickets' && <TicketsTab />}
           {activeTab === 'lotteria' && <LotteriaBoard />}
           {activeTab === 'calendar' && <CalendarTab />}
           {activeTab === 'carwash' && <CarWashTab />}
