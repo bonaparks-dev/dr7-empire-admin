@@ -97,9 +97,12 @@ const generateTimeSlots = () => {
     }
   }
 
-  // Afternoon slots: 15h-18h
-  for (let hour = 15; hour < 18; hour++) {
+  // Afternoon slots: 15h-18h (including 18:00)
+  for (let hour = 15; hour <= 18; hour++) {
     for (let minute = 0; minute < 60; minute += 15) {
+      // Stop at 18:00 exactly
+      if (hour === 18 && minute > 0) break
+
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
       slots.push(time)
     }
