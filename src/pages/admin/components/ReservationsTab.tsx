@@ -433,59 +433,41 @@ export default function ReservationsTab() {
   }
 
   function handleEditBooking(booking: Booking) {
-    const isCarWash = booking.service_type === 'car_wash'
-
-    // Set booking type
-    setBookingType(isCarWash ? 'carwash' : 'rental')
+    // Only handle car rental bookings - car wash bookings are in CarWashBookingsTab
+    if (booking.service_type === 'car_wash') {
+      alert('Le prenotazioni lavaggio devono essere modificate nella tab "Prenotazioni Lavaggio"')
+      return
+    }
 
     // Set customer data
     const customerId = booking.booking_details?.customer?.customerId || booking.user_id || ''
+
+    // Populate rental data
+    const pickupDate = booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date) : null
+    const dropoffDate = booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date) : null
+
+    // Find vehicle by name
+    const vehicle = vehicles.find(v => v.display_name === booking.vehicle_name)
+
+    // Extract location codes from booking_details
+    const pickupLoc = booking.booking_details?.pickupLocation || 'dr7_office'
+    const dropoffLoc = booking.booking_details?.dropoffLocation || 'dr7_office'
+
     setFormData({
       ...formData,
       customer_id: customerId,
+      vehicle_id: vehicle?.id || '',
+      pickup_date: pickupDate ? pickupDate.toISOString().split('T')[0] : '',
+      pickup_time: pickupDate ? pickupDate.toTimeString().substring(0, 5) : '',
+      return_date: dropoffDate ? dropoffDate.toISOString().split('T')[0] : '',
+      return_time: dropoffDate ? dropoffDate.toTimeString().substring(0, 5) : '',
+      pickup_location: pickupLoc,
+      dropoff_location: dropoffLoc,
       status: booking.status,
       total_amount: (booking.price_total / 100).toString(),
-      currency: booking.currency.toUpperCase()
+      currency: booking.currency.toUpperCase(),
+      source: 'admin'
     })
-
-    if (isCarWash) {
-      // Populate car wash data
-      setCarWashData({
-        service_name: booking.service_name || '',
-        appointment_date: booking.appointment_date ? new Date(booking.appointment_date).toISOString().split('T')[0] : '',
-        appointment_time: booking.appointment_time || '',
-        additional_service: booking.booking_details?.additionalService || '',
-        additional_service_hours: '1',
-        notes: booking.booking_details?.notes || ''
-      })
-    } else {
-      // Populate rental data
-      const pickupDate = booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date) : null
-      const dropoffDate = booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date) : null
-
-      // Find vehicle by name
-      const vehicle = vehicles.find(v => v.display_name === booking.vehicle_name)
-
-      // Extract location codes from booking_details
-      const pickupLoc = booking.booking_details?.pickupLocation || 'dr7_office'
-      const dropoffLoc = booking.booking_details?.dropoffLocation || 'dr7_office'
-
-      setFormData({
-        ...formData,
-        customer_id: customerId,
-        vehicle_id: vehicle?.id || '',
-        pickup_date: pickupDate ? pickupDate.toISOString().split('T')[0] : '',
-        pickup_time: pickupDate ? pickupDate.toTimeString().substring(0, 5) : '',
-        return_date: dropoffDate ? dropoffDate.toISOString().split('T')[0] : '',
-        return_time: dropoffDate ? dropoffDate.toTimeString().substring(0, 5) : '',
-        pickup_location: pickupLoc,
-        dropoff_location: dropoffLoc,
-        status: booking.status,
-        total_amount: (booking.price_total / 100).toString(),
-        currency: booking.currency.toUpperCase(),
-        source: 'admin'
-      })
-    }
 
     setEditingId(booking.id)
     setShowForm(true)
@@ -667,14 +649,6 @@ export default function ReservationsTab() {
       total_amount: '0',
       currency: 'EUR'
     })
-    setCarWashData({
-      service_name: '',
-      appointment_date: '',
-      appointment_time: '',
-      additional_service: '',
-      additional_service_hours: '1',
-      notes: ''
-    })
     setCustomerSearchQuery('')
     setNewCustomerData({
       full_name: '',
@@ -682,7 +656,6 @@ export default function ReservationsTab() {
       phone: '',
       driver_license_number: ''
     })
-    setBookingType('rental')
   }
 
   async function handleExport() {
