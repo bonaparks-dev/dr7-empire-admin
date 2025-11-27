@@ -314,7 +314,7 @@ const LotteriaBoard: React.FC = () => {
         .single();
 
       if (existingTicket) {
-        alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è già stato venduto!`);
+        alert(`❌ Ticket #${String(ticketNumber).padStart(4, '0')} has already been sold!`);
         await fetchSoldTickets(); // Refresh to show current state
         setSelectedTicket(null);
         return;
@@ -340,7 +340,10 @@ const LotteriaBoard: React.FC = () => {
       if (error) {
         // Check if it's a duplicate key error (ticket was just sold)
         if (error.code === '23505') {
-          alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
+          alert(`❌ Ticket #${String(ticketNumber).padStart(4, '0')} has already been sold by someone else!`);
+          await fetchSoldTickets(); // Refresh to show current state
+          setSelectedTicket(null);
+          return; // Stop execution here
         } else {
           throw error;
         }
@@ -518,27 +521,6 @@ const LotteriaBoard: React.FC = () => {
             <div className="text-2xl font-bold text-green-600">{availableCount}</div>
           </div>
         </div>
-        {/* Search and Cancel Section */}
-        <div className="mb-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
-          <h3 className="text-white font-semibold mb-3">🔍 Cerca e Cancella Biglietti</h3>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="Inserisci email cliente..."
-              value={searchEmail}
-              onChange={(e) => setSearchEmail(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearchTickets()}
-              className="flex-1 px-3 py-2 rounded border border-gray-600 bg-gray-900 text-white"
-            />
-            <button
-              onClick={handleSearchTickets}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
-            >
-              Cerca
-            </button>
-          </div>
-        </div>
-
         <div className="flex gap-4 items-center flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-green-500 rounded"></div>
