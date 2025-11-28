@@ -891,26 +891,19 @@ export default function ReservationsTab() {
 
           {/* Service Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Select
-                  label="Veicolo"
-                  required
-                  value={formData.vehicle_id}
-                  onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
-                  options={[
-                    { value: '', label: 'Seleziona veicolo...' },
-                    ...vehicles.map(v => ({ value: v.id, label: v.display_name }))
-                  ]}
-                />
-                {formData.vehicle_id && (() => {
-                  const selectedVehicle = vehicles.find(v => v.id === formData.vehicle_id)
-                  return selectedVehicle?.plate ? (
-                    <div className="mt-2 text-sm text-gray-400">
-                      🚗 Targa: <span className="text-white font-medium">{selectedVehicle.plate}</span>
-                    </div>
-                  ) : null
-                })()}
-              </div>
+              <Select
+                label="Veicolo"
+                required
+                value={formData.vehicle_id}
+                onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
+                options={[
+                  { value: '', label: 'Seleziona veicolo...' },
+                  ...vehicles.map(v => ({
+                    value: v.id,
+                    label: v.plate ? `${v.display_name} - Targa: ${v.plate}` : v.display_name
+                  }))
+                ]}
+              />
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-dr7-darker rounded-lg border border-gray-700">
                 <div className="space-y-3">
                   <Input
