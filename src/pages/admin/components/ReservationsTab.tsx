@@ -855,7 +855,10 @@ export default function ReservationsTab() {
                 onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
                 options={[
                   { value: '', label: 'Seleziona veicolo...' },
-                  ...vehicles.map(v => ({ value: v.id, label: v.display_name }))
+                  ...vehicles.map(v => ({
+                    value: v.id,
+                    label: v.plate ? `${v.display_name} (Targa: ${v.plate})` : v.display_name
+                  }))
                 ]}
               />
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-dr7-darker rounded-lg border border-gray-700">
