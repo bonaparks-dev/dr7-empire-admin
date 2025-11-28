@@ -104,14 +104,14 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Desktop Tabs - Hidden on Mobile */}
         <div className="mb-6 hidden lg:block">
           <div className="border-b border-gray-800">
-            <nav className="-mb-px flex gap-x-2 flex-wrap">
+            <nav className="-mb-px flex gap-x-4 flex-wrap">
               <button
                 onClick={() => setActiveTab('reservations')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'reservations'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('carwash')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'carwash'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('mechanical')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'mechanical'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('calendar')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'calendar'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('carwash-calendar')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'carwash-calendar'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('mechanical-calendar')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'mechanical-calendar'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('customers')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'customers'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('vehicles')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'vehicles'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('lotteria')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'lotteria'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('contratto')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'contratto'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('fattura')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                className={`py-4 px-6 border-b-2 font-medium text-base whitespace-nowrap transition-colors ${
                   activeTab === 'fattura'
                     ? 'border-white text-white'
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
