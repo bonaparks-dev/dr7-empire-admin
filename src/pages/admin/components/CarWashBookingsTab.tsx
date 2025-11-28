@@ -31,8 +31,8 @@ const CAR_WASH_SERVICES = [
     duration: '1 ora',
     durationMinutes: 60,
     allowedTimeRanges: [
-      { start: '09:00', end: '13:00' },
-      { start: '15:00', end: '19:00' }
+      { start: '09:00', end: '12:00' },
+      { start: '15:00', end: '18:00' }
     ]
   },
   {
