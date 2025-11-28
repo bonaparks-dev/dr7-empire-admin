@@ -30,6 +30,7 @@ export default function CustomersTab() {
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingId, setUploadingId] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -640,11 +641,42 @@ export default function CustomersTab() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Clienti</h2>
-        <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
-          + Nuovo Cliente
-        </Button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-white">Clienti</h2>
+          <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
+            + Nuovo Cliente
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Cerca cliente per nome, email o telefono..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pl-10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dr7-gold focus:border-transparent"
+          />
+          <svg
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (
@@ -703,7 +735,17 @@ export default function CustomersTab() {
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer) => (
+              {customers
+                .filter((customer) => {
+                  if (!searchQuery) return true
+                  const query = searchQuery.toLowerCase()
+                  return (
+                    customer.full_name.toLowerCase().includes(query) ||
+                    customer.email?.toLowerCase().includes(query) ||
+                    customer.phone?.toLowerCase().includes(query)
+                  )
+                })
+                .map((customer) => (
                 <tr key={customer.id} className="border-t border-gray-700 hover:bg-gray-800">
                   <td className="px-4 py-3 text-sm text-white">{customer.full_name}</td>
                   <td className="px-4 py-3 text-sm text-white">{customer.email || '-'}</td>
@@ -735,10 +777,18 @@ export default function CustomersTab() {
                   </td>
                 </tr>
               ))}
-              {customers.length === 0 && (
+              {customers.filter((customer) => {
+                if (!searchQuery) return true
+                const query = searchQuery.toLowerCase()
+                return (
+                  customer.full_name.toLowerCase().includes(query) ||
+                  customer.email?.toLowerCase().includes(query) ||
+                  customer.phone?.toLowerCase().includes(query)
+                )
+              }).length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                    Nessun cliente trovato
+                    {searchQuery ? `Nessun cliente trovato per "${searchQuery}"` : 'Nessun cliente trovato'}
                   </td>
                 </tr>
               )}
