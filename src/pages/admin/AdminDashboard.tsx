@@ -106,9 +106,9 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Desktop Tabs - Hidden on Mobile */}
-        <div className="mb-6 hidden lg:block overflow-x-auto">
+        <div className="mb-6 hidden lg:block">
           <div className="border-b border-gray-800">
-            <nav className="-mb-px flex gap-x-4">
+            <nav className="-mb-px flex gap-x-2 flex-wrap">
               <button
                 onClick={() => setActiveTab('reservations')}
                 className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
