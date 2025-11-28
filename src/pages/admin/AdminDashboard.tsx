@@ -117,7 +117,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🚗 Auto
+                🚗 Prenotazioni Auto
               </button>
               <button
                 onClick={() => setActiveTab('carwash')}
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🚿 Lavaggio
+                🚿 Prenotazioni Lavaggio
               </button>
               <button
                 onClick={() => setActiveTab('mechanical')}
@@ -137,7 +137,37 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🔧 Meccanica
+                🔧 Prenotazioni Meccanica
+              </button>
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === 'calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                📅 Calendario Cars
+              </button>
+              <button
+                onClick={() => setActiveTab('carwash-calendar')}
+                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === 'carwash-calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🧼 Calendario Lavaggio
+              </button>
+              <button
+                onClick={() => setActiveTab('mechanical-calendar')}
+                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === 'mechanical-calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🔧 Calendario Meccanica
               </button>
               <button
                 onClick={() => setActiveTab('customers')}
@@ -160,36 +190,6 @@ export default function AdminDashboard() {
                 🚙 Veicoli
               </button>
               <button
-                onClick={() => setActiveTab('calendar')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                📅 Calendario Noleggio
-              </button>
-              <button
-                onClick={() => setActiveTab('carwash-calendar')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'carwash-calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🧼 Calendario Lavaggi
-              </button>
-              <button
-                onClick={() => setActiveTab('mechanical-calendar')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'mechanical-calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🔧 Calendario Meccanica
-              </button>
-              <button
                 onClick={() => setActiveTab('lotteria')}
                 className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'lotteria'
@@ -200,16 +200,6 @@ export default function AdminDashboard() {
                 🎰 Lotteria
               </button>
               <button
-                onClick={() => setActiveTab('fattura')}
-                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'fattura'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                📄 Fatture
-              </button>
-              <button
                 onClick={() => setActiveTab('contratto')}
                 className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'contratto'
@@ -218,6 +208,16 @@ export default function AdminDashboard() {
                 }`}
               >
                 📋 Contratti
+              </button>
+              <button
+                onClick={() => setActiveTab('fattura')}
+                className={`py-3 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === 'fattura'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                📄 Fatture
               </button>
             </nav>
           </div>
