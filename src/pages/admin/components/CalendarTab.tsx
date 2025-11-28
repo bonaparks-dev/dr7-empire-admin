@@ -6,6 +6,10 @@ interface Vehicle {
   display_name: string
   status: string
   category: 'exotic' | 'urban' | 'aziendali' | null
+  metadata?: {
+    unavailable_from?: string
+    unavailable_until?: string
+  }
 }
 
 interface Booking {
@@ -19,7 +23,7 @@ interface Booking {
   price_total: number
 }
 
-type CellStatus = 'available' | 'rented'
+type CellStatus = 'available' | 'rented' | 'unavailable'
 
 export default function CalendarTab() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -55,7 +59,7 @@ export default function CalendarTab() {
       // Load vehicles - Custom order: Exotic → Urban → Aziendali
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
-        .select('id, display_name, status, category')
+        .select('id, display_name, status, category, metadata')
         .neq('status', 'retired')
 
       if (vehiclesError) throw vehiclesError
@@ -139,6 +143,18 @@ export default function CalendarTab() {
     const month = currentDate.getMonth()
     const checkDate = new Date(year, month, day)
     checkDate.setHours(0, 0, 0, 0)
+
+    // Check if date falls within unavailable range
+    if (vehicle.metadata?.unavailable_from && vehicle.metadata?.unavailable_until) {
+      const unavailableFrom = new Date(vehicle.metadata.unavailable_from)
+      const unavailableUntil = new Date(vehicle.metadata.unavailable_until)
+      unavailableFrom.setHours(0, 0, 0, 0)
+      unavailableUntil.setHours(0, 0, 0, 0)
+
+      if (checkDate >= unavailableFrom && checkDate <= unavailableUntil) {
+        return 'unavailable'
+      }
+    }
 
     // Find bookings for this vehicle on this day
     // Use flexible matching: exact, normalized, or partial match
@@ -235,11 +251,26 @@ export default function CalendarTab() {
       {/* Header Controls */}
       <div className="bg-gray-900 rounded-lg p-3 lg:p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-lg font-bold text-white">Calendario Flotta</h2>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400">Veicoli:</span>
               <span className="text-dr7-gold font-bold text-sm">{vehicles.length}</span>
+            </div>
+            {/* Legend */}
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 bg-green-500 rounded border border-gray-600"></div>
+                <span className="text-gray-300">Disponibile</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 bg-orange-500 rounded border border-gray-600"></div>
+                <span className="text-gray-300">Non Disponibile</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 bg-red-500 rounded border border-gray-600"></div>
+                <span className="text-gray-300">Noleggiato</span>
+              </div>
             </div>
           </div>
 
@@ -325,9 +356,17 @@ export default function CalendarTab() {
                           className={`border border-gray-700 p-0.5 min-w-[24px] h-6 transition-all ${
                             status === 'rented'
                               ? 'bg-red-500 hover:bg-red-600 cursor-pointer'
+                              : status === 'unavailable'
+                              ? 'bg-orange-500 hover:bg-orange-600'
                               : 'bg-green-500 hover:bg-green-600'
                           } ${day === todayDay ? 'ring-1 ring-dr7-gold ring-inset' : ''}`}
-                          title={status === 'rented' ? `${vehicle.display_name} - Noleggiato` : `${vehicle.display_name} - Disponibile`}
+                          title={
+                            status === 'rented'
+                              ? `${vehicle.display_name} - Noleggiato`
+                              : status === 'unavailable'
+                              ? `${vehicle.display_name} - Non Disponibile`
+                              : `${vehicle.display_name} - Disponibile`
+                          }
                         />
                       )
                     })}
