@@ -97,8 +97,26 @@ export default function CalendarTab() {
       }
 
       // Log vehicle names for debugging matching
-      console.log('📅 CALENDARIO - Nomi veicoli:', sortedVehicles?.map(v => v.display_name))
-      console.log('📅 CALENDARIO - Nomi nelle prenotazioni:', [...new Set(bookingsData?.map(b => b.vehicle_name))])
+      const vehicleNames = sortedVehicles?.map(v => v.display_name) || []
+      const bookingNames = [...new Set(bookingsData?.map(b => b.vehicle_name))]
+
+      console.log('📅 CALENDARIO - Nomi veicoli:', vehicleNames)
+      console.log('📅 CALENDARIO - Nomi nelle prenotazioni:', bookingNames)
+
+      // Check for mismatches
+      console.log('📅 CALENDARIO - CONFRONTO NOMI:')
+      bookingNames.forEach(bookingName => {
+        const exactMatch = vehicleNames.some(vName => vName === bookingName)
+        const normalizedMatch = vehicleNames.some(vName =>
+          vName?.trim().toLowerCase() === bookingName?.trim().toLowerCase()
+        )
+        const partialMatch = vehicleNames.find(vName =>
+          vName?.toLowerCase().includes(bookingName?.toLowerCase()) ||
+          bookingName?.toLowerCase().includes(vName?.toLowerCase())
+        )
+
+        console.log(`  "${bookingName}" → Exact: ${exactMatch}, Normalized: ${normalizedMatch}, Partial: "${partialMatch || 'NO MATCH'}"`)
+      })
 
       setVehicles(sortedVehicles || [])
       setBookings(bookingsData || [])
@@ -123,12 +141,19 @@ export default function CalendarTab() {
     checkDate.setHours(0, 0, 0, 0)
 
     // Find bookings for this vehicle on this day
-    // Use case-insensitive and trimmed comparison to handle any formatting differences
+    // Use flexible matching: exact, normalized, or partial match
     const vehicleBookings = bookings.filter(booking => {
       const bookingVehicle = booking.vehicle_name?.trim().toLowerCase()
       const vehicleDisplay = vehicle.display_name?.trim().toLowerCase()
 
-      if (bookingVehicle !== vehicleDisplay) return false
+      // Try multiple matching strategies
+      const exactMatch = bookingVehicle === vehicleDisplay
+      const partialMatch = bookingVehicle && vehicleDisplay && (
+        bookingVehicle.includes(vehicleDisplay) ||
+        vehicleDisplay.includes(bookingVehicle)
+      )
+
+      if (!exactMatch && !partialMatch) return false
 
       const pickupDate = new Date(booking.pickup_date)
       const dropoffDate = new Date(booking.dropoff_date)
@@ -154,7 +179,14 @@ export default function CalendarTab() {
       const bookingVehicle = booking.vehicle_name?.trim().toLowerCase()
       const vehicleDisplay = vehicle.display_name?.trim().toLowerCase()
 
-      if (bookingVehicle !== vehicleDisplay) return false
+      // Try multiple matching strategies
+      const exactMatch = bookingVehicle === vehicleDisplay
+      const partialMatch = bookingVehicle && vehicleDisplay && (
+        bookingVehicle.includes(vehicleDisplay) ||
+        vehicleDisplay.includes(bookingVehicle)
+      )
+
+      if (!exactMatch && !partialMatch) return false
 
       const pickupDate = new Date(booking.pickup_date)
       const dropoffDate = new Date(booking.dropoff_date)
