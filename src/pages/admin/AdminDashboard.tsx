@@ -5,13 +5,15 @@ import ReservationsTab from './components/ReservationsTab'
 import CustomersTab from './components/CustomersTab'
 import VehiclesTab from './components/VehiclesTab'
 import FatturaTab from './components/FatturaTab'
+import ContrattoTab from './components/ContrattoTab'
 import CalendarTab from './components/CalendarTab'
 import CarWashBookingsTab from './components/CarWashBookingsTab'
 import CarWashCalendarTab from './components/CarWashCalendarTab'
 import MechanicalBookingTab from './components/MechanicalBookingTab'
+import MechanicalCalendarTab from './components/MechanicalCalendarTab'
 import LotteriaBoard from './components/LotteriaBoard'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'lotteria' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical' | 'mechanical-calendar' | 'lotteria' | 'fattura' | 'contratto'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -72,12 +74,14 @@ export default function AdminDashboard() {
                 { id: 'reservations', label: 'Prenotazioni Auto', icon: '🚗' },
                 { id: 'carwash', label: 'Prenotazioni Lavaggio', icon: '🚿' },
                 { id: 'mechanical', label: 'Prenotazioni Meccanica', icon: '🔧' },
-                { id: 'carwash-calendar', label: 'Calendario Lavaggi', icon: '🧼' },
                 { id: 'customers', label: 'Clienti', icon: '👥' },
                 { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
                 { id: 'calendar', label: 'Calendario Noleggio', icon: '📅' },
+                { id: 'carwash-calendar', label: 'Calendario Lavaggi', icon: '🧼' },
+                { id: 'mechanical-calendar', label: 'Calendario Meccanica', icon: '🔧' },
                 { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
-                { id: 'fattura', label: 'Fatture', icon: '📄' }
+                { id: 'fattura', label: 'Fatture', icon: '📄' },
+                { id: 'contratto', label: 'Contratti', icon: '📋' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -104,7 +108,7 @@ export default function AdminDashboard() {
         {/* Desktop Tabs - Hidden on Mobile */}
         <div className="mb-6 hidden lg:block">
           <div className="border-b border-gray-800">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex flex-wrap gap-x-6 gap-y-2">
               <button
                 onClick={() => setActiveTab('reservations')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -136,16 +140,6 @@ export default function AdminDashboard() {
                 🔧 Prenotazioni Meccanica
               </button>
               <button
-                onClick={() => setActiveTab('carwash-calendar')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'carwash-calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🧼 Calendario Lavaggi
-              </button>
-              <button
                 onClick={() => setActiveTab('customers')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'customers'
@@ -165,6 +159,9 @@ export default function AdminDashboard() {
               >
                 🚙 Veicoli
               </button>
+
+              {/* Calendar Group */}
+              <div className="w-full h-px bg-gray-800 my-2"></div>
               <button
                 onClick={() => setActiveTab('calendar')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -175,6 +172,29 @@ export default function AdminDashboard() {
               >
                 📅 Calendario Noleggio
               </button>
+              <button
+                onClick={() => setActiveTab('carwash-calendar')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'carwash-calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🧼 Calendario Lavaggi
+              </button>
+              <button
+                onClick={() => setActiveTab('mechanical-calendar')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'mechanical-calendar'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🔧 Calendario Meccanica
+              </button>
+
+              {/* Other tabs */}
+              <div className="w-full h-px bg-gray-800 my-2"></div>
               <button
                 onClick={() => setActiveTab('lotteria')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -195,6 +215,16 @@ export default function AdminDashboard() {
               >
                 📄 Fatture
               </button>
+              <button
+                onClick={() => setActiveTab('contratto')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'contratto'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                📋 Contratti
+              </button>
             </nav>
           </div>
         </div>
@@ -205,12 +235,14 @@ export default function AdminDashboard() {
             {activeTab === 'reservations' && '🚗 Prenotazioni Auto'}
             {activeTab === 'carwash' && '🚿 Prenotazioni Lavaggio'}
             {activeTab === 'mechanical' && '🔧 Prenotazioni Meccanica'}
-            {activeTab === 'carwash-calendar' && '🧼 Calendario Lavaggi'}
             {activeTab === 'customers' && '👥 Clienti'}
             {activeTab === 'vehicles' && '🚙 Veicoli'}
             {activeTab === 'calendar' && '📅 Calendario Noleggio'}
+            {activeTab === 'carwash-calendar' && '🧼 Calendario Lavaggi'}
+            {activeTab === 'mechanical-calendar' && '🔧 Calendario Meccanica'}
             {activeTab === 'lotteria' && '🎰 Biglietti Lotteria'}
             {activeTab === 'fattura' && '📄 Fatture'}
+            {activeTab === 'contratto' && '📋 Contratti'}
           </h2>
         </div>
 
@@ -218,12 +250,14 @@ export default function AdminDashboard() {
           {activeTab === 'reservations' && <ReservationsTab />}
           {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'vehicles' && <VehiclesTab />}
-          {activeTab === 'fattura' && <FatturaTab />}
-          {activeTab === 'lotteria' && <LotteriaBoard />}
           {activeTab === 'calendar' && <CalendarTab />}
           {activeTab === 'carwash' && <CarWashBookingsTab />}
           {activeTab === 'carwash-calendar' && <CarWashCalendarTab />}
           {activeTab === 'mechanical' && <MechanicalBookingTab />}
+          {activeTab === 'mechanical-calendar' && <MechanicalCalendarTab />}
+          {activeTab === 'lotteria' && <LotteriaBoard />}
+          {activeTab === 'fattura' && <FatturaTab />}
+          {activeTab === 'contratto' && <ContrattoTab />}
         </div>
       </main>
     </div>

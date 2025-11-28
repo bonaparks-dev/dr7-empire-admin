@@ -1,0 +1,496 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../../../supabaseClient'
+
+interface Contract {
+  id: string
+  contract_number: string
+  contract_date: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  customer_address: string
+  customer_tax_code: string
+  customer_license_number?: string
+  vehicle_name: string
+  rental_start_date: string
+  rental_end_date: string
+  daily_rate: number
+  total_days: number
+  total_amount: number
+  deposit_amount?: number
+  status: 'active' | 'completed' | 'cancelled'
+  notes?: string
+  created_at: string
+}
+
+export default function ContrattoTab() {
+  const [contracts, setContracts] = useState<Contract[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [viewingContract, setViewingContract] = useState<Contract | null>(null)
+
+  const [formData, setFormData] = useState({
+    contract_number: '',
+    contract_date: new Date().toISOString().split('T')[0],
+    customer_name: '',
+    customer_email: '',
+    customer_phone: '',
+    customer_address: '',
+    customer_tax_code: '',
+    customer_license_number: '',
+    vehicle_name: '',
+    rental_start_date: new Date().toISOString().split('T')[0],
+    rental_end_date: new Date().toISOString().split('T')[0],
+    daily_rate: 0,
+    deposit_amount: 0,
+    status: 'active' as 'active' | 'completed' | 'cancelled',
+    notes: ''
+  })
+
+  useEffect(() => {
+    loadContracts()
+  }, [])
+
+  async function loadContracts() {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('*')
+        .order('contract_date', { ascending: false })
+
+      if (error) throw error
+      setContracts(data || [])
+    } catch (error) {
+      console.error('Failed to load contracts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function calculateTotalDays(): number {
+    const start = new Date(formData.rental_start_date)
+    const end = new Date(formData.rental_end_date)
+    const diffTime = Math.abs(end.getTime() - start.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays || 1
+  }
+
+  function calculateTotalAmount(): number {
+    return calculateTotalDays() * formData.daily_rate
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      const totalDays = calculateTotalDays()
+      const totalAmount = calculateTotalAmount()
+
+      const contractData = {
+        ...formData,
+        total_days: totalDays,
+        total_amount: totalAmount
+      }
+
+      if (editingId) {
+        const { error } = await supabase
+          .from('contracts')
+          .update(contractData)
+          .eq('id', editingId)
+
+        if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from('contracts')
+          .insert([contractData])
+
+        if (error) throw error
+      }
+
+      setShowForm(false)
+      setEditingId(null)
+      resetForm()
+      loadContracts()
+    } catch (error) {
+      console.error('Failed to save contract:', error)
+      alert('Impossibile salvare il contratto. Assicurati che la tabella "contracts" esista nel database.')
+    }
+  }
+
+  function resetForm() {
+    setFormData({
+      contract_number: '',
+      contract_date: new Date().toISOString().split('T')[0],
+      customer_name: '',
+      customer_email: '',
+      customer_phone: '',
+      customer_address: '',
+      customer_tax_code: '',
+      customer_license_number: '',
+      vehicle_name: '',
+      rental_start_date: new Date().toISOString().split('T')[0],
+      rental_end_date: new Date().toISOString().split('T')[0],
+      daily_rate: 0,
+      deposit_amount: 0,
+      status: 'active',
+      notes: ''
+    })
+  }
+
+  function handleEdit(contract: Contract) {
+    setFormData({
+      contract_number: contract.contract_number,
+      contract_date: contract.contract_date,
+      customer_name: contract.customer_name,
+      customer_email: contract.customer_email,
+      customer_phone: contract.customer_phone,
+      customer_address: contract.customer_address,
+      customer_tax_code: contract.customer_tax_code,
+      customer_license_number: contract.customer_license_number || '',
+      vehicle_name: contract.vehicle_name,
+      rental_start_date: contract.rental_start_date,
+      rental_end_date: contract.rental_end_date,
+      daily_rate: contract.daily_rate,
+      deposit_amount: contract.deposit_amount || 0,
+      status: contract.status,
+      notes: contract.notes || ''
+    })
+    setEditingId(contract.id)
+    setShowForm(true)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo contratto?')) return
+
+    try {
+      const { error } = await supabase
+        .from('contracts')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      loadContracts()
+    } catch (error) {
+      console.error('Failed to delete contract:', error)
+      alert('Impossibile eliminare il contratto')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+        <p className="text-white">Caricamento contratti...</p>
+      </div>
+    )
+  }
+
+  if (showForm) {
+    return (
+      <div className="bg-gray-900 rounded-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-white">
+            {editingId ? 'Modifica Contratto' : 'Nuovo Contratto'}
+          </h2>
+          <button
+            onClick={() => {
+              setShowForm(false)
+              setEditingId(null)
+              resetForm()
+            }}
+            className="text-gray-400 hover:text-white"
+          >
+            ✕ Chiudi
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Contract Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Numero Contratto *</label>
+              <input
+                type="text"
+                value={formData.contract_number}
+                onChange={(e) => setFormData({ ...formData, contract_number: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Data Contratto *</label>
+              <input
+                type="date"
+                value={formData.contract_date}
+                onChange={(e) => setFormData({ ...formData, contract_date: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Customer Info */}
+          <div className="border-t border-gray-700 pt-4">
+            <h3 className="text-lg font-bold text-white mb-4">Informazioni Cliente</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Nome Cliente *</label>
+                <input
+                  type="text"
+                  value={formData.customer_name}
+                  onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={formData.customer_email}
+                  onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
+                <input
+                  type="tel"
+                  value={formData.customer_phone}
+                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Codice Fiscale</label>
+                <input
+                  type="text"
+                  value={formData.customer_tax_code}
+                  onChange={(e) => setFormData({ ...formData, customer_tax_code: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">Indirizzo</label>
+                <input
+                  type="text"
+                  value={formData.customer_address}
+                  onChange={(e) => setFormData({ ...formData, customer_address: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Patente N.</label>
+                <input
+                  type="text"
+                  value={formData.customer_license_number}
+                  onChange={(e) => setFormData({ ...formData, customer_license_number: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Rental Info */}
+          <div className="border-t border-gray-700 pt-4">
+            <h3 className="text-lg font-bold text-white mb-4">Dettagli Noleggio</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">Veicolo *</label>
+                <input
+                  type="text"
+                  value={formData.vehicle_name}
+                  onChange={(e) => setFormData({ ...formData, vehicle_name: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Data Inizio *</label>
+                <input
+                  type="date"
+                  value={formData.rental_start_date}
+                  onChange={(e) => setFormData({ ...formData, rental_start_date: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Data Fine *</label>
+                <input
+                  type="date"
+                  value={formData.rental_end_date}
+                  onChange={(e) => setFormData({ ...formData, rental_end_date: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Tariffa Giornaliera (€) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.daily_rate}
+                  onChange={(e) => setFormData({ ...formData, daily_rate: parseFloat(e.target.value) })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Cauzione (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.deposit_amount}
+                  onChange={(e) => setFormData({ ...formData, deposit_amount: parseFloat(e.target.value) })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Stato</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                >
+                  <option value="active">Attivo</option>
+                  <option value="completed">Completato</option>
+                  <option value="cancelled">Cancellato</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Calculated Totals */}
+            <div className="mt-4 p-4 bg-gray-800 rounded">
+              <div className="flex justify-between text-white mb-2">
+                <span>Giorni Totali:</span>
+                <span className="font-bold">{calculateTotalDays()}</span>
+              </div>
+              <div className="flex justify-between text-white text-lg">
+                <span>Totale:</span>
+                <span className="font-bold text-dr7-gold">€{calculateTotalAmount().toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Note</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              className="flex-1 bg-dr7-gold hover:bg-yellow-500 text-black font-bold py-3 px-4 rounded transition-colors"
+            >
+              {editingId ? 'Aggiorna Contratto' : 'Crea Contratto'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowForm(false)
+                setEditingId(null)
+                resetForm()
+              }}
+              className="px-6 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded transition-colors"
+            >
+              Annulla
+            </button>
+          </div>
+        </form>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">📄 Contratti</h2>
+        <button
+          onClick={() => setShowForm(true)}
+          className="bg-dr7-gold hover:bg-yellow-500 text-black font-bold py-2 px-4 rounded transition-colors"
+        >
+          + Nuovo Contratto
+        </button>
+      </div>
+
+      {/* Contracts List */}
+      {contracts.length === 0 ? (
+        <div className="bg-gray-900 rounded-lg p-12 text-center">
+          <p className="text-gray-400 text-lg mb-4">Nessun contratto trovato</p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-dr7-gold hover:bg-yellow-500 text-black font-bold py-2 px-6 rounded transition-colors"
+          >
+            Crea il primo contratto
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {contracts.map((contract) => (
+            <div key={contract.id} className="bg-gray-900 rounded-lg p-4 border border-gray-800">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-bold text-white">{contract.contract_number}</h3>
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                      contract.status === 'active' ? 'bg-green-600 text-white' :
+                      contract.status === 'completed' ? 'bg-blue-600 text-white' :
+                      'bg-red-600 text-white'
+                    }`}>
+                      {contract.status === 'active' ? 'Attivo' :
+                       contract.status === 'completed' ? 'Completato' : 'Cancellato'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-400">Cliente:</span>
+                      <p className="text-white font-semibold">{contract.customer_name}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Veicolo:</span>
+                      <p className="text-white font-semibold">{contract.vehicle_name}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Periodo:</span>
+                      <p className="text-white font-semibold">
+                        {new Date(contract.rental_start_date).toLocaleDateString('it-IT')} - {new Date(contract.rental_end_date).toLocaleDateString('it-IT')}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Totale:</span>
+                      <p className="text-dr7-gold font-bold">€{contract.total_amount.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 ml-4">
+                  <button
+                    onClick={() => handleEdit(contract)}
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                  >
+                    Modifica
+                  </button>
+                  <button
+                    onClick={() => handleDelete(contract.id)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                  >
+                    Elimina
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
