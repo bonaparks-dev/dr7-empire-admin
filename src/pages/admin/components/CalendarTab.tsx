@@ -262,8 +262,26 @@ export default function CalendarTab() {
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-lg font-bold text-white">Calendario Flotta</h2>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-400">Veicoli:</span>
-              <span className="text-dr7-gold font-bold text-sm">{vehicles.length}</span>
+              <span className="text-xs text-gray-400">Questo Mese:</span>
+              <span className="text-dr7-gold font-bold text-sm">
+                {bookings.filter(b => {
+                  const pickupDate = new Date(b.pickup_date)
+                  return pickupDate.getMonth() === currentDate.getMonth() &&
+                         pickupDate.getFullYear() === currentDate.getFullYear()
+                }).length} noleggi
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400">Fatturato:</span>
+              <span className="text-green-400 font-bold text-sm">
+                €{(bookings
+                  .filter(b => {
+                    const pickupDate = new Date(b.pickup_date)
+                    return pickupDate.getMonth() === currentDate.getMonth() &&
+                           pickupDate.getFullYear() === currentDate.getFullYear()
+                  })
+                  .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
+              </span>
             </div>
             {/* Legend */}
             <div className="flex items-center gap-3 text-xs">

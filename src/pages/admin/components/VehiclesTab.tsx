@@ -294,14 +294,6 @@ export default function VehiclesTab() {
             {editingId ? 'Modifica Veicolo' : 'Nuovo Veicolo'}
           </h3>
 
-          {/* Warning message */}
-          <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
-            <p className="text-yellow-200 text-sm">
-              ⚠️ <strong>IMPORTANTE:</strong> Il campo "Nome" è per il modello dell'auto (es: "Audi RS3 Verde").
-              La targa va nel campo separato "Targa" (es: "AB123CD"). <strong>NON scrivere "targa" nel nome!</strong>
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Input

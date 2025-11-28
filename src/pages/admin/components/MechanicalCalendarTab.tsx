@@ -162,11 +162,29 @@ export default function MechanicalCalendarTab() {
       {/* Header Controls */}
       <div className="bg-gray-900 rounded-lg p-3 lg:p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-lg font-bold text-white">🔧 Calendario Meccanica</h2>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-400">Prenotazioni:</span>
-              <span className="text-dr7-gold font-bold text-sm">{bookings.length}</span>
+              <span className="text-xs text-gray-400">Questo Mese:</span>
+              <span className="text-dr7-gold font-bold text-sm">
+                {bookings.filter(b => {
+                  const bookingDate = new Date(b.appointment_date)
+                  return bookingDate.getMonth() === currentDate.getMonth() &&
+                         bookingDate.getFullYear() === currentDate.getFullYear()
+                }).length} interventi
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400">Fatturato:</span>
+              <span className="text-green-400 font-bold text-sm">
+                €{(bookings
+                  .filter(b => {
+                    const bookingDate = new Date(b.appointment_date)
+                    return bookingDate.getMonth() === currentDate.getMonth() &&
+                           bookingDate.getFullYear() === currentDate.getFullYear()
+                  })
+                  .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
+              </span>
             </div>
           </div>
 
