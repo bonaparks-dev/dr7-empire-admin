@@ -58,6 +58,19 @@ export default function VehiclesTab() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    // Validate that "targa" is not in the display_name
+    if (formData.display_name.toLowerCase().includes('targa')) {
+      alert('⚠️ ERRORE: Non scrivere "targa" nel campo Nome!\n\nUsa il campo "Targa" separato sotto.\n\nEsempio:\n✅ Nome: "Audi RS3 Verde"\n✅ Targa: "AB123CD"')
+      return
+    }
+
+    // Validate that the plate number is not in the display_name
+    if (formData.plate && formData.display_name.includes(formData.plate.trim())) {
+      alert('⚠️ ERRORE: Non mettere la targa nel campo Nome!\n\nIl numero di targa va SOLO nel campo "Targa".\n\nEsempio SBAGLIATO:\n❌ Nome: "Audi RS3 Verde PAMT299"\n\nEsempio CORRETTO:\n✅ Nome: "Audi RS3 Verde"\n✅ Targa: "PAMT299"')
+      return
+    }
+
     try {
       const dataToSave = {
         display_name: formData.display_name,
@@ -270,18 +283,33 @@ export default function VehiclesTab() {
           <h3 className="text-xl font-semibold text-white mb-4">
             {editingId ? 'Modifica Veicolo' : 'Nuovo Veicolo'}
           </h3>
+
+          {/* Warning message */}
+          <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+            <p className="text-yellow-200 text-sm">
+              ⚠️ <strong>IMPORTANTE:</strong> Il campo "Nome" è per il modello dell'auto (es: "Audi RS3 Verde").
+              La targa va nel campo separato "Targa" (es: "AB123CD"). <strong>NON scrivere "targa" nel nome!</strong>
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Nome"
-              required
-              value={formData.display_name}
-              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-            />
-            <Input
-              label="Targa"
-              value={formData.plate}
-              onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
-            />
+            <div>
+              <Input
+                label="Nome (solo modello auto)"
+                placeholder="Es: Audi RS3 Verde"
+                required
+                value={formData.display_name}
+                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Input
+                label="Targa (numero di targa)"
+                placeholder="Es: AB123CD"
+                value={formData.plate}
+                onChange={(e) => setFormData({ ...formData, plate: e.target.value })}
+              />
+            </div>
             <Select
               label="Categoria"
               required
