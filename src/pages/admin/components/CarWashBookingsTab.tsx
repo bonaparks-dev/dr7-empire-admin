@@ -70,20 +70,6 @@ const CAR_WASH_SERVICES = [
   }
 ]
 
-const ADDITIONAL_SERVICES = [
-  // Utilitaria di Cortesia
-  { value: 'courtesy-car-1h', label: 'Utilitaria di Cortesia - 1 ora (+€15)', price: 15 },
-  { value: 'courtesy-car-2h', label: 'Utilitaria di Cortesia - 2 ore (+€25)', price: 25 },
-  { value: 'courtesy-car-3h', label: 'Utilitaria di Cortesia - 3 ore (+€35)', price: 35 },
-  // Supercar Experience
-  { value: 'supercar-1h', label: 'Supercar Experience - 1 ora (+€59)', price: 59 },
-  { value: 'supercar-2h', label: 'Supercar Experience - 2 ore (+€99)', price: 99 },
-  { value: 'supercar-3h', label: 'Supercar Experience - 3 ore (+€139)', price: 139 },
-  // Lamborghini & Ferrari Experience
-  { value: 'lamborghini-ferrari-1h', label: 'Lamborghini & Ferrari Experience - 1 ora (+€149)', price: 149 },
-  { value: 'lamborghini-ferrari-2h', label: 'Lamborghini & Ferrari Experience - 2 ore (+€249)', price: 249 },
-  { value: 'lamborghini-ferrari-3h', label: 'Lamborghini & Ferrari Experience - 3 ore (+€299)', price: 299 }
-]
 
 // Generate time slots for car wash: 9h-13h and 15h-19h, every 15 minutes
 const generateTimeSlots = () => {
@@ -146,7 +132,6 @@ export default function CarWashBookingsTab() {
     service_name: '',
     appointment_date: '',
     appointment_time: '',
-    additional_service: '',
     price_total: 0,
     payment_status: 'paid',
     amount_paid: '0',
@@ -263,14 +248,8 @@ export default function CarWashBookingsTab() {
     const appointmentDate = new Date(year, month - 1, day, hours, minutes, 0)
     const appointmentDateTime = appointmentDate.toISOString()
 
-    // Calculate total price
-    let totalPrice = formData.price_total
-    if (formData.additional_service) {
-      const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
-      if (additionalService) {
-        totalPrice += additionalService.price
-      }
-    }
+    // Total price is just the service price
+    const totalPrice = formData.price_total
 
     const bookingDetails: any = {
       notes: formData.notes,
@@ -278,11 +257,6 @@ export default function CarWashBookingsTab() {
       amountPaid: Math.round(parseFloat(formData.amount_paid) * 100),
       adminOverride: forceBooking, // Mark as admin override for backend
       createdBy: 'admin_panel'
-    }
-
-    if (formData.additional_service) {
-      const additionalService = ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)
-      bookingDetails.additionalService = additionalService?.label || formData.additional_service
     }
 
     // Build payload carefully to match database schema
@@ -371,7 +345,6 @@ export default function CarWashBookingsTab() {
       service_name: '',
       appointment_date: '',
       appointment_time: '',
-      additional_service: '',
       price_total: 0,
       payment_status: 'paid',
       amount_paid: '0',
@@ -658,21 +631,6 @@ export default function CarWashBookingsTab() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Servizio Aggiuntivo (opzionale)</label>
-                <select
-                  value={formData.additional_service}
-                  onChange={(e) => setFormData({ ...formData, additional_service: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                >
-                  <option value="">Nessuno</option>
-                  {ADDITIONAL_SERVICES.map(service => (
-                    <option key={service.value} value={service.value}>
-                      {service.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Data</label>
                 <input
                   type="date"
@@ -762,7 +720,7 @@ export default function CarWashBookingsTab() {
             {formData.price_total > 0 && (
               <div className="text-right">
                 <span className="text-lg font-bold text-dr7-gold">
-                  Totale: EUR {(formData.price_total + (formData.additional_service ? ADDITIONAL_SERVICES.find(s => s.value === formData.additional_service)?.price || 0 : 0)).toFixed(2)}
+                  Totale: EUR {formData.price_total.toFixed(2)}
                 </span>
               </div>
             )}
