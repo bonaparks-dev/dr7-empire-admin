@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
+import { FinancialData } from '../../../components/FinancialData';
 
 // Generate UUID for ticket
 function generateTicketUuid(ticketNumber: number): string {
@@ -507,7 +508,7 @@ const LotteriaBoard: React.FC = () => {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-4">Tabellone LOTTERIA</h2>
-        <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-4 gap-4 mb-4">
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Totale Biglietti</div>
             <div className="text-2xl font-bold">{totalTickets}</div>
@@ -519,6 +520,14 @@ const LotteriaBoard: React.FC = () => {
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Disponibili</div>
             <div className="text-2xl font-bold text-green-600">{availableCount}</div>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="text-sm text-gray-600">Fatturato Totale</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              <FinancialData type="total">
+                €{((soldCount * 2500) / 100).toFixed(2)}
+              </FinancialData>
+            </div>
           </div>
         </div>
         <div className="flex gap-4 items-center flex-wrap">

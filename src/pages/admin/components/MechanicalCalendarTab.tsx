@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../supabaseClient'
+import { FinancialData } from '../../../components/FinancialData'
 
 interface MechanicalBooking {
   id: string
@@ -177,13 +178,15 @@ export default function MechanicalCalendarTab() {
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400">Fatturato:</span>
               <span className="text-green-400 font-bold text-sm">
-                €{(bookings
-                  .filter(b => {
-                    const bookingDate = new Date(b.appointment_date)
-                    return bookingDate.getMonth() === currentDate.getMonth() &&
-                           bookingDate.getFullYear() === currentDate.getFullYear()
-                  })
-                  .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
+                <FinancialData type="total">
+                  €{(bookings
+                    .filter(b => {
+                      const bookingDate = new Date(b.appointment_date)
+                      return bookingDate.getMonth() === currentDate.getMonth() &&
+                             bookingDate.getFullYear() === currentDate.getFullYear()
+                    })
+                    .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
+                </FinancialData>
               </span>
             </div>
           </div>
