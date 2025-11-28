@@ -144,15 +144,23 @@ export default function CalendarTab() {
     const checkDate = new Date(year, month, day)
     checkDate.setHours(0, 0, 0, 0)
 
-    // Check if date falls within unavailable range
-    if (vehicle.metadata?.unavailable_from && vehicle.metadata?.unavailable_until) {
-      const unavailableFrom = new Date(vehicle.metadata.unavailable_from)
-      const unavailableUntil = new Date(vehicle.metadata.unavailable_until)
-      unavailableFrom.setHours(0, 0, 0, 0)
-      unavailableUntil.setHours(0, 0, 0, 0)
-
-      if (checkDate >= unavailableFrom && checkDate <= unavailableUntil) {
+    // Check if vehicle is marked as unavailable
+    if (vehicle.status === 'unavailable') {
+      // If no date range specified, mark ALL dates as unavailable
+      if (!vehicle.metadata?.unavailable_from && !vehicle.metadata?.unavailable_until) {
         return 'unavailable'
+      }
+
+      // If date range specified, check if current date falls within range
+      if (vehicle.metadata?.unavailable_from && vehicle.metadata?.unavailable_until) {
+        const unavailableFrom = new Date(vehicle.metadata.unavailable_from)
+        const unavailableUntil = new Date(vehicle.metadata.unavailable_until)
+        unavailableFrom.setHours(0, 0, 0, 0)
+        unavailableUntil.setHours(0, 0, 0, 0)
+
+        if (checkDate >= unavailableFrom && checkDate <= unavailableUntil) {
+          return 'unavailable'
+        }
       }
     }
 
