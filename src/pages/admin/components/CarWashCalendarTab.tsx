@@ -103,8 +103,9 @@ export default function CarWashCalendarTab() {
   const isSlotBooked = (day: number, timeSlot: string): boolean => {
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
-    const checkDate = new Date(year, month, day)
-    const dateString = checkDate.toISOString().split('T')[0]
+
+    // Format date as YYYY-MM-DD in local timezone (no UTC conversion)
+    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
     return bookings.some(booking => {
       const bookingDate = booking.appointment_date?.split('T')[0]
@@ -115,8 +116,9 @@ export default function CarWashCalendarTab() {
   const getSlotBookings = (day: number, timeSlot: string): CarWashBooking[] => {
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
-    const checkDate = new Date(year, month, day)
-    const dateString = checkDate.toISOString().split('T')[0]
+
+    // Format date as YYYY-MM-DD in local timezone (no UTC conversion)
+    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
     return bookings.filter(booking => {
       const bookingDate = booking.appointment_date?.split('T')[0]
