@@ -302,6 +302,33 @@ export default function CarWashBookingsTab() {
 
     console.log('✅ Booking created successfully:', data)
 
+    // Send WhatsApp notification
+    try {
+      await fetch('/.netlify/functions/send-whatsapp-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          booking: {
+            id: data.id || '',
+            service_type: 'car_wash',
+            customer_name: customerName,
+            customer_email: customerEmail,
+            customer_phone: customerPhone,
+            vehicle_name: formData.service_name,
+            pickup_date: appointmentDateTime,
+            dropoff_date: appointmentDateTime,
+            pickup_location: 'DR7 Empire - Car Wash',
+            price_total: totalPrice * 100,
+            payment_status: formData.payment_status || 'pending'
+          }
+        })
+      })
+      console.log('✅ WhatsApp notification sent')
+    } catch (whatsappError) {
+      console.error('⚠️ WhatsApp notification failed:', whatsappError)
+      // Don't block the booking if WhatsApp fails
+    }
+
     // Add to Google Calendar
     try {
       const selectedService = CAR_WASH_SERVICES.find(s => s.name === formData.service_name)

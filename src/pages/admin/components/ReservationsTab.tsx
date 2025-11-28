@@ -48,6 +48,7 @@ interface Booking {
   id: string
   user_id: string | null
   vehicle_name: string
+  vehicle_plate?: string | null
   vehicle_image_url: string | null
   pickup_date: string
   dropoff_date: string
@@ -530,6 +531,7 @@ export default function ReservationsTab() {
           guest_phone: customerInfo?.phone || null,
           vehicle_type: 'car',
           vehicle_name: vehicle?.display_name || 'N/A',
+          vehicle_plate: vehicle?.plate || null,
           vehicle_image_url: null,
           pickup_date: new Date(pickupDateTime).toISOString(),
           dropoff_date: new Date(returnDateTime).toISOString(),
@@ -995,17 +997,22 @@ export default function ReservationsTab() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mb-2 text-white">
-                {isCarWash ? (
-                  <>
-                    <span className="text-blue-400">🚿</span>
-                    <span className="text-sm">{booking.service_name || 'Autolavaggio'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-green-400">🚗</span>
-                    <span className="text-sm">{booking.vehicle_name}</span>
-                  </>
+              <div className="mb-2">
+                <div className="flex items-center gap-2 text-white">
+                  {isCarWash ? (
+                    <>
+                      <span className="text-blue-400">🚿</span>
+                      <span className="text-sm">{booking.service_name || 'Autolavaggio'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-green-400">🚗</span>
+                      <span className="text-sm">{booking.vehicle_name}</span>
+                    </>
+                  )}
+                </div>
+                {!isCarWash && booking.vehicle_plate && (
+                  <div className="text-xs text-gray-400 ml-6 mt-1">Targa: {booking.vehicle_plate}</div>
                 )}
               </div>
 
@@ -1094,10 +1101,15 @@ export default function ReservationsTab() {
                           <span>{booking.service_name || 'Autolavaggio'}</span>
                         </span>
                       ) : (
-                        <span className="flex items-center gap-2">
-                          <span className="text-green-400">🚗</span>
-                          <span>{booking.vehicle_name}</span>
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="flex items-center gap-2">
+                            <span className="text-green-400">🚗</span>
+                            <span>{booking.vehicle_name}</span>
+                          </span>
+                          {booking.vehicle_plate && (
+                            <span className="text-xs text-gray-400 ml-6">Targa: {booking.vehicle_plate}</span>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
@@ -1225,6 +1237,9 @@ export default function ReservationsTab() {
                   ) : (
                     <>
                       <div><span className="text-gray-400">Veicolo:</span> <span className="text-white">{selectedBooking.vehicle_name || '-'}</span></div>
+                      {selectedBooking.vehicle_plate && (
+                        <div><span className="text-gray-400">Targa:</span> <span className="text-white">{selectedBooking.vehicle_plate}</span></div>
+                      )}
                       <div><span className="text-gray-400">Ritiro:</span> <span className="text-white">{selectedBooking.pickup_date ? new Date(typeof selectedBooking.pickup_date === 'number' ? selectedBooking.pickup_date * 1000 : selectedBooking.pickup_date).toLocaleString('it-IT') : '-'}</span></div>
                       <div><span className="text-gray-400">Luogo Ritiro:</span> <span className="text-white">{selectedBooking.pickup_location || '-'}</span></div>
                       <div><span className="text-gray-400">Riconsegna:</span> <span className="text-white">{selectedBooking.dropoff_date ? new Date(typeof selectedBooking.dropoff_date === 'number' ? selectedBooking.dropoff_date * 1000 : selectedBooking.dropoff_date).toLocaleString('it-IT') : '-'}</span></div>
