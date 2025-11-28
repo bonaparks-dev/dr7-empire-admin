@@ -8,9 +8,10 @@ import FatturaTab from './components/FatturaTab'
 import CalendarTab from './components/CalendarTab'
 import CarWashBookingsTab from './components/CarWashBookingsTab'
 import CarWashCalendarTab from './components/CarWashCalendarTab'
+import MechanicalBookingTab from './components/MechanicalBookingTab'
 import LotteriaBoard from './components/LotteriaBoard'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'lotteria' | 'calendar' | 'carwash' | 'carwash-calendar'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'fattura' | 'lotteria' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -70,6 +71,7 @@ export default function AdminDashboard() {
               {[
                 { id: 'reservations', label: 'Prenotazioni Auto', icon: '🚗' },
                 { id: 'carwash', label: 'Prenotazioni Lavaggio', icon: '🚿' },
+                { id: 'mechanical', label: 'Prenotazioni Meccanica', icon: '🔧' },
                 { id: 'carwash-calendar', label: 'Calendario Lavaggi', icon: '🧼' },
                 { id: 'customers', label: 'Clienti', icon: '👥' },
                 { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
@@ -122,6 +124,16 @@ export default function AdminDashboard() {
                 }`}
               >
                 🚿 Prenotazioni Lavaggio
+              </button>
+              <button
+                onClick={() => setActiveTab('mechanical')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'mechanical'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                🔧 Prenotazioni Meccanica
               </button>
               <button
                 onClick={() => setActiveTab('carwash-calendar')}
@@ -192,6 +204,7 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-bold text-white">
             {activeTab === 'reservations' && '🚗 Prenotazioni Auto'}
             {activeTab === 'carwash' && '🚿 Prenotazioni Lavaggio'}
+            {activeTab === 'mechanical' && '🔧 Prenotazioni Meccanica'}
             {activeTab === 'carwash-calendar' && '🧼 Calendario Lavaggi'}
             {activeTab === 'customers' && '👥 Clienti'}
             {activeTab === 'vehicles' && '🚙 Veicoli'}
@@ -210,6 +223,7 @@ export default function AdminDashboard() {
           {activeTab === 'calendar' && <CalendarTab />}
           {activeTab === 'carwash' && <CarWashBookingsTab />}
           {activeTab === 'carwash-calendar' && <CarWashCalendarTab />}
+          {activeTab === 'mechanical' && <MechanicalBookingTab />}
         </div>
       </main>
     </div>
