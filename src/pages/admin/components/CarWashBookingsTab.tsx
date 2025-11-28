@@ -653,7 +653,7 @@ export default function CarWashBookingsTab() {
                   {formData.service_name && (() => {
                     const availableSlots = getAvailableTimeSlotsForService(formData.service_name)
                     const morningSlots = availableSlots.filter(t => t.startsWith('09') || t.startsWith('10') || t.startsWith('11') || t.startsWith('12'))
-                    const afternoonSlots = availableSlots.filter(t => t.startsWith('15') || t.startsWith('16') || t.startsWith('17'))
+                    const afternoonSlots = availableSlots.filter(t => t.startsWith('15') || t.startsWith('16') || t.startsWith('17') || t.startsWith('18'))
 
                     return (
                       <>
