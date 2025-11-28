@@ -209,11 +209,45 @@ export default function MechanicalBookingTab() {
 
         if (error) throw error
       } else {
-        const { error } = await supabase
+        const { data: insertedBooking, error } = await supabase
           .from('bookings')
           .insert([bookingData])
+          .select()
+          .single()
 
         if (error) throw error
+
+        // Generate PDF invoice for mechanical service
+        try {
+          await fetch('/.netlify/functions/generate-invoice-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bookingId: insertedBooking?.id || '',
+              bookingType: 'mechanical',
+              customerName: customerInfo?.full_name || '',
+              customerEmail: customerInfo?.email || '',
+              customerPhone: customerInfo?.phone || '',
+              items: [{
+                description: `Servizio Meccanico: ${formData.service_name} - ${formData.vehicle_info}`,
+                quantity: 1,
+                unitPrice: Math.round(formData.price_total * 100),
+                total: Math.round(formData.price_total * 100)
+              }],
+              subtotal: Math.round(formData.price_total * 100),
+              tax: 0,
+              total: Math.round(formData.price_total * 100),
+              paymentStatus: formData.payment_status,
+              bookingDate: new Date().toISOString(),
+              serviceDate: `${formData.appointment_date}T${formData.appointment_time}:00`,
+              notes: formData.notes || ''
+            })
+          })
+          console.log('✅ Invoice generated successfully')
+        } catch (invoiceError) {
+          console.error('⚠️ Failed to generate invoice:', invoiceError)
+          // Don't fail the whole booking if invoice generation fails
+        }
 
         // Create Google Calendar event
         try {

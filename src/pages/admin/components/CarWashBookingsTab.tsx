@@ -302,6 +302,38 @@ export default function CarWashBookingsTab() {
 
     console.log('✅ Booking created successfully:', data)
 
+    // Generate PDF invoice for car wash
+    try {
+      await fetch('/.netlify/functions/generate-invoice-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: data.id || '',
+          bookingType: 'car_wash',
+          customerName: customerName,
+          customerEmail: customerEmail,
+          customerPhone: customerPhone,
+          items: [{
+            description: `Servizio Lavaggio: ${formData.service_name}`,
+            quantity: 1,
+            unitPrice: totalPrice * 100,
+            total: totalPrice * 100
+          }],
+          subtotal: totalPrice * 100,
+          tax: 0,
+          total: totalPrice * 100,
+          paymentStatus: formData.payment_status || 'pending',
+          bookingDate: new Date().toISOString(),
+          serviceDate: appointmentDateTime,
+          notes: formData.notes || ''
+        })
+      })
+      console.log('✅ Invoice generated successfully')
+    } catch (invoiceError) {
+      console.error('⚠️ Failed to generate invoice:', invoiceError)
+      // Don't fail the whole booking if invoice generation fails
+    }
+
     // Send WhatsApp notification
     try {
       await fetch('/.netlify/functions/send-whatsapp-notification', {

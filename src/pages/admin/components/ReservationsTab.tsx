@@ -666,6 +666,40 @@ export default function ReservationsTab() {
           // Don't fail the whole booking if calendar fails
         }
 
+        // Generate PDF invoice for car rental
+        if (!editingId) { // Only for new bookings
+          try {
+            await fetch('/.netlify/functions/generate-invoice-pdf', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                bookingId: insertedBooking?.id || '',
+                bookingType: 'car_rental',
+                customerName: customerInfo?.full_name || '',
+                customerEmail: customerInfo?.email || '',
+                customerPhone: customerInfo?.phone || '',
+                items: [{
+                  description: `Noleggio ${vehicle?.display_name || 'Veicolo'}`,
+                  quantity: 1,
+                  unitPrice: Math.round(parseFloat(formData.total_amount) * 100),
+                  total: Math.round(parseFloat(formData.total_amount) * 100)
+                }],
+                subtotal: Math.round(parseFloat(formData.total_amount) * 100),
+                tax: 0,
+                total: Math.round(parseFloat(formData.total_amount) * 100),
+                paymentStatus: formData.payment_status || 'pending',
+                bookingDate: new Date().toISOString(),
+                serviceDate: `${formData.pickup_date}T${formData.pickup_time}:00`,
+                notes: `Ritiro: ${pickupLocationLabel}\nRiconsegna: ${dropoffLocationLabel}`
+              })
+            })
+            console.log('✅ Invoice generated successfully')
+          } catch (invoiceError) {
+            console.error('⚠️ Failed to generate invoice:', invoiceError)
+            // Don't fail the whole booking if invoice generation fails
+          }
+        }
+
         // Send WhatsApp notification for car rental
         if (!editingId) { // Only for new bookings
           try {

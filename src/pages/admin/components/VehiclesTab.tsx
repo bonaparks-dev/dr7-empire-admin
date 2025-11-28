@@ -31,7 +31,9 @@ export default function VehiclesTab() {
     plate: '',
     status: 'available',
     daily_rate: '0',
-    category: 'exotic'
+    category: 'exotic',
+    unavailable_from: '',
+    unavailable_until: ''
   })
 
   useEffect(() => {
@@ -77,7 +79,11 @@ export default function VehiclesTab() {
         plate: formData.plate || null,
         status: formData.status,
         daily_rate: parseFloat(formData.daily_rate),
-        category: formData.category
+        category: formData.category,
+        metadata: {
+          unavailable_from: formData.unavailable_from || null,
+          unavailable_until: formData.unavailable_until || null
+        }
       }
 
       if (editingId) {
@@ -128,7 +134,9 @@ export default function VehiclesTab() {
       plate: '',
       status: 'available',
       daily_rate: '0',
-      category: 'exotic'
+      category: 'exotic',
+      unavailable_from: '',
+      unavailable_until: ''
     })
   }
 
@@ -138,7 +146,9 @@ export default function VehiclesTab() {
       plate: vehicle.plate || '',
       status: vehicle.status,
       daily_rate: vehicle.daily_rate.toString(),
-      category: vehicle.category || 'exotic'
+      category: vehicle.category || 'exotic',
+      unavailable_from: (vehicle.metadata as any)?.unavailable_from || '',
+      unavailable_until: (vehicle.metadata as any)?.unavailable_until || ''
     })
     setEditingId(vehicle.id)
     setShowForm(true)
@@ -339,6 +349,41 @@ export default function VehiclesTab() {
               value={formData.daily_rate}
               onChange={(e) => setFormData({ ...formData, daily_rate: e.target.value })}
             />
+          </div>
+
+          {/* Date Range for Unavailability */}
+          {formData.status === 'unavailable' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+              <div>
+                <label className="block text-sm text-yellow-200 mb-1">Non Disponibile Dal</label>
+                <input
+                  type="date"
+                  value={formData.unavailable_from}
+                  onChange={(e) => setFormData({ ...formData, unavailable_from: e.target.value })}
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-yellow-200 mb-1">Non Disponibile Fino Al</label>
+                <input
+                  type="date"
+                  value={formData.unavailable_until}
+                  onChange={(e) => setFormData({ ...formData, unavailable_until: e.target.value })}
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-yellow-200">
+                  ℹ️ Specificare le date in cui il veicolo non sarà disponibile per il noleggio.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4">
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ display: 'none' }}>
+            {/* Hidden placeholder to maintain structure */}
           </div>
           <div className="flex gap-3 mt-4">
             <Button type="submit">Salva</Button>
