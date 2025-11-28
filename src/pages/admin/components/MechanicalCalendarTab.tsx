@@ -323,7 +323,7 @@ export default function MechanicalCalendarTab() {
             </div>
 
             <div className="space-y-4">
-              {selectedCell.bookings.map((booking, index) => (
+              {selectedCell.bookings.map((booking) => (
                 <div
                   key={booking.id}
                   className="bg-gray-800 border border-gray-700 rounded-lg p-4"

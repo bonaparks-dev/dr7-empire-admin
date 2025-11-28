@@ -28,7 +28,6 @@ export default function ContrattoTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [viewingContract, setViewingContract] = useState<Contract | null>(null)
 
   const [formData, setFormData] = useState({
     contract_number: '',
