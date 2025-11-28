@@ -358,6 +358,7 @@ export default function VehiclesTab() {
                 <label className="block text-sm text-yellow-200 mb-1">Non Disponibile Dal</label>
                 <input
                   type="date"
+                  lang="it"
                   value={formData.unavailable_from}
                   onChange={(e) => setFormData({ ...formData, unavailable_from: e.target.value })}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
@@ -367,6 +368,7 @@ export default function VehiclesTab() {
                 <label className="block text-sm text-yellow-200 mb-1">Non Disponibile Fino Al</label>
                 <input
                   type="date"
+                  lang="it"
                   value={formData.unavailable_until}
                   onChange={(e) => setFormData({ ...formData, unavailable_until: e.target.value })}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
