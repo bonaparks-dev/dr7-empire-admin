@@ -327,6 +327,40 @@ export default function CarWashBookingsTab() {
 
     console.log('✅ Booking created successfully:', data)
 
+    // Add to Google Calendar
+    try {
+      const selectedService = CAR_WASH_SERVICES.find(s => s.name === formData.service_name)
+      const durationMinutes = selectedService?.durationMinutes || 60
+
+      // Calculate end time
+      const endDate = new Date(year, month - 1, day, hours, minutes + durationMinutes, 0)
+      const endDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const endTimeStr = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`
+
+      await fetch('/.netlify/functions/create-calendar-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleName: `🧼 ${formData.service_name}`,
+          customerName,
+          customerEmail,
+          customerPhone,
+          pickupDate: formData.appointment_date,
+          pickupTime: formData.appointment_time,
+          returnDate: endDateStr,
+          returnTime: endTimeStr,
+          pickupLocation: 'DR7 Empire - Car Wash',
+          returnLocation: 'DR7 Empire - Car Wash',
+          totalPrice: totalPrice,
+          bookingId: data.id
+        })
+      })
+      console.log('✅ Google Calendar event created')
+    } catch (calendarError) {
+      console.error('⚠️ Failed to create Google Calendar event:', calendarError)
+      // Don't block the booking if calendar fails
+    }
+
     alert('✅ Prenotazione creata con successo!')
     setShowForm(false)
     setNewCustomerMode(false)
