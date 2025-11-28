@@ -205,6 +205,27 @@ export default function CarWashBookingsTab() {
     }
   }
 
+  async function handleDeleteBooking(bookingId: string, customerName: string) {
+    if (!confirm(`⚠️ ATTENZIONE: Sei sicuro di voler ELIMINARE DEFINITIVAMENTE la prenotazione di ${customerName}?\n\nQuesta azione è irreversibile e rimuoverà la prenotazione dal database.`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+
+      if (error) throw error
+
+      alert('✅ Prenotazione eliminata definitivamente!')
+      loadData()
+    } catch (error: any) {
+      console.error('Failed to delete booking:', error)
+      alert(`❌ Errore durante l'eliminazione: ${error.message}`)
+    }
+  }
+
   async function createBooking(forceBooking: boolean = false) {
     let customerName = ''
     let customerEmail = ''
@@ -871,18 +892,26 @@ export default function CarWashBookingsTab() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {booking.status !== 'cancelled' ? (
+                      <div className="flex gap-2">
+                        {booking.status !== 'cancelled' ? (
+                          <button
+                            onClick={() => handleCancelBooking(booking.id, booking.customer_name)}
+                            className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded text-xs font-medium transition-colors"
+                          >
+                            Annulla
+                          </button>
+                        ) : (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-400">
+                            Annullata
+                          </span>
+                        )}
                         <button
-                          onClick={() => handleCancelBooking(booking.id, booking.customer_name)}
+                          onClick={() => handleDeleteBooking(booking.id, booking.customer_name)}
                           className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
                         >
-                          Annulla
+                          Elimina
                         </button>
-                      ) : (
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-400">
-                          Annullata
-                        </span>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}
