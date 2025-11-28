@@ -253,7 +253,14 @@ export default function CarWashBookingsTab() {
       customerPhone = customer.phone || ''
     }
 
-    const appointmentDateTime = `${formData.appointment_date}T${formData.appointment_time}:00`
+    // Create appointment datetime in Europe/Rome timezone
+    // Parse the date and time and create a proper Date object
+    const [year, month, day] = formData.appointment_date.split('-').map(Number)
+    const [hours, minutes] = formData.appointment_time.split(':').map(Number)
+
+    // Create date in local timezone (Europe/Rome for Italian admin)
+    const appointmentDate = new Date(year, month - 1, day, hours, minutes, 0)
+    const appointmentDateTime = appointmentDate.toISOString()
 
     // Calculate total price
     let totalPrice = formData.price_total
