@@ -136,6 +136,7 @@ export default function CarWashBookingsTab() {
   const [bookings, setBookings] = useState<CarWashBooking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [newCustomerMode, setNewCustomerMode] = useState(false)
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
@@ -405,11 +406,20 @@ export default function CarWashBookingsTab() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
+    // Prevent double submission
+    if (submitting) {
+      console.log('⚠️ Form already submitting, ignoring duplicate submission')
+      return
+    }
+
+    setSubmitting(true)
+
     try {
       // Get the selected service duration
       const selectedService = CAR_WASH_SERVICES.find(s => s.name === formData.service_name)
       if (!selectedService) {
         alert('❌ Errore: Seleziona un servizio valido')
+        setSubmitting(false)
         return
       }
 
@@ -501,6 +511,8 @@ export default function CarWashBookingsTab() {
       } else {
         alert(`❌ Errore nella creazione della prenotazione: ${errorMessage}`)
       }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -764,9 +776,14 @@ export default function CarWashBookingsTab() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-dr7-gold hover:bg-yellow-500 text-black font-semibold rounded"
+                disabled={submitting}
+                className={`px-4 py-2 font-semibold rounded ${
+                  submitting
+                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                    : 'bg-dr7-gold hover:bg-yellow-500 text-black'
+                }`}
               >
-                Crea Prenotazione
+                {submitting ? 'Creazione in corso...' : 'Crea Prenotazione'}
               </button>
             </div>
           </form>
