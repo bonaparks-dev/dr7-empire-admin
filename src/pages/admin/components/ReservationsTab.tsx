@@ -479,6 +479,49 @@ export default function ReservationsTab() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
+      // Check for existing bookings on the same vehicle and dates (only for new bookings, not edits)
+      if (!editingId) {
+        const vehicle = vehicles.find(v => v.id === formData.vehicle_id)
+        const pickupDateTime = new Date(`${formData.pickup_date}T${formData.pickup_time}:00`)
+        const returnDateTime = new Date(`${formData.return_date}T${formData.return_time}:00`)
+
+        // Check for overlapping bookings
+        const { data: existingBookings, error: checkError } = await supabase
+          .from('bookings')
+          .select('id, customer_name, vehicle_name, pickup_date, dropoff_date, status')
+          .eq('vehicle_name', vehicle?.display_name)
+          .neq('status', 'cancelled')
+          .or(`and(pickup_date.lte.${returnDateTime.toISOString()},dropoff_date.gte.${pickupDateTime.toISOString()})`)
+
+        if (checkError) {
+          console.error('Error checking existing bookings:', checkError)
+        }
+
+        // If there's a conflict, show warning
+        if (existingBookings && existingBookings.length > 0) {
+          const conflictingBooking = existingBookings[0]
+          const bookingId = conflictingBooking.id.substring(0, 8).toUpperCase()
+
+          const pickupDate = new Date(conflictingBooking.pickup_date)
+          const dropoffDate = new Date(conflictingBooking.dropoff_date)
+
+          const confirmed = confirm(
+            `ℹ️ INFO: Esiste già una prenotazione per questo veicolo\n\n` +
+            `Cliente esistente: ${conflictingBooking.customer_name}\n` +
+            `Veicolo: ${conflictingBooking.vehicle_name}\n` +
+            `Periodo: ${pickupDate.toLocaleDateString('it-IT')} ${pickupDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${dropoffDate.toLocaleDateString('it-IT')} ${dropoffDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
+            `ID Prenotazione: DR7-${bookingId}\n\n` +
+            `Stai per creare una doppia prenotazione.\n\n` +
+            `• Clicca OK per procedere comunque\n` +
+            `• Clicca ANNULLA per scegliere altre date`
+          )
+
+          if (!confirmed) {
+            return // User cancelled
+          }
+        }
+      }
+
       let customerId = formData.customer_id
 
       // If creating new customer, create them first in the customers table
