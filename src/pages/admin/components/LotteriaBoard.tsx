@@ -439,15 +439,18 @@ const LotteriaBoard: React.FC = () => {
 
   const handleSearchTickets = async () => {
     if (!searchEmail.trim()) {
-      alert('Inserisci un indirizzo email per cercare');
+      alert('Inserisci un email o nome del cliente');
       return;
     }
 
     try {
+      const searchTerm = searchEmail.trim().toLowerCase();
+
+      // Search by email OR name
       const { data, error } = await supabase
         .from('commercial_operation_tickets')
         .select('*')
-        .eq('email', searchEmail.trim().toLowerCase())
+        .or(`email.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
         .order('ticket_number', { ascending: true });
 
       if (error) throw error;
@@ -508,6 +511,35 @@ const LotteriaBoard: React.FC = () => {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-4">Tabellone LOTTERIA</h2>
+
+        {/* Search Bar */}
+        <div className="mb-6 bg-gray-800 border border-gray-700 rounded-lg p-4">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                🔍 Cerca Cliente per Email o Nome
+              </label>
+              <input
+                type="text"
+                placeholder="Inserisci email o nome del cliente..."
+                value={searchEmail}
+                onChange={(e) => setSearchEmail(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearchTickets()}
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-dr7-gold transition-colors"
+              />
+            </div>
+            <button
+              onClick={handleSearchTickets}
+              className="px-6 py-2 bg-dr7-gold hover:bg-yellow-500 text-black font-semibold rounded-lg transition-colors whitespace-nowrap"
+            >
+              🔍 Cerca Biglietti
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            💡 Cerca un cliente per vedere tutti i suoi biglietti e numeri associati
+          </p>
+        </div>
+
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Totale Biglietti</div>
