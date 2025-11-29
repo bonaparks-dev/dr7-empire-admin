@@ -3,7 +3,6 @@ import { supabase } from '../../../supabaseClient'
 import Input from './Input'
 import Select from './Select'
 import Button from './Button'
-import { FinancialData } from '../../../components/FinancialData'
 
 interface Customer {
   id: string
@@ -1106,9 +1105,7 @@ export default function ReservationsTab() {
 
               <div className="flex justify-between items-start mt-3 gap-2">
                 <div className="text-lg font-bold text-white">
-                  <FinancialData type="total">
-                    €{(booking.price_total / 100).toFixed(2)}
-                  </FinancialData>
+                  €{(booking.price_total / 100).toFixed(2)}
                 </div>
                 <div className="flex flex-col gap-2">
                   {booking.status !== 'cancelled' && (
@@ -1217,9 +1214,7 @@ export default function ReservationsTab() {
                       </span>
                     </td>
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
-                      <FinancialData type="total">
-                        €{(booking.price_total / 100).toFixed(2)}
-                      </FinancialData>
+                      €{(booking.price_total / 100).toFixed(2)}
                     </td>
                     <td className="px-3 py-3 text-sm whitespace-nowrap">
                       <div className="flex gap-2 items-center">
