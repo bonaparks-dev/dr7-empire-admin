@@ -164,6 +164,7 @@ const LotteriaBoard: React.FC = () => {
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -194,7 +195,25 @@ const LotteriaBoard: React.FC = () => {
 
   useEffect(() => {
     fetchSoldTickets();
+    fetchUserRole();
   }, []);
+
+  const fetchUserRole = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+
+        setUserRole(profile?.role || null);
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  };
 
   const handleBulkManualSale = async (ticketNumbers: number[], email: string, fullName: string, phone: string) => {
     try {
@@ -506,7 +525,8 @@ const LotteriaBoard: React.FC = () => {
 
   return (
     <div className="p-6">
-      {/* Featured Statistics - Biglietti Venduti */}
+      {/* Featured Statistics - Biglietti Venduti (Only for Admin role) */}
+      {userRole === 'admin' && (
       <div className="mb-6 bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-8 shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
@@ -537,6 +557,7 @@ const LotteriaBoard: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-4">Tabellone LOTTERIA</h2>
