@@ -808,10 +808,6 @@ export default function ReservationsTab() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-xl sm:text-2xl font-bold text-dr7-gold">Prenotazioni</h2>
         <div className="flex gap-2 sm:gap-3">
-          <Button onClick={handleExport} variant="secondary" className="flex-1 sm:flex-none text-sm sm:text-base">
-            <span className="hidden sm:inline">Esporta CSV</span>
-            <span className="sm:hidden">📥 CSV</span>
-          </Button>
           <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }} className="flex-1 sm:flex-none text-sm sm:text-base">
             <span className="hidden sm:inline">+ Nuova Prenotazione</span>
             <span className="sm:hidden">+ Nuovo</span>

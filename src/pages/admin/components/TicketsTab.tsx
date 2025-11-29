@@ -235,11 +235,6 @@ export default function TicketsTab() {
                 Biglietti venduti per l'operazione "7 MILIONI DI EURO"
               </p>
             </div>
-            <div className="flex gap-3">
-              <Button onClick={handleExportCommercial} variant="secondary">
-                Esporta CSV
-              </Button>
-            </div>
           </div>
 
           {/* Summary Cards */}
@@ -335,11 +330,6 @@ export default function TicketsTab() {
               <p className="text-sm text-gray-400 mt-1">
                 Buoni da €25 con validità 24 mesi (non cumulabili)
               </p>
-            </div>
-            <div className="flex gap-3">
-              <Button onClick={handleExportGiftCards} variant="secondary">
-                Esporta CSV
-              </Button>
             </div>
           </div>
 
