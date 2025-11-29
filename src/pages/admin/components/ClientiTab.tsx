@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
 import DynamicCustomerForm from './DynamicCustomerForm'
+import CustomerDocuments from './CustomerDocuments'
 import Button from './Button'
 
 interface Customer {
@@ -33,6 +34,7 @@ export default function ClientiTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [filter, setFilter] = useState<'all' | 'azienda' | 'persona_fisica' | 'pubblica_amministrazione'>('all')
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
   useEffect(() => {
     loadCustomers()
@@ -190,6 +192,7 @@ export default function ClientiTab() {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Indirizzo</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Data</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-white">Origine</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,12 +235,29 @@ export default function ClientiTab() {
                         {customer.source === 'admin' ? 'Admin' : 'Website'}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        onClick={() => setSelectedCustomer(customer)}
+                        className="px-3 py-1.5 bg-dr7-gold hover:bg-yellow-500 text-black rounded text-xs font-medium transition-colors"
+                      >
+                        📁 Documenti
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+      )}
+
+      {/* Customer Documents Modal */}
+      {selectedCustomer && (
+        <CustomerDocuments
+          customerId={selectedCustomer.id}
+          customerName={getDisplayName(selectedCustomer)}
+          onClose={() => setSelectedCustomer(null)}
+        />
       )}
     </div>
   )
