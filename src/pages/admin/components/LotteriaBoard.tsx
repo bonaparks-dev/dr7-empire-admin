@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { FinancialData } from '../../../components/FinancialData';
+import { useAdminRole } from '../../../hooks/useAdminRole';
 
 // Generate UUID for ticket
 function generateTicketUuid(ticketNumber: number): string {
@@ -154,6 +155,7 @@ const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, ticketN
 };
 
 const LotteriaBoard: React.FC = () => {
+  const { canViewFinancials } = useAdminRole();
   const [soldTickets, setSoldTickets] = useState<Map<number, Ticket>>(new Map());
   const [loading, setLoading] = useState(true);
   const [hoveredTicket, setHoveredTicket] = useState<number | null>(null);
@@ -540,27 +542,31 @@ const LotteriaBoard: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-4">
+        <div className={`grid gap-4 mb-4 ${canViewFinancials ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Totale Biglietti</div>
             <div className="text-2xl font-bold">{totalTickets}</div>
           </div>
-          <div className="bg-red-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-600">Venduti</div>
-            <div className="text-2xl font-bold text-red-600">{soldCount}</div>
-          </div>
+          {canViewFinancials && (
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Venduti</div>
+              <div className="text-2xl font-bold text-red-600">{soldCount}</div>
+            </div>
+          )}
           <div className="bg-green-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Disponibili</div>
             <div className="text-2xl font-bold text-green-600">{availableCount}</div>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-600">Fatturato Totale</div>
-            <div className="text-2xl font-bold text-yellow-600">
-              <FinancialData type="total">
-                €{((soldCount * 2500) / 100).toFixed(2)}
-              </FinancialData>
+          {canViewFinancials && (
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Fatturato Totale</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                <FinancialData type="total">
+                  €{((soldCount * 2500) / 100).toFixed(2)}
+                </FinancialData>
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <div className="flex gap-4 items-center flex-wrap">
           <div className="flex items-center gap-2">
