@@ -300,33 +300,56 @@ export default function CustomersTab() {
 
     try {
       // List files in driver-licenses bucket for this user
-      const { data: licenseFiles } = await supabase.storage
+      const { data: licenseFiles, error: licenseError } = await supabase.storage
         .from('driver-licenses')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
 
+      if (licenseError) {
+        console.error('Error listing license files:', licenseError)
+      }
+
       // List files in driver-ids bucket for this user
-      const { data: idFiles } = await supabase.storage
+      const { data: idFiles, error: idError } = await supabase.storage
         .from('driver-ids')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
+
+      if (idError) {
+        console.error('Error listing ID files:', idError)
+      }
 
       let licenseUrl = null
       let idUrl = null
 
+      // Filter out folders and empty placeholders, get only actual files
+      const actualLicenseFiles = licenseFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
+      const actualIdFiles = idFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
+
+      console.log('License files found:', actualLicenseFiles.length, actualLicenseFiles)
+      console.log('ID files found:', actualIdFiles.length, actualIdFiles)
+
       // Get signed URL for the latest driver license
-      if (licenseFiles && licenseFiles.length > 0) {
-        const latestLicense = licenseFiles[0]
-        const { data: signedLicense } = await supabase.storage
+      if (actualLicenseFiles.length > 0) {
+        const latestLicense = actualLicenseFiles[0]
+        const { data: signedLicense, error: signError } = await supabase.storage
           .from('driver-licenses')
           .createSignedUrl(`${userId}/${latestLicense.name}`, 3600) // 1 hour expiry
+
+        if (signError) {
+          console.error('Error creating signed URL for license:', signError)
+        }
         if (signedLicense) licenseUrl = signedLicense.signedUrl
       }
 
       // Get signed URL for the latest ID
-      if (idFiles && idFiles.length > 0) {
-        const latestId = idFiles[0]
-        const { data: signedId } = await supabase.storage
+      if (actualIdFiles.length > 0) {
+        const latestId = actualIdFiles[0]
+        const { data: signedId, error: signError } = await supabase.storage
           .from('driver-ids')
           .createSignedUrl(`${userId}/${latestId.name}`, 3600) // 1 hour expiry
+
+        if (signError) {
+          console.error('Error creating signed URL for ID:', signError)
+        }
         if (signedId) idUrl = signedId.signedUrl
       }
 
