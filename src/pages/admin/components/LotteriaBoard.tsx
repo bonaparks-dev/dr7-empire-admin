@@ -166,6 +166,7 @@ const LotteriaBoard: React.FC = () => {
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [hideFinancials, setHideFinancials] = useState(false);
 
   const fetchSoldTickets = async () => {
     try {
@@ -542,12 +543,12 @@ const LotteriaBoard: React.FC = () => {
           </p>
         </div>
 
-        <div className={`grid gap-4 mb-4 ${canViewFinancials ? 'grid-cols-4' : 'grid-cols-2'}`}>
+        <div className={`grid gap-4 mb-4 ${canViewFinancials && !hideFinancials ? 'grid-cols-4' : 'grid-cols-2'}`}>
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-sm text-gray-600">Totale Biglietti</div>
             <div className="text-2xl font-bold">{totalTickets}</div>
           </div>
-          {canViewFinancials && (
+          {canViewFinancials && !hideFinancials && (
             <div className="bg-red-50 p-4 rounded-lg">
               <div className="text-sm text-gray-600">Venduti</div>
               <div className="text-2xl font-bold text-red-600">{soldCount}</div>
@@ -557,7 +558,7 @@ const LotteriaBoard: React.FC = () => {
             <div className="text-sm text-gray-600">Disponibili</div>
             <div className="text-2xl font-bold text-green-600">{availableCount}</div>
           </div>
-          {canViewFinancials && (
+          {canViewFinancials && !hideFinancials && (
             <div className="bg-yellow-50 p-4 rounded-lg">
               <div className="text-sm text-gray-600">Fatturato Totale</div>
               <div className="text-2xl font-bold text-yellow-600">
@@ -584,6 +585,18 @@ const LotteriaBoard: React.FC = () => {
             </div>
           )}
           <div className="flex items-center gap-2 ml-auto">
+            {canViewFinancials && (
+              <button
+                onClick={() => setHideFinancials(!hideFinancials)}
+                className={`px-4 py-2 rounded font-semibold transition-colors ${
+                  hideFinancials
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-yellow-600 text-black hover:bg-yellow-700'
+                }`}
+              >
+                {hideFinancials ? '👁️ MOSTRA EURO' : '🔒 NASCONDI EURO'}
+              </button>
+            )}
             <button
               onClick={() => {
                 setMultiSelectMode(!multiSelectMode)
