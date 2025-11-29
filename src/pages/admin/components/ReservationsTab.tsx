@@ -523,15 +523,18 @@ export default function ReservationsTab() {
           const pickupDate = new Date(conflictingBooking.pickup_date)
           const dropoffDate = new Date(conflictingBooking.dropoff_date)
 
+          const vehicleTarga = vehicle?.targa || conflictingBooking.vehicle_name
           const confirmed = confirm(
-            `ℹ️ INFO: Esiste già una prenotazione per questo veicolo\n\n` +
-            `Cliente esistente: ${conflictingBooking.customer_name}\n` +
+            `⚠️ ATTENZIONE: VEICOLO GIÀ PRENOTATO!\n\n` +
             `Veicolo: ${conflictingBooking.vehicle_name}\n` +
+            `Targa: ${vehicleTarga}\n\n` +
+            `PRENOTAZIONE ESISTENTE:\n` +
+            `Cliente: ${conflictingBooking.customer_name}\n` +
             `Periodo: ${pickupDate.toLocaleDateString('it-IT')} ${pickupDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${dropoffDate.toLocaleDateString('it-IT')} ${dropoffDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
-            `ID Prenotazione: DR7-${bookingId}\n\n` +
-            `Stai per creare una doppia prenotazione.\n\n` +
-            `• Clicca OK per procedere comunque\n` +
-            `• Clicca ANNULLA per scegliere altre date`
+            `ID: DR7-${bookingId}\n\n` +
+            `⚠️ SEI SICURO DI VOLER CREARE UNA DOPPIA PRENOTAZIONE?\n\n` +
+            `✅ Clicca OK per PROCEDERE COMUNQUE\n` +
+            `❌ Clicca ANNULLA per scegliere altre date/veicolo`
           )
 
           if (!confirmed) {
