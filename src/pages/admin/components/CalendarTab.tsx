@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../supabaseClient'
 import { FinancialData } from '../../../components/FinancialData'
+import { useAdminRole } from '../../../hooks/useAdminRole'
 
 interface Vehicle {
   id: string
@@ -27,6 +28,8 @@ interface Booking {
 type CellStatus = 'available' | 'rented' | 'unavailable'
 
 export default function CalendarTab() {
+  const { canViewFinancials } = useAdminRole()
+  const [hideFinancials, setHideFinancials] = useState(false)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -272,20 +275,22 @@ export default function CalendarTab() {
                 }).length} noleggi
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-400">Fatturato:</span>
-              <span className="text-green-400 font-bold text-sm">
-                <FinancialData type="total">
-                  €{(bookings
-                    .filter(b => {
-                      const pickupDate = new Date(b.pickup_date)
-                      return pickupDate.getMonth() === currentDate.getMonth() &&
-                             pickupDate.getFullYear() === currentDate.getFullYear()
-                    })
-                    .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
-                </FinancialData>
-              </span>
-            </div>
+            {canViewFinancials && !hideFinancials && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400">Fatturato:</span>
+                <span className="text-green-400 font-bold text-sm">
+                  <FinancialData type="total">
+                    €{(bookings
+                      .filter(b => {
+                        const pickupDate = new Date(b.pickup_date)
+                        return pickupDate.getMonth() === currentDate.getMonth() &&
+                               pickupDate.getFullYear() === currentDate.getFullYear()
+                      })
+                      .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
+                  </FinancialData>
+                </span>
+              </div>
+            )}
             {/* Legend */}
             <div className="flex items-center gap-3 text-xs">
               <div className="flex items-center gap-1.5">
@@ -301,6 +306,18 @@ export default function CalendarTab() {
                 <span className="text-gray-300">Noleggiato</span>
               </div>
             </div>
+            {canViewFinancials && (
+              <button
+                onClick={() => setHideFinancials(!hideFinancials)}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
+                  hideFinancials
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-yellow-600 text-black hover:bg-yellow-700'
+                }`}
+              >
+                {hideFinancials ? 'MOSTRA' : 'NASCONDI'}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

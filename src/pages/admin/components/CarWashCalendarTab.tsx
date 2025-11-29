@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../supabaseClient'
 import { FinancialData } from '../../../components/FinancialData'
+import { useAdminRole } from '../../../hooks/useAdminRole'
 
 interface CarWashBooking {
   id: string
@@ -45,6 +46,8 @@ const generateTimeSlots = () => {
 const TIME_SLOTS = generateTimeSlots()
 
 export default function CarWashCalendarTab() {
+  const { canViewFinancials } = useAdminRole()
+  const [hideFinancials, setHideFinancials] = useState(false)
   const [bookings, setBookings] = useState<CarWashBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -176,20 +179,34 @@ export default function CarWashCalendarTab() {
                 }).length} lavaggi
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-400">Fatturato:</span>
-              <span className="text-green-400 font-bold text-sm">
-                <FinancialData type="total">
-                  €{(bookings
-                    .filter(b => {
-                      const bookingDate = new Date(b.appointment_date)
-                      return bookingDate.getMonth() === currentDate.getMonth() &&
-                             bookingDate.getFullYear() === currentDate.getFullYear()
-                    })
-                    .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
-                </FinancialData>
-              </span>
-            </div>
+            {canViewFinancials && !hideFinancials && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-400">Fatturato:</span>
+                <span className="text-green-400 font-bold text-sm">
+                  <FinancialData type="total">
+                    €{(bookings
+                      .filter(b => {
+                        const bookingDate = new Date(b.appointment_date)
+                        return bookingDate.getMonth() === currentDate.getMonth() &&
+                               bookingDate.getFullYear() === currentDate.getFullYear()
+                      })
+                      .reduce((sum, b) => sum + (b.price_total || 0), 0) / 100).toFixed(2)}
+                  </FinancialData>
+                </span>
+              </div>
+            )}
+            {canViewFinancials && (
+              <button
+                onClick={() => setHideFinancials(!hideFinancials)}
+                className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
+                  hideFinancials
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-yellow-600 text-black hover:bg-yellow-700'
+                }`}
+              >
+                {hideFinancials ? 'MOSTRA' : 'NASCONDI'}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
