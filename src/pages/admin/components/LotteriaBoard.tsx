@@ -543,32 +543,30 @@ const LotteriaBoard: React.FC = () => {
           </p>
         </div>
 
-        <div className={`grid gap-4 mb-4 ${canViewFinancials && !hideFinancials ? 'grid-cols-4' : 'grid-cols-1'}`}>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="text-sm text-gray-600">Totale Biglietti</div>
-            <div className="text-2xl font-bold">{totalTickets}</div>
+        {canViewFinancials && !hideFinancials && (
+          <div className="grid gap-4 mb-4 grid-cols-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Totale Biglietti</div>
+              <div className="text-2xl font-bold">{totalTickets}</div>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Venduti</div>
+              <div className="text-2xl font-bold text-red-600">{soldCount}</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Disponibili</div>
+              <div className="text-2xl font-bold text-green-600">{availableCount}</div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-600">Fatturato Totale</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                <FinancialData type="total">
+                  €{((soldCount * 2500) / 100).toFixed(2)}
+                </FinancialData>
+              </div>
+            </div>
           </div>
-          {canViewFinancials && !hideFinancials && (
-            <>
-              <div className="bg-red-50 p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Venduti</div>
-                <div className="text-2xl font-bold text-red-600">{soldCount}</div>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Disponibili</div>
-                <div className="text-2xl font-bold text-green-600">{availableCount}</div>
-              </div>
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <div className="text-sm text-gray-600">Fatturato Totale</div>
-                <div className="text-2xl font-bold text-yellow-600">
-                  <FinancialData type="total">
-                    €{((soldCount * 2500) / 100).toFixed(2)}
-                  </FinancialData>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        )}
         <div className="flex gap-4 items-center flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-green-500 rounded"></div>
