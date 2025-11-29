@@ -6,7 +6,7 @@ import { useAdminRole } from '../../../hooks/useAdminRole'
 interface Vehicle {
   id: string
   display_name: string
-  targa: string
+  targa?: string | null
   status: string
   category: 'exotic' | 'urban' | 'aziendali' | null
   metadata?: {

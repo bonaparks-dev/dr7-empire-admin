@@ -20,7 +20,7 @@ interface Vehicle {
   id: string
   display_name: string
   plate: string | null
-  targa: string
+  targa?: string | null
   status: 'available' | 'rented' | 'maintenance' | 'retired'
   daily_rate: number
   metadata: Record<string, any> | null
