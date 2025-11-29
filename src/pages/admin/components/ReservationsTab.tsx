@@ -20,6 +20,7 @@ interface Vehicle {
   id: string
   display_name: string
   plate: string | null
+  targa: string
   status: 'available' | 'rented' | 'maintenance' | 'retired'
   daily_rate: number
   metadata: Record<string, any> | null
@@ -828,27 +829,6 @@ export default function ReservationsTab() {
       indirizzo: '',
       driver_license_number: ''
     })
-  }
-
-  async function handleExport() {
-    try {
-      const res = await fetch(`${API_BASE}/export/reservations.csv`, {
-        headers: { 'Authorization': `Bearer ${API_TOKEN}` }
-      })
-
-      if (!res.ok) throw new Error('Export failed')
-
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `reservations-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Export failed:', error)
-      alert('Failed to export reservations')
-    }
   }
 
   if (loading) {

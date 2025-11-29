@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
-import Button from './Button'
 
 interface GiftCard {
   id: string
@@ -134,67 +133,6 @@ export default function TicketsTab() {
   const totalValue = filteredCards.reduce((sum, card) => sum + card.initial_value, 0)
   const totalRedeemed = filteredCards.filter(c => c.status === 'redeemed').length
   const totalActive = filteredCards.filter(c => c.status === 'active').length
-
-  async function handleExportCommercial() {
-    try {
-      const csvData = [
-        ['UUID', 'Numero Biglietto', 'Nome', 'Email', 'Importo', 'Valuta', 'Data Acquisto', 'Quantità', 'Payment Intent ID'].join(','),
-        ...commercialTickets.map(ticket => [
-          ticket.uuid,
-          ticket.ticket_number.toString().padStart(6, '0'),
-          ticket.full_name,
-          ticket.email,
-          (ticket.amount_paid / 100).toFixed(2),
-          ticket.currency.toUpperCase(),
-          new Date(ticket.purchase_date).toLocaleString('it-IT'),
-          ticket.quantity,
-          ticket.payment_intent_id
-        ].join(','))
-      ].join('\n')
-
-      const blob = new Blob([csvData], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `biglietti-operazione-commerciale-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Export failed:', error)
-      alert('Impossibile esportare i biglietti')
-    }
-  }
-
-  async function handleExportGiftCards() {
-    try {
-      const csvData = [
-        ['Codice', 'Valore Iniziale', 'Valore Rimanente', 'Valuta', 'Stato', 'Destinatario', 'Email', 'Emesso', 'Scadenza', 'Riscattato'].join(','),
-        ...filteredCards.map(card => [
-          card.code,
-          card.initial_value.toFixed(2),
-          card.remaining_value.toFixed(2),
-          card.currency,
-          getStatusLabel(card.status),
-          card.recipient_name || '',
-          card.recipient_email || '',
-          new Date(card.issued_at).toLocaleDateString('it-IT'),
-          card.expires_at ? new Date(card.expires_at).toLocaleDateString('it-IT') : '',
-          card.redeemed_at ? new Date(card.redeemed_at).toLocaleDateString('it-IT') : ''
-        ].join(','))
-      ].join('\n')
-
-      const blob = new Blob([csvData], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `gift-cards-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      window.URL.revokeObjectURL(url)
-    } catch (error) {
-      console.error('Export failed:', error)
-      alert('Impossibile esportare i buoni regalo')
-    }
-  }
 
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
