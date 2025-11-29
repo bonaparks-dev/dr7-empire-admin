@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
+import { useAdminRole } from '../../../hooks/useAdminRole'
 import Input from './Input'
 import Select from './Select'
 import Button from './Button'
@@ -101,6 +102,7 @@ const API_BASE = '/.netlify/functions/admin'
 const API_TOKEN = import.meta.env.VITE_ADMIN_UI_TOKEN
 
 export default function ReservationsTab() {
+  const { canViewFinancials } = useAdminRole()
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -1141,7 +1143,7 @@ export default function ReservationsTab() {
 
               <div className="flex justify-between items-start mt-3 gap-2">
                 <div className="text-lg font-bold text-white">
-                  €{(booking.price_total / 100).toFixed(2)}
+                  {canViewFinancials ? `€${(booking.price_total / 100).toFixed(2)}` : '***'}
                 </div>
                 <div className="flex flex-col gap-2">
                   {booking.status !== 'cancelled' && (
@@ -1250,7 +1252,7 @@ export default function ReservationsTab() {
                       </span>
                     </td>
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
-                      €{(booking.price_total / 100).toFixed(2)}
+                      {canViewFinancials ? `€${(booking.price_total / 100).toFixed(2)}` : '***'}
                     </td>
                     <td className="px-3 py-3 text-sm whitespace-nowrap">
                       <div className="flex gap-2 items-center">
@@ -1373,7 +1375,9 @@ export default function ReservationsTab() {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Importo:</span>
-                    <span className="text-white font-bold text-xl">€{(selectedBooking.price_total / 100).toFixed(2)}</span>
+                    <span className="text-white font-bold text-xl">
+                      {canViewFinancials ? `€${(selectedBooking.price_total / 100).toFixed(2)}` : '***'}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Stato:</span>
