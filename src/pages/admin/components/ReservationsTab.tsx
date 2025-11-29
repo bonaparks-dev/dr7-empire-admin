@@ -1006,7 +1006,8 @@ export default function ReservationsTab() {
                   setFormData({
                     ...formData,
                     payment_status: newStatus,
-                    status: newStatus === 'paid' ? 'confirmed' : 'pending'
+                    status: newStatus === 'paid' ? 'confirmed' : 'pending',
+                    payment_method: newStatus === 'unpaid' ? '' : formData.payment_method
                   })
                 }}
                 options={[
@@ -1015,12 +1016,13 @@ export default function ReservationsTab() {
                   { value: 'unpaid', label: 'Non Pagato' }
                 ]}
               />
-              <Select
-                label="Metodo di Pagamento"
-                required
-                value={formData.payment_method}
-                onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-                options={[
+              {formData.payment_status !== 'unpaid' && (
+                <Select
+                  label="Metodo di Pagamento"
+                  required
+                  value={formData.payment_method}
+                  onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                  options={[
                   { value: 'Bonifico', label: 'Bonifico' },
                   { value: 'Contanti', label: 'Contanti' },
                   { value: 'Carta di Credito / bancomat', label: 'Carta di Credito / bancomat' },
@@ -1046,6 +1048,7 @@ export default function ReservationsTab() {
                   { value: 'Giroconto su conti di contabilità', label: 'Giroconto su conti di contabilità' }
                 ]}
               />
+              )}
               <Input
                 label="Importo Totale (€)"
                 type="number"
