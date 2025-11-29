@@ -6,6 +6,7 @@ import { useAdminRole } from '../../../hooks/useAdminRole'
 interface Vehicle {
   id: string
   display_name: string
+  targa: string
   status: string
   category: 'exotic' | 'urban' | 'aziendali' | null
   metadata?: {
@@ -63,7 +64,7 @@ export default function CalendarTab() {
       // Load vehicles - Custom order: Exotic → Urban → Aziendali
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
-        .select('id, display_name, status, category, metadata')
+        .select('id, display_name, targa, status, category, metadata')
         .neq('status', 'retired')
 
       if (vehiclesError) throw vehiclesError
@@ -373,17 +374,24 @@ export default function CalendarTab() {
                 {vehicles.map(vehicle => (
                   <tr key={vehicle.id}>
                     <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-semibold text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate">{vehicle.display_name}</span>
-                        {vehicle.category && (
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
-                            vehicle.category === 'exotic'
-                              ? 'bg-purple-900 text-purple-200'
-                              : vehicle.category === 'urban'
-                              ? 'bg-cyan-900 text-cyan-200'
-                              : 'bg-orange-900 text-orange-200'
-                          }`}>
-                            {vehicle.category}
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate">{vehicle.display_name}</span>
+                          {vehicle.category && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
+                              vehicle.category === 'exotic'
+                                ? 'bg-purple-900 text-purple-200'
+                                : vehicle.category === 'urban'
+                                ? 'bg-cyan-900 text-cyan-200'
+                                : 'bg-orange-900 text-orange-200'
+                            }`}>
+                              {vehicle.category}
+                            </span>
+                          )}
+                        </div>
+                        {vehicle.targa && (
+                          <span className="text-xs text-gray-400 font-normal">
+                            Targa: {vehicle.targa}
                           </span>
                         )}
                       </div>
