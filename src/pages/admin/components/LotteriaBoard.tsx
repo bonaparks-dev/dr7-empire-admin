@@ -543,20 +543,24 @@ const LotteriaBoard: React.FC = () => {
           </p>
         </div>
 
-        {canViewFinancials && !hideFinancials && (
-          <div className="grid gap-4 mb-4 grid-cols-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Totale Biglietti</div>
-              <div className="text-2xl font-bold">{totalTickets}</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Venduti</div>
-              <div className="text-2xl font-bold text-red-600">{soldCount}</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-600">Disponibili</div>
-              <div className="text-2xl font-bold text-green-600">{availableCount}</div>
-            </div>
+        {canViewFinancials && (
+          <div className={`grid gap-4 mb-4 ${hideFinancials ? 'grid-cols-1' : 'grid-cols-4'}`}>
+            {!hideFinancials && (
+              <>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600">Totale Biglietti</div>
+                  <div className="text-2xl font-bold">{totalTickets}</div>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600">Venduti</div>
+                  <div className="text-2xl font-bold text-red-600">{soldCount}</div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600">Disponibili</div>
+                  <div className="text-2xl font-bold text-green-600">{availableCount}</div>
+                </div>
+              </>
+            )}
             <div className="bg-yellow-50 p-4 rounded-lg">
               <div className="text-sm text-gray-600">Fatturato Totale</div>
               <div className="text-2xl font-bold text-yellow-600">
