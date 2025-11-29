@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
-import { FinancialData } from '../../../components/FinancialData';
 import { useAdminRole } from '../../../hooks/useAdminRole';
 
 // Generate UUID for ticket
