@@ -144,6 +144,7 @@ export default function ReservationsTab() {
     total_amount: '0',
     amount_paid: '0',
     payment_status: 'paid',
+    payment_method: 'Contanti',
     currency: 'EUR'
   })
 
@@ -584,7 +585,7 @@ export default function ReservationsTab() {
           currency: formData.currency.toUpperCase(),
           status: formData.status,
           payment_status: formData.payment_status,
-          payment_method: 'agency',
+          payment_method: formData.payment_method,
           customer_name: customerInfo?.full_name || 'N/A',
           customer_email: customerInfo?.email || null,
           customer_phone: customerInfo?.phone || null,
@@ -760,6 +761,7 @@ export default function ReservationsTab() {
       total_amount: '0',
       amount_paid: '0',
       payment_status: 'pending',
+      payment_method: 'Contanti',
       currency: 'EUR'
     })
     setCustomerSearchQuery('')
@@ -1011,6 +1013,37 @@ export default function ReservationsTab() {
                   { value: 'paid', label: 'Pagato' },
                   { value: 'pending', label: 'Da Saldare' },
                   { value: 'unpaid', label: 'Non Pagato' }
+                ]}
+              />
+              <Select
+                label="Metodo di Pagamento"
+                required
+                value={formData.payment_method}
+                onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
+                options={[
+                  { value: 'Bonifico', label: 'Bonifico' },
+                  { value: 'Contanti', label: 'Contanti' },
+                  { value: 'Carta di Credito / bancomat', label: 'Carta di Credito / bancomat' },
+                  { value: 'Paypal', label: 'Paypal' },
+                  { value: 'RIBA', label: 'RIBA' },
+                  { value: 'RID', label: 'RID' },
+                  { value: 'Bollettino postale', label: 'Bollettino postale' },
+                  { value: 'Assegno', label: 'Assegno' },
+                  { value: 'Assegno circolare', label: 'Assegno circolare' },
+                  { value: 'PagoPA', label: 'PagoPA' },
+                  { value: 'RID utenze', label: 'RID utenze' },
+                  { value: 'RIB veloce', label: 'RIB veloce' },
+                  { value: 'SEPA Direct Debit', label: 'SEPA Direct Debit' },
+                  { value: 'SEPA Direct Debit CORE', label: 'SEPA Direct Debit CORE' },
+                  { value: 'SEPA Direct Debit B2B', label: 'SEPA Direct Debit B2B' },
+                  { value: 'Domiciliazione bancaria', label: 'Domiciliazione bancaria' },
+                  { value: 'Domiciliazione postale', label: 'Domiciliazione postale' },
+                  { value: 'Trattenuta su somme già riscosse', label: 'Trattenuta su somme già riscosse' },
+                  { value: 'Bollettino bancario', label: 'Bollettino bancario' },
+                  { value: 'Contanti presso tesoreria', label: 'Contanti presso tesoreria' },
+                  { value: 'Vaglia cambiario', label: 'Vaglia cambiario' },
+                  { value: 'Quietanza erario', label: 'Quietanza erario' },
+                  { value: 'Giroconto su conti di contabilità', label: 'Giroconto su conti di contabilità' }
                 ]}
               />
               <Input
