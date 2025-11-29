@@ -164,7 +164,6 @@ const LotteriaBoard: React.FC = () => {
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -195,25 +194,7 @@ const LotteriaBoard: React.FC = () => {
 
   useEffect(() => {
     fetchSoldTickets();
-    fetchUserRole();
   }, []);
-
-  const fetchUserRole = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single();
-
-        setUserRole(profile?.role || null);
-      }
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-    }
-  };
 
   const handleBulkManualSale = async (ticketNumbers: number[], email: string, fullName: string, phone: string) => {
     try {
@@ -525,35 +506,6 @@ const LotteriaBoard: React.FC = () => {
 
   return (
     <div className="p-6">
-      {/* Featured Statistics - Biglietti Venduti (Only for Admin role) */}
-      {userRole === 'admin' && (
-      <div className="mb-6 bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-red-100 text-sm font-medium uppercase tracking-wide mb-2">🎰 Biglietti Lotteria Venduti</p>
-            <p className="text-white text-6xl font-bold">{soldCount}</p>
-            <p className="text-red-100 text-sm mt-2">su {totalTickets} biglietti totali • {((soldCount / totalTickets) * 100).toFixed(1)}% venduto</p>
-          </div>
-          <div className="text-right">
-            <p className="text-red-100 text-xs font-medium uppercase tracking-wide mb-1">💰 Revenue</p>
-            <p className="text-white text-2xl font-bold">
-              <FinancialData type="total">
-                €{((soldCount * 2500) / 100).toFixed(2)}
-              </FinancialData>
-            </p>
-          </div>
-        </div>
-        <div className="mt-3">
-          <div className="w-full bg-red-300 rounded-full h-2">
-            <div
-              className="bg-white rounded-full h-2 transition-all duration-300"
-              style={{ width: `${(soldCount / totalTickets) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-      )}
-
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-4">Tabellone LOTTERIA</h2>
         <div className="grid grid-cols-4 gap-4 mb-4">
