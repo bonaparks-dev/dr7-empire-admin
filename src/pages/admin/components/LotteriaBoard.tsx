@@ -594,7 +594,7 @@ const LotteriaBoard: React.FC = () => {
                     : 'bg-yellow-600 text-black hover:bg-yellow-700'
                 }`}
               >
-                {hideFinancials ? '👁️ MOSTRA' : '🔒 NASCONDI'}
+                {hideFinancials ? 'MOSTRA' : 'NASCONDI'}
               </button>
             )}
             <button
