@@ -390,6 +390,9 @@ export default function CalendarTab() {
                   const query = searchQuery.toLowerCase()
                   // Filter vehicles that have bookings matching the customer name search
                   return bookings.some(booking => {
+                    // Safely check if customer_name exists
+                    if (!booking.customer_name) return false
+
                     const bookingVehicle = booking.vehicle_name?.trim().toLowerCase()
                     const vehicleDisplay = vehicle.display_name?.trim().toLowerCase()
                     const vehicleMatches = bookingVehicle === vehicleDisplay ||
