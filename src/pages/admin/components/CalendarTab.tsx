@@ -355,6 +355,62 @@ export default function CalendarTab() {
         </div>
       </div>
 
+      {/* Search Results - Show matching bookings */}
+      {searchQuery && (
+        <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-lg font-bold text-white mb-3">
+            Risultati ricerca: "{searchQuery}"
+          </h3>
+          {(() => {
+            const matchingBookings = bookings.filter(booking =>
+              booking.customer_name &&
+              booking.customer_name.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+
+            if (matchingBookings.length === 0) {
+              return (
+                <p className="text-gray-400 text-sm">Nessuna prenotazione trovata con questo nome cliente.</p>
+              )
+            }
+
+            return (
+              <div className="space-y-2">
+                {matchingBookings.map(booking => (
+                  <div
+                    key={booking.id}
+                    className="bg-gray-800 p-3 rounded border border-gray-700 hover:border-dr7-gold transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-white font-semibold">{booking.customer_name}</p>
+                        <p className="text-gray-400 text-sm">{booking.customer_email}</p>
+                        <p className="text-dr7-gold text-sm mt-1">
+                          🚗 {booking.vehicle_name}
+                          {booking.vehicle_plate && <span className="text-gray-400"> ({booking.vehicle_plate})</span>}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-gray-300 text-sm">
+                          {new Date(booking.pickup_date).toLocaleDateString('it-IT')} →{' '}
+                          {new Date(booking.dropoff_date).toLocaleDateString('it-IT')}
+                        </p>
+                        <span className={`inline-block px-2 py-1 rounded text-xs mt-1 ${
+                          booking.status === 'confirmed' ? 'bg-green-900 text-green-200' :
+                          booking.status === 'pending' ? 'bg-yellow-900 text-yellow-200' :
+                          'bg-gray-700 text-gray-300'
+                        }`}>
+                          {booking.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       {/* All Vehicles Grid - Combined */}
       {vehicles.length > 0 && (
         <div className="bg-gray-900 rounded-lg p-4 lg:p-6 overflow-x-auto">
