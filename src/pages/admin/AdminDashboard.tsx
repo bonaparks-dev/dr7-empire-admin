@@ -79,7 +79,7 @@ export default function AdminDashboard() {
                   className="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between text-gray-300 hover:bg-gray-800"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">🚗</span>
+                    
                     <span>Noleggio</span>
                   </div>
                   <span className={`transform transition-transform ${openSubmenu === 'noleggio' ? 'rotate-180' : ''}`}>▼</span>
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
                           : 'text-gray-300 hover:bg-gray-800'
                       }`}
                     >
-                      📋 Prenotazioni
+                      Prenotazioni
                     </button>
                     <button
                       onClick={() => {
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                           : 'text-gray-300 hover:bg-gray-800'
                       }`}
                     >
-                      📅 Calendario
+                      Calendario
                     </button>
                   </div>
                 )}
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
                   className="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between text-gray-300 hover:bg-gray-800"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">🚿</span>
+                    
                     <span>Lavaggio</span>
                   </div>
                   <span className={`transform transition-transform ${openSubmenu === 'lavaggio' ? 'rotate-180' : ''}`}>▼</span>
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
                           : 'text-gray-300 hover:bg-gray-800'
                       }`}
                     >
-                      📋 Prenotazioni
+                      Prenotazioni
                     </button>
                     <button
                       onClick={() => {
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
                           : 'text-gray-300 hover:bg-gray-800'
                       }`}
                     >
-                      📅 Calendario
+                      Calendario
                     </button>
                   </div>
                 )}
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
                   className="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between text-gray-300 hover:bg-gray-800"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">🔧</span>
+                    
                     <span>Meccanica</span>
                   </div>
                   <span className={`transform transition-transform ${openSubmenu === 'meccanica' ? 'rotate-180' : ''}`}>▼</span>
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                           : 'text-gray-300 hover:bg-gray-800'
                       }`}
                     >
-                      📋 Prenotazioni
+                      Prenotazioni
                     </button>
                     <button
                       onClick={() => {
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
                           : 'text-gray-300 hover:bg-gray-800'
                       }`}
                     >
-                      📅 Calendario
+                      Calendario
                     </button>
                   </div>
                 )}
@@ -206,12 +206,12 @@ export default function AdminDashboard() {
 
               {/* Other menu items */}
               {[
-                { id: 'unpaid', label: 'Da Saldare', icon: '💳' },
-                { id: 'customers', label: 'Clienti', icon: '👥' },
-                { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
-                { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
-                { id: 'fattura', label: 'Fatture', icon: '📄' },
-                { id: 'contratto', label: 'Contratti', icon: '📋' }
+                { id: 'unpaid', label: 'Da Saldare' },
+                { id: 'customers', label: 'Clienti' },
+                { id: 'vehicles', label: 'Veicoli' },
+                { id: 'lotteria', label: 'Biglietti Lotteria' },
+                { id: 'fattura', label: 'Fatture' },
+                { id: 'contratto', label: 'Contratti' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -219,14 +219,13 @@ export default function AdminDashboard() {
                     setActiveTab(tab.id as TabType)
                     setMobileMenuOpen(false)
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-lg mb-1 transition-colors flex items-center gap-3 ${
+                  className={`w-full text-left px-4 py-3 rounded-lg mb-1 transition-colors ${
                     activeTab === tab.id
                       ? 'bg-dr7-gold text-black font-semibold'
                       : 'text-gray-300 hover:bg-gray-800'
                   }`}
                 >
-                  <span className="text-xl">{tab.icon}</span>
-                  <span>{tab.label}</span>
+                  {tab.label}
                 </button>
               ))}
             </nav>
@@ -248,7 +247,7 @@ export default function AdminDashboard() {
                       : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                   }`}
                 >
-                  🚗 Noleggio
+                  Noleggio
                   <span className="text-xs">▼</span>
                 </button>
                 <div className="absolute left-0 mt-0 w-48 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
@@ -258,7 +257,7 @@ export default function AdminDashboard() {
                       activeTab === 'reservations' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
                     }`}
                   >
-                    📋 Prenotazioni
+                    Prenotazioni
                   </button>
                   <button
                     onClick={() => setActiveTab('calendar')}
@@ -266,7 +265,7 @@ export default function AdminDashboard() {
                       activeTab === 'calendar' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
                     }`}
                   >
-                    📅 Calendario
+                    Calendario
                   </button>
                 </div>
               </div>
@@ -280,7 +279,7 @@ export default function AdminDashboard() {
                       : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                   }`}
                 >
-                  🚿 Lavaggio
+                  Lavaggio
                   <span className="text-xs">▼</span>
                 </button>
                 <div className="absolute left-0 mt-0 w-48 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
@@ -290,7 +289,7 @@ export default function AdminDashboard() {
                       activeTab === 'carwash' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
                     }`}
                   >
-                    📋 Prenotazioni
+                    Prenotazioni
                   </button>
                   <button
                     onClick={() => setActiveTab('carwash-calendar')}
@@ -298,7 +297,7 @@ export default function AdminDashboard() {
                       activeTab === 'carwash-calendar' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
                     }`}
                   >
-                    📅 Calendario
+                    Calendario
                   </button>
                 </div>
               </div>
@@ -312,7 +311,7 @@ export default function AdminDashboard() {
                       : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                   }`}
                 >
-                  🔧 Meccanica
+                  Meccanica
                   <span className="text-xs">▼</span>
                 </button>
                 <div className="absolute left-0 mt-0 w-48 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
@@ -322,7 +321,7 @@ export default function AdminDashboard() {
                       activeTab === 'mechanical' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
                     }`}
                   >
-                    📋 Prenotazioni
+                    Prenotazioni
                   </button>
                   <button
                     onClick={() => setActiveTab('mechanical-calendar')}
@@ -330,7 +329,7 @@ export default function AdminDashboard() {
                       activeTab === 'mechanical-calendar' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
                     }`}
                   >
-                    📅 Calendario
+                    Calendario
                   </button>
                 </div>
               </div>
@@ -344,7 +343,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                💳 Da Saldare
+                Da Saldare
               </button>
               <button
                 onClick={() => setActiveTab('customers')}
@@ -354,7 +353,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                👥 Clienti
+                Clienti
               </button>
               <button
                 onClick={() => setActiveTab('vehicles')}
@@ -364,7 +363,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🚙 Veicoli
+                Veicoli
               </button>
               <button
                 onClick={() => setActiveTab('lotteria')}
@@ -374,7 +373,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                🎰 Lotteria
+                Lotteria
               </button>
               <button
                 onClick={() => setActiveTab('contratto')}
@@ -384,7 +383,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                📋 Contratti
+                Contratti
               </button>
               <button
                 onClick={() => setActiveTab('fattura')}
@@ -394,7 +393,7 @@ export default function AdminDashboard() {
                     : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
                 }`}
               >
-                📄 Fatture
+                Fatture
               </button>
             </nav>
           </div>
@@ -403,18 +402,18 @@ export default function AdminDashboard() {
         {/* Mobile Tab Indicator */}
         <div className="mb-4 lg:hidden">
           <h2 className="text-xl font-bold text-white">
-            {activeTab === 'reservations' && '🚗 Prenotazioni Auto'}
-            {activeTab === 'carwash' && '🚿 Prenotazioni Lavaggio'}
-            {activeTab === 'mechanical' && '🔧 Prenotazioni Meccanica'}
-            {activeTab === 'unpaid' && '💳 Da Saldare'}
-            {activeTab === 'customers' && '👥 Clienti'}
-            {activeTab === 'vehicles' && '🚙 Veicoli'}
-            {activeTab === 'calendar' && '📅 Calendario Noleggio'}
-            {activeTab === 'carwash-calendar' && '🧼 Calendario Lavaggi'}
-            {activeTab === 'mechanical-calendar' && '🔧 Calendario Meccanica'}
-            {activeTab === 'lotteria' && '🎰 Biglietti Lotteria'}
-            {activeTab === 'fattura' && '📄 Fatture'}
-            {activeTab === 'contratto' && '📋 Contratti'}
+            {activeTab === 'reservations' && 'Prenotazioni Auto'}
+            {activeTab === 'carwash' && 'Prenotazioni Lavaggio'}
+            {activeTab === 'mechanical' && 'Prenotazioni Meccanica'}
+            {activeTab === 'unpaid' && 'Da Saldare'}
+            {activeTab === 'customers' && 'Clienti'}
+            {activeTab === 'vehicles' && 'Veicoli'}
+            {activeTab === 'calendar' && 'Calendario Noleggio'}
+            {activeTab === 'carwash-calendar' && 'Calendario Lavaggi'}
+            {activeTab === 'mechanical-calendar' && 'Calendario Meccanica'}
+            {activeTab === 'lotteria' && 'Biglietti Lotteria'}
+            {activeTab === 'fattura' && 'Fatture'}
+            {activeTab === 'contratto' && 'Contratti'}
           </h2>
         </div>
 
