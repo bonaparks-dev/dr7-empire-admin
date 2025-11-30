@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { useAdminRole } from '../../../hooks/useAdminRole';
+import NewClientModal from './NewClientModal';
 
 // Generate UUID for ticket
 function generateTicketUuid(ticketNumber: number): string {
@@ -62,9 +63,10 @@ interface ManualSaleModalProps {
   ticketNumbers?: number[];
   onClose: () => void;
   onConfirm: (ticketNumbers: number[], email: string, fullName: string, phone: string) => void;
+  onOpenNewClientModal: () => void;
 }
 
-const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, ticketNumbers, onClose, onConfirm }) => {
+const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, ticketNumbers, onClose, onConfirm, onOpenNewClientModal }) => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -82,12 +84,21 @@ const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, ticketN
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-96">
-        <h3 className="text-xl font-bold mb-4">
+        <h3 className="text-xl font-bold mb-2">
           {isBulkSale
             ? `Vendita Multipla - ${tickets.length} Biglietti`
             : `Vendita Manuale - Biglietto #${String(tickets[0]).padStart(4, '0')}`
           }
         </h3>
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={onOpenNewClientModal}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            + Crea Cliente Completo (Azienda/PA)
+          </button>
+        </div>
         {isBulkSale && (
           <div className="mb-4 p-3 bg-gray-100 rounded">
             <p className="text-sm font-medium mb-2">Biglietti selezionati:</p>
@@ -166,6 +177,8 @@ const LotteriaBoard: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [hideFinancials, setHideFinancials] = useState(false);
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [newClientData, setNewClientData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -680,6 +693,9 @@ const LotteriaBoard: React.FC = () => {
           ticketNumber={selectedTicket}
           onClose={() => setSelectedTicket(null)}
           onConfirm={(tickets, email, fullName, phone) => handleManualSale(tickets[0], email, fullName, phone)}
+          onOpenNewClientModal={() => {
+            setShowNewClientModal(true);
+          }}
         />
       )}
 
@@ -691,8 +707,21 @@ const LotteriaBoard: React.FC = () => {
             setSelectedTickets([]);
           }}
           onConfirm={handleBulkManualSale}
+          onOpenNewClientModal={() => {
+            setShowNewClientModal(true);
+          }}
         />
       )}
+
+      <NewClientModal
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onClientCreated={(clientId) => {
+          setShowNewClientModal(false);
+          // TODO: Optionally fetch the client data and auto-fill the ManualSaleModal fields
+          alert('Cliente creato! Ora puoi inserire i dati nella vendita biglietto.');
+        }}
+      />
 
       {generatingPdf && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">

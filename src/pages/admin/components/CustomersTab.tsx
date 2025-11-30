@@ -3,6 +3,7 @@ import { supabase } from '../../../supabaseClient'
 import Input from './Input'
 import TextArea from './TextArea'
 import Button from './Button'
+import NewClientModal from './NewClientModal'
 
 interface Customer {
   id: string
@@ -31,6 +32,7 @@ export default function CustomersTab() {
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingId, setUploadingId] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showNewClientModal, setShowNewClientModal] = useState(false)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -667,7 +669,7 @@ export default function CustomersTab() {
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-white">Clienti</h2>
-          <Button onClick={() => { resetForm(); setEditingId(null); setShowForm(true) }}>
+          <Button onClick={() => setShowNewClientModal(true)}>
             + Nuovo Cliente
           </Button>
         </div>
@@ -819,6 +821,15 @@ export default function CustomersTab() {
           </table>
         </div>
       </div>
+
+      <NewClientModal
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onClientCreated={() => {
+          setShowNewClientModal(false)
+          loadCustomers()
+        }}
+      />
     </div>
   )
 }
