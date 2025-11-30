@@ -399,7 +399,10 @@ export default function CalendarTab() {
                     <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-semibold text-sm">
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="truncate">{vehicle.display_name}</span>
+                          <span className="truncate">
+                            {vehicle.display_name}
+                            {vehicle.targa && <span className="text-gray-400 font-normal"> ({vehicle.targa})</span>}
+                          </span>
                           {vehicle.category && (
                             <span className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
                               vehicle.category === 'exotic'
@@ -412,11 +415,6 @@ export default function CalendarTab() {
                             </span>
                           )}
                         </div>
-                        {vehicle.targa && (
-                          <span className="text-xs text-gray-400 font-normal">
-                            Targa: {vehicle.targa}
-                          </span>
-                        )}
                       </div>
                     </td>
                     {daysInMonth.map(day => {

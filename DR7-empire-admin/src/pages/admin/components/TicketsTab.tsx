@@ -3,6 +3,7 @@ import { supabase } from '../../../supabaseClient'
 import Button from './Button'
 import Input from './Input'
 import Select from './Select'
+import NewClientModal from './NewClientModal'
 
 interface GiftCard {
   id: string
@@ -47,12 +48,13 @@ export default function TicketsTab() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('commercial')
   const [showManualSaleModal, setShowManualSaleModal] = useState(false)
-  const [manualSaleStep, setManualSaleStep] = useState<'number' | 'customer' | 'payment'>('number')
+  const [showNewClientModal, setShowNewClientModal] = useState(false)
+  const [manualSaleStep, setManualSaleStep] = useState<'number' | 'payment'>('number')
   const [manualSaleData, setManualSaleData] = useState({
     ticket_number: '',
-    full_name: '',
-    email: '',
-    phone: '',
+    customer_id: '',
+    customer_name: '',
+    customer_email: '',
     payment_method: 'cash',
     amount: '20'
   })
@@ -211,9 +213,9 @@ export default function TicketsTab() {
   function resetManualSaleForm() {
     setManualSaleData({
       ticket_number: '',
-      full_name: '',
-      email: '',
-      phone: '',
+      customer_id: '',
+      customer_name: '',
+      customer_email: '',
       payment_method: 'cash',
       amount: '20'
     })
@@ -227,7 +229,46 @@ export default function TicketsTab() {
 
   function closeManualSaleModal() {
     setShowManualSaleModal(false)
+    setShowNewClientModal(false)
     resetManualSaleForm()
+  }
+
+  async function handleClientCreated(clientId: string) {
+    // Fetch customer data to display in payment step
+    try {
+      const { data, error } = await supabase
+        .from('customers_extended')
+        .select('*')
+        .eq('id', clientId)
+        .single()
+
+      if (error) throw error
+
+      // Get customer name and email
+      let customerName = ''
+      let customerEmail = data.email || ''
+
+      if (data.tipo_cliente === 'persona_fisica') {
+        customerName = `${data.nome || ''} ${data.cognome || ''}`.trim()
+      } else if (data.tipo_cliente === 'azienda') {
+        customerName = data.denominazione || ''
+      } else if (data.tipo_cliente === 'pubblica_amministrazione') {
+        customerName = data.ente_ufficio || ''
+      }
+
+      setManualSaleData(prev => ({
+        ...prev,
+        customer_id: clientId,
+        customer_name: customerName,
+        customer_email: customerEmail
+      }))
+
+      setShowNewClientModal(false)
+      setManualSaleStep('payment')
+    } catch (error) {
+      console.error('Failed to fetch customer data:', error)
+      alert('Errore nel recupero dati cliente')
+    }
   }
 
   async function handleManualSaleSubmit() {
@@ -257,8 +298,8 @@ export default function TicketsTab() {
         .from('commercial_operation_tickets')
         .insert([{
           ticket_number: ticketNum,
-          email: manualSaleData.email,
-          full_name: manualSaleData.full_name,
+          email: manualSaleData.customer_email,
+          full_name: manualSaleData.customer_name,
           payment_intent_id: `manual_sale_${Date.now()}`,
           amount_paid: amount,
           currency: 'eur',
@@ -556,55 +597,14 @@ export default function TicketsTab() {
                         alert('Inserisci un numero di biglietto')
                         return
                       }
-                      setManualSaleStep('customer')
+                      // Open NewClientModal
+                      setShowNewClientModal(true)
                     }}
                   >
                     Avanti
                   </Button>
                   <Button variant="secondary" onClick={closeManualSaleModal}>
                     Annulla
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {manualSaleStep === 'customer' && (
-              <div className="space-y-4">
-                <Input
-                  label="Nome Completo"
-                  required
-                  value={manualSaleData.full_name}
-                  onChange={(e) => setManualSaleData({ ...manualSaleData, full_name: e.target.value })}
-                  placeholder="Mario Rossi"
-                />
-                <Input
-                  label="Email"
-                  type="email"
-                  required
-                  value={manualSaleData.email}
-                  onChange={(e) => setManualSaleData({ ...manualSaleData, email: e.target.value })}
-                  placeholder="mario.rossi@email.com"
-                />
-                <Input
-                  label="Telefono"
-                  value={manualSaleData.phone}
-                  onChange={(e) => setManualSaleData({ ...manualSaleData, phone: e.target.value })}
-                  placeholder="+39 123 456 7890"
-                />
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => {
-                      if (!manualSaleData.full_name || !manualSaleData.email) {
-                        alert('Compila nome ed email')
-                        return
-                      }
-                      setManualSaleStep('payment')
-                    }}
-                  >
-                    Avanti
-                  </Button>
-                  <Button variant="secondary" onClick={() => setManualSaleStep('number')}>
-                    Indietro
                   </Button>
                 </div>
               </div>
@@ -638,8 +638,8 @@ export default function TicketsTab() {
                   <h4 className="text-sm font-semibold text-white mb-2">Riepilogo</h4>
                   <div className="text-sm text-gray-300 space-y-1">
                     <p><span className="text-gray-400">Biglietto:</span> #{manualSaleData.ticket_number.padStart(6, '0')}</p>
-                    <p><span className="text-gray-400">Cliente:</span> {manualSaleData.full_name}</p>
-                    <p><span className="text-gray-400">Email:</span> {manualSaleData.email}</p>
+                    <p><span className="text-gray-400">Cliente:</span> {manualSaleData.customer_name}</p>
+                    <p><span className="text-gray-400">Email:</span> {manualSaleData.customer_email}</p>
                     <p><span className="text-gray-400">Pagamento:</span> {manualSaleData.payment_method === 'cash' ? 'Contanti' : manualSaleData.payment_method === 'card' ? 'Carta' : manualSaleData.payment_method === 'bank_transfer' ? 'Bonifico' : manualSaleData.payment_method === 'satispay' ? 'Satispay' : 'Altro'}</p>
                     <p><span className="text-gray-400">Importo:</span> €{parseFloat(manualSaleData.amount).toFixed(2)}</p>
                   </div>
@@ -649,8 +649,11 @@ export default function TicketsTab() {
                   <Button onClick={handleManualSaleSubmit}>
                     Conferma Vendita
                   </Button>
-                  <Button variant="secondary" onClick={() => setManualSaleStep('customer')}>
-                    Indietro
+                  <Button variant="secondary" onClick={() => {
+                    setManualSaleStep('number')
+                    setShowNewClientModal(true)
+                  }}>
+                    Cambia Cliente
                   </Button>
                 </div>
               </div>
@@ -658,6 +661,13 @@ export default function TicketsTab() {
           </div>
         </div>
       )}
+
+      {/* New Client Modal */}
+      <NewClientModal
+        isOpen={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        onClientCreated={handleClientCreated}
+      />
     </div>
   )
 }
