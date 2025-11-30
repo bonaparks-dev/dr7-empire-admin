@@ -6,7 +6,7 @@ import { useAdminRole } from '../../../hooks/useAdminRole'
 interface Vehicle {
   id: string
   display_name: string
-  targa?: string | null
+  plate?: string | null
   status: string
   category: 'exotic' | 'urban' | 'aziendali' | null
   metadata?: {
@@ -66,7 +66,7 @@ export default function CalendarTab() {
       // Load vehicles - Custom order: Exotic → Urban → Aziendali
       const { data: vehiclesData, error: vehiclesError } = await supabase
         .from('vehicles')
-        .select('id, display_name, targa, status, category, metadata')
+        .select('id, display_name, plate, status, category, metadata')
         .neq('status', 'retired')
 
       if (vehiclesError) throw vehiclesError
@@ -423,7 +423,7 @@ export default function CalendarTab() {
                       </div>
                     </td>
                     <td className="sticky left-[140px] z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-gray-300 text-sm font-mono">
-                      {vehicle.targa || '-'}
+                      {vehicle.plate || '-'}
                     </td>
                     {daysInMonth.map(day => {
                       const status = getCellStatus(vehicle, day)
