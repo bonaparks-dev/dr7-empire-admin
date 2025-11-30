@@ -229,6 +229,8 @@ export default function TicketsTab() {
 
   // Open NewClientModal with pre-selected ticket number
   function handleTicketNumberClick(ticketNumber: number) {
+    console.log('🎫 Ticket clicked:', ticketNumber)
+
     // Check if ticket is already sold
     const isAlreadySold = commercialTickets.some(t => t.ticket_number === ticketNumber)
     if (isAlreadySold) {
@@ -236,12 +238,16 @@ export default function TicketsTab() {
       return
     }
 
+    console.log('✅ Opening NewClientModal for ticket', ticketNumber)
+
     // Set the ticket number and open NewClientModal
     setManualSaleData(prev => ({
       ...prev,
       ticket_number: ticketNumber.toString()
     }))
     setShowNewClientModal(true)
+
+    console.log('📝 Modal state set to true')
   }
 
   function closeAllModals() {
