@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
 
 type ClientType = 'persona_fisica' | 'azienda' | 'pubblica_amministrazione'
