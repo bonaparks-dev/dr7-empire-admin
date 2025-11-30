@@ -1310,7 +1310,7 @@ export default function ReservationsTab() {
               <tr>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Nome</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Telefono</th>
-                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Servizio</th>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Car</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Inizio</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Data Fine</th>
                 <th className="px-3 py-3 text-left text-sm font-semibold text-gray-300 whitespace-nowrap">Pagamento</th>
@@ -1479,8 +1479,7 @@ export default function ReservationsTab() {
               {/* Service Info */}
               <div className="bg-dr7-darker p-4 rounded-lg">
                 <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                  {selectedBooking.service_type === 'car_wash' ? <span>🚿</span> : <span>🚗</span>}
-                  Servizio
+                  Car
                 </h4>
                 <div className="space-y-2 text-sm">
                   {selectedBooking.service_type === 'car_wash' ? (
