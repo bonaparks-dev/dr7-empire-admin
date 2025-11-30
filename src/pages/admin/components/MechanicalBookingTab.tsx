@@ -112,7 +112,6 @@ export default function MechanicalBookingTab() {
   })
 
   const [bookingSearchQuery, setBookingSearchQuery] = useState('')
-  const [showUnpaidOnly, setShowUnpaidOnly] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -365,31 +364,6 @@ export default function MechanicalBookingTab() {
         />
       </div>
 
-      {/* Payment Filter Tab */}
-      <div className="mb-6 border-b border-gray-800">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowUnpaidOnly(false)}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              !showUnpaidOnly
-                ? 'border-dr7-gold text-dr7-gold'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Tutte
-          </button>
-          <button
-            onClick={() => setShowUnpaidOnly(true)}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              showUnpaidOnly
-                ? 'border-red-500 text-red-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Da Saldare
-          </button>
-        </div>
-      </div>
 
       {/* Booking Form Modal */}
       {showForm && (
@@ -621,10 +595,6 @@ export default function MechanicalBookingTab() {
           </thead>
           <tbody>
             {bookings.filter(booking => {
-              // Payment filter - show only unpaid/pending if filter is enabled
-              if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
-                return false
-              }
 
               // Search filter
               if (!bookingSearchQuery) return true
