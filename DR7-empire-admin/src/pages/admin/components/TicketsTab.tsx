@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../supabaseClient'
 import Button from './Button'
+import Input from './Input'
+import Select from './Select'
 
 interface GiftCard {
   id: string
@@ -44,6 +46,16 @@ export default function TicketsTab() {
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('commercial')
+  const [showManualSaleModal, setShowManualSaleModal] = useState(false)
+  const [manualSaleStep, setManualSaleStep] = useState<'number' | 'customer' | 'payment'>('number')
+  const [manualSaleData, setManualSaleData] = useState({
+    ticket_number: '',
+    full_name: '',
+    email: '',
+    phone: '',
+    payment_method: 'cash',
+    amount: '20'
+  })
 
   useEffect(() => {
     loadData()
@@ -196,6 +208,75 @@ export default function TicketsTab() {
     }
   }
 
+  function resetManualSaleForm() {
+    setManualSaleData({
+      ticket_number: '',
+      full_name: '',
+      email: '',
+      phone: '',
+      payment_method: 'cash',
+      amount: '20'
+    })
+    setManualSaleStep('number')
+  }
+
+  function openManualSaleModal() {
+    resetManualSaleForm()
+    setShowManualSaleModal(true)
+  }
+
+  function closeManualSaleModal() {
+    setShowManualSaleModal(false)
+    resetManualSaleForm()
+  }
+
+  async function handleManualSaleSubmit() {
+    try {
+      // Validate ticket number
+      const ticketNum = parseInt(manualSaleData.ticket_number)
+      if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > 350000) {
+        alert('Il numero del biglietto deve essere tra 1 e 350,000')
+        return
+      }
+
+      // Check if ticket number already exists
+      const { data: existingTicket } = await supabase
+        .from('commercial_operation_tickets')
+        .select('ticket_number')
+        .eq('ticket_number', ticketNum)
+        .single()
+
+      if (existingTicket) {
+        alert('Questo numero di biglietto è già stato venduto!')
+        return
+      }
+
+      // Create the ticket
+      const amount = parseFloat(manualSaleData.amount) * 100 // Convert to cents
+      const { error } = await supabase
+        .from('commercial_operation_tickets')
+        .insert([{
+          ticket_number: ticketNum,
+          email: manualSaleData.email,
+          full_name: manualSaleData.full_name,
+          payment_intent_id: `manual_sale_${Date.now()}`,
+          amount_paid: amount,
+          currency: 'eur',
+          purchase_date: new Date().toISOString(),
+          quantity: 1
+        }])
+
+      if (error) throw error
+
+      alert('Biglietto venduto con successo!')
+      closeManualSaleModal()
+      loadCommercialTickets()
+    } catch (error) {
+      console.error('Failed to create manual sale:', error)
+      alert('Impossibile creare la vendita manuale')
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-8 text-gray-400">Caricamento...</div>
   }
@@ -236,6 +317,9 @@ export default function TicketsTab() {
               </p>
             </div>
             <div className="flex gap-3">
+              <Button onClick={openManualSaleModal}>
+                + Vendita Manuale
+              </Button>
               <Button onClick={handleExportCommercial} variant="secondary">
                 Esporta CSV
               </Button>
@@ -444,6 +528,134 @@ export default function TicketsTab() {
               </ul>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Manual Sale Modal */}
+      {showManualSaleModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg border border-gray-700 max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Vendita Manuale Biglietto</h3>
+
+            {manualSaleStep === 'number' && (
+              <div className="space-y-4">
+                <Input
+                  label="Numero Biglietto (1-350,000)"
+                  type="number"
+                  min="1"
+                  max="350000"
+                  required
+                  value={manualSaleData.ticket_number}
+                  onChange={(e) => setManualSaleData({ ...manualSaleData, ticket_number: e.target.value })}
+                  placeholder="Es. 12345"
+                />
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      if (!manualSaleData.ticket_number) {
+                        alert('Inserisci un numero di biglietto')
+                        return
+                      }
+                      setManualSaleStep('customer')
+                    }}
+                  >
+                    Avanti
+                  </Button>
+                  <Button variant="secondary" onClick={closeManualSaleModal}>
+                    Annulla
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {manualSaleStep === 'customer' && (
+              <div className="space-y-4">
+                <Input
+                  label="Nome Completo"
+                  required
+                  value={manualSaleData.full_name}
+                  onChange={(e) => setManualSaleData({ ...manualSaleData, full_name: e.target.value })}
+                  placeholder="Mario Rossi"
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  required
+                  value={manualSaleData.email}
+                  onChange={(e) => setManualSaleData({ ...manualSaleData, email: e.target.value })}
+                  placeholder="mario.rossi@email.com"
+                />
+                <Input
+                  label="Telefono"
+                  value={manualSaleData.phone}
+                  onChange={(e) => setManualSaleData({ ...manualSaleData, phone: e.target.value })}
+                  placeholder="+39 123 456 7890"
+                />
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => {
+                      if (!manualSaleData.full_name || !manualSaleData.email) {
+                        alert('Compila nome ed email')
+                        return
+                      }
+                      setManualSaleStep('payment')
+                    }}
+                  >
+                    Avanti
+                  </Button>
+                  <Button variant="secondary" onClick={() => setManualSaleStep('number')}>
+                    Indietro
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {manualSaleStep === 'payment' && (
+              <div className="space-y-4">
+                <Select
+                  label="Metodo di Pagamento"
+                  required
+                  value={manualSaleData.payment_method}
+                  onChange={(e) => setManualSaleData({ ...manualSaleData, payment_method: e.target.value })}
+                  options={[
+                    { value: 'cash', label: 'Contanti' },
+                    { value: 'card', label: 'Carta' },
+                    { value: 'bank_transfer', label: 'Bonifico' },
+                    { value: 'satispay', label: 'Satispay' },
+                    { value: 'other', label: 'Altro' }
+                  ]}
+                />
+                <Input
+                  label="Importo (€)"
+                  type="number"
+                  step="0.01"
+                  required
+                  value={manualSaleData.amount}
+                  onChange={(e) => setManualSaleData({ ...manualSaleData, amount: e.target.value })}
+                />
+
+                <div className="bg-gray-800 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-white mb-2">Riepilogo</h4>
+                  <div className="text-sm text-gray-300 space-y-1">
+                    <p><span className="text-gray-400">Biglietto:</span> #{manualSaleData.ticket_number.padStart(6, '0')}</p>
+                    <p><span className="text-gray-400">Cliente:</span> {manualSaleData.full_name}</p>
+                    <p><span className="text-gray-400">Email:</span> {manualSaleData.email}</p>
+                    <p><span className="text-gray-400">Pagamento:</span> {manualSaleData.payment_method === 'cash' ? 'Contanti' : manualSaleData.payment_method === 'card' ? 'Carta' : manualSaleData.payment_method === 'bank_transfer' ? 'Bonifico' : manualSaleData.payment_method === 'satispay' ? 'Satispay' : 'Altro'}</p>
+                    <p><span className="text-gray-400">Importo:</span> €{parseFloat(manualSaleData.amount).toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button onClick={handleManualSaleSubmit}>
+                    Conferma Vendita
+                  </Button>
+                  <Button variant="secondary" onClick={() => setManualSaleStep('customer')}>
+                    Indietro
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
