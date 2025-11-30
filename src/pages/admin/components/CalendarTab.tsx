@@ -369,6 +369,9 @@ export default function CalendarTab() {
                   <th className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-left text-white font-bold text-xs min-w-[140px]">
                     Veicolo
                   </th>
+                  <th className="sticky left-[140px] z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-left text-white font-bold text-xs min-w-[90px]">
+                    Targa
+                  </th>
                   {daysInMonth.map(day => (
                     <th
                       key={day}
@@ -401,10 +404,7 @@ export default function CalendarTab() {
                     <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-semibold text-sm">
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="truncate">
-                            {vehicle.display_name}
-                            {vehicle.targa && <span className="text-gray-400 font-normal"> ({vehicle.targa})</span>}
-                          </span>
+                          <span className="truncate">{vehicle.display_name}</span>
                           {vehicle.category && (
                             <span className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
                               vehicle.category === 'exotic'
@@ -418,6 +418,9 @@ export default function CalendarTab() {
                           )}
                         </div>
                       </div>
+                    </td>
+                    <td className="sticky left-[140px] z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-gray-300 text-sm font-mono">
+                      {vehicle.targa || '-'}
                     </td>
                     {daysInMonth.map(day => {
                       const status = getCellStatus(vehicle, day)
