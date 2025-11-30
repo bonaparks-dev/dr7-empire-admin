@@ -1,8 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../../../supabaseClient'
-import Input from './Input'
-import Select from './Select'
-import Button from './Button'
 
 type ClientType = 'persona_fisica' | 'azienda' | 'pubblica_amministrazione'
 
