@@ -227,6 +227,23 @@ export default function TicketsTab() {
     setShowTicketNumberModal(true)
   }
 
+  // Open NewClientModal with pre-selected ticket number
+  function handleTicketNumberClick(ticketNumber: number) {
+    // Check if ticket is already sold
+    const isAlreadySold = commercialTickets.some(t => t.ticket_number === ticketNumber)
+    if (isAlreadySold) {
+      alert('Questo biglietto è già stato venduto!')
+      return
+    }
+
+    // Set the ticket number and open NewClientModal
+    setManualSaleData(prev => ({
+      ...prev,
+      ticket_number: ticketNumber.toString()
+    }))
+    setShowNewClientModal(true)
+  }
+
   function closeAllModals() {
     setShowTicketNumberModal(false)
     setShowNewClientModal(false)
@@ -235,7 +252,7 @@ export default function TicketsTab() {
   }
 
   async function handleClientCreated(clientId: string) {
-    // Fetch customer data to display in payment step
+    // Fetch customer data and complete ticket sale
     try {
       const { data, error } = await supabase
         .from('customers_extended')
@@ -257,19 +274,49 @@ export default function TicketsTab() {
         customerName = data.ente_ufficio || ''
       }
 
-      setManualSaleData(prev => ({
-        ...prev,
-        customer_id: clientId,
-        customer_name: customerName,
-        customer_email: customerEmail
-      }))
+      // Validate ticket number
+      const ticketNum = parseInt(manualSaleData.ticket_number)
+      if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > 2000) {
+        alert('Numero biglietto non valido!')
+        return
+      }
 
+      // Check if ticket already exists
+      const { data: existingTicket } = await supabase
+        .from('commercial_operation_tickets')
+        .select('ticket_number')
+        .eq('ticket_number', ticketNum)
+        .single()
+
+      if (existingTicket) {
+        alert('Questo numero di biglietto è già stato venduto!')
+        return
+      }
+
+      // Create the ticket with default €20 price
+      const amount = 2000 // €20 in cents
+      const { error: insertError } = await supabase
+        .from('commercial_operation_tickets')
+        .insert([{
+          ticket_number: ticketNum,
+          email: customerEmail,
+          full_name: customerName,
+          payment_intent_id: `manual_sale_${Date.now()}`,
+          amount_paid: amount,
+          currency: 'eur',
+          purchase_date: new Date().toISOString(),
+          quantity: 1
+        }])
+
+      if (insertError) throw insertError
+
+      alert(`Biglietto #${ticketNum} venduto con successo a ${customerName}!`)
       setShowNewClientModal(false)
-      // Open payment modal
-      setShowPaymentModal(true)
+      resetManualSaleForm()
+      loadCommercialTickets()
     } catch (error) {
-      console.error('Failed to fetch customer data:', error)
-      alert('Errore nel recupero dati cliente')
+      console.error('Failed to complete ticket sale:', error)
+      alert('Errore nella vendita del biglietto')
     }
   }
 
@@ -360,12 +407,49 @@ export default function TicketsTab() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Button onClick={openManualSaleModal}>
-                + Vendita Manuale
-              </Button>
               <Button onClick={handleExportCommercial} variant="secondary">
                 Esporta CSV
               </Button>
+            </div>
+          </div>
+
+          {/* Ticket Number Grid */}
+          <div className="bg-gray-900 rounded-lg border border-gray-700 p-6 mb-6">
+            <h3 className="text-lg font-bold text-white mb-4">Seleziona Numero Biglietto</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Clicca su un numero disponibile per vendere il biglietto
+            </p>
+            <div className="grid grid-cols-10 sm:grid-cols-15 md:grid-cols-20 gap-2 max-h-96 overflow-y-auto">
+              {Array.from({ length: 2000 }, (_, i) => i + 1).map(num => {
+                const isSold = commercialTickets.some(t => t.ticket_number === num)
+                return (
+                  <button
+                    key={num}
+                    onClick={() => !isSold && handleTicketNumberClick(num)}
+                    disabled={isSold}
+                    className={`
+                      aspect-square flex items-center justify-center rounded text-xs font-bold transition-all
+                      ${isSold
+                        ? 'bg-red-900/30 text-red-500 cursor-not-allowed border border-red-700/50'
+                        : 'bg-green-900/30 text-green-400 hover:bg-green-700 hover:scale-105 cursor-pointer border border-green-700/50'
+                      }
+                    `}
+                    title={isSold ? `Biglietto ${num} - Venduto` : `Biglietto ${num} - Disponibile`}
+                  >
+                    {num}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-4 flex gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-900/30 border border-green-700/50 rounded"></div>
+                <span className="text-gray-400">Disponibile</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-900/30 border border-red-700/50 rounded"></div>
+                <span className="text-gray-400">Venduto</span>
+              </div>
             </div>
           </div>
 
@@ -574,51 +658,12 @@ export default function TicketsTab() {
         </div>
       )}
 
-      {/* Step 1: Ticket Number Modal (opens first) */}
-      {showTicketNumberModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-lg border border-gray-700 max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Vendita Manuale Biglietto</h3>
-            <div className="space-y-4">
-              <Input
-                label="Numero Biglietto (1-2000)"
-                type="number"
-                min="1"
-                max="2000"
-                required
-                value={manualSaleData.ticket_number}
-                onChange={(e) => setManualSaleData({ ...manualSaleData, ticket_number: e.target.value })}
-                placeholder="Es. 1234"
-              />
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => {
-                    if (!manualSaleData.ticket_number) {
-                      alert('Inserisci un numero di biglietto')
-                      return
-                    }
-                    // Close ticket number modal and open NewClientModal
-                    setShowTicketNumberModal(false)
-                    setShowNewClientModal(true)
-                  }}
-                >
-                  Avanti
-                </Button>
-                <Button variant="secondary" onClick={closeAllModals}>
-                  Annulla
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: New Client Modal (after ticket number) */}
+      {/* New Client Modal - Opens when clicking a ticket number */}
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => {
           setShowNewClientModal(false)
-          setShowTicketNumberModal(true)
+          resetManualSaleForm()
         }}
         onClientCreated={handleClientCreated}
       />
