@@ -98,7 +98,7 @@ export default function UnpaidBookingsTab() {
       case 'rental': return 'Noleggio'
       case 'car_wash': return 'Lavaggio'
       case 'mechanical_service': return 'Meccanica'
-      default: return 'Altro'
+      default: return serviceType || 'Altro' // Show actual value if unknown
     }
   }
 
