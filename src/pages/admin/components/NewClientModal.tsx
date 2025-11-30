@@ -618,30 +618,6 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                 />
                 {errors.citta && <p className="text-red-500 text-xs mt-1">{errors.citta}</p>}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Partita IVA (opzionale)
-                </label>
-                <input
-                  type="text"
-                  value={formData.partita_iva_pa}
-                  onChange={(e) => setFormData({ ...formData, partita_iva_pa: e.target.value })}
-                  maxLength={11}
-                  placeholder="12345678901"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PEC (opzionale)
-                </label>
-                <input
-                  type="email"
-                  value={formData.pec_pa}
-                  onChange={(e) => setFormData({ ...formData, pec_pa: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
             </div>
           )}
 
