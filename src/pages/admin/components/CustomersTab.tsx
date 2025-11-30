@@ -118,6 +118,42 @@ export default function CustomersTab() {
         console.log('Unique customers:', customerMap.size)
       }
 
+      // Also get customers from customers_extended table
+      const { data: customersExtendedData, error: customersExtendedError } = await supabase
+        .from('customers_extended')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (!customersExtendedError && customersExtendedData) {
+        console.log('Customers from customers_extended:', customersExtendedData.length)
+        customersExtendedData.forEach((customer: any) => {
+          const key = customer.email || customer.telefono || customer.id
+
+          // Create display name based on customer type
+          let fullName = 'Cliente'
+          if (customer.tipo_cliente === 'persona_fisica') {
+            fullName = `${customer.nome || ''} ${customer.cognome || ''}`.trim()
+          } else if (customer.tipo_cliente === 'azienda') {
+            fullName = customer.ragione_sociale || customer.denominazione || 'Azienda'
+          } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
+            fullName = customer.denominazione || customer.ente_ufficio || 'PA'
+          }
+
+          if (!customerMap.has(key)) {
+            customerMap.set(key, {
+              id: customer.id,
+              full_name: fullName,
+              email: customer.email,
+              phone: customer.telefono,
+              driver_license_number: customer.patente || null,
+              notes: null,
+              created_at: customer.created_at,
+              updated_at: customer.updated_at
+            })
+          }
+        })
+      }
+
       // Also get customers from customers table if it exists
       const { data: customersData, error: customersError } = await supabase
         .from('customers')
