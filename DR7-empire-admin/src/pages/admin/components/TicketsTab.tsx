@@ -581,14 +581,14 @@ export default function TicketsTab() {
             <h3 className="text-xl font-bold text-white mb-4">Vendita Manuale Biglietto</h3>
             <div className="space-y-4">
               <Input
-                label="Numero Biglietto (1-350,000)"
+                label="Numero Biglietto (1-2000)"
                 type="number"
                 min="1"
-                max="350000"
+                max="2000"
                 required
                 value={manualSaleData.ticket_number}
                 onChange={(e) => setManualSaleData({ ...manualSaleData, ticket_number: e.target.value })}
-                placeholder="Es. 12345"
+                placeholder="Es. 1234"
               />
               <div className="flex gap-3">
                 <Button
