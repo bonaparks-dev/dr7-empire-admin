@@ -81,9 +81,11 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
   }
 
   const validateItalianPhone = (phone: string): boolean => {
-    // Italian phone: +39 followed by 9-10 digits, or just 9-10 digits
-    const re = /^(\+39)?[\s]?[0-9]{9,10}$/
-    return re.test(phone.replace(/\s/g, ''))
+    // Italian phone: More flexible - accepts spaces, dashes, and various formats
+    // Examples: +39 320 1234567, 320-123-4567, 3201234567, +393201234567
+    const cleaned = phone.replace(/[\s\-\.]/g, '') // Remove spaces, dashes, dots
+    const re = /^(\+39|0039)?[0-9]{9,11}$/
+    return re.test(cleaned)
   }
 
   const validateCodiceFiscale = (cf: string): boolean => {
