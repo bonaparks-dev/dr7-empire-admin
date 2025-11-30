@@ -159,18 +159,20 @@ export default function ReservationsTab() {
     nome: '',
     cognome: '',
     codice_fiscale: '',
+    pec: '',
     // Azienda fields
-    ragione_sociale: '',
+    denominazione: '',
     partita_iva: '',
     codice_destinatario: '',
-    pec: '',
     // Pubblica Amministrazione fields
-    denominazione: '',
-    codice_ipa: '',
-    codice_univoco: '',
-    // Common fields
+    codice_univoco_pa: '',
+    codice_fiscale_pa: '',
+    ente_o_ufficio: '',
+    citta: '',
+    // Common fields (mandatory for all)
+    nazione: 'Italia',
+    telefono: '',
     email: '',
-    phone: '',
     indirizzo: '',
     driver_license_number: ''
   })
@@ -554,8 +556,9 @@ export default function ReservationsTab() {
         try {
           const customerData: any = {
             tipo_cliente: newCustomerData.tipo_cliente,
+            nazione: newCustomerData.nazione,
             email: newCustomerData.email || null,
-            telefono: newCustomerData.phone || null,
+            telefono: newCustomerData.telefono || null,
             indirizzo: newCustomerData.indirizzo || null,
             source: 'admin',
             created_at: new Date().toISOString()
@@ -566,16 +569,20 @@ export default function ReservationsTab() {
             customerData.nome = newCustomerData.nome
             customerData.cognome = newCustomerData.cognome
             customerData.codice_fiscale = newCustomerData.codice_fiscale
-            customerData.patente = newCustomerData.driver_license_number
+            customerData.pec = newCustomerData.pec || null
+            customerData.patente = newCustomerData.driver_license_number || null
           } else if (newCustomerData.tipo_cliente === 'azienda') {
-            customerData.ragione_sociale = newCustomerData.ragione_sociale
-            customerData.partita_iva = newCustomerData.partita_iva
-            customerData.codice_destinatario = newCustomerData.codice_destinatario
-            customerData.pec = newCustomerData.pec
-          } else if (newCustomerData.tipo_cliente === 'pubblica_amministrazione') {
             customerData.denominazione = newCustomerData.denominazione
-            customerData.codice_ipa = newCustomerData.codice_ipa
-            customerData.codice_univoco = newCustomerData.codice_univoco
+            customerData.partita_iva = newCustomerData.partita_iva
+            customerData.codice_destinatario = newCustomerData.codice_destinatario || null
+            customerData.codice_fiscale = newCustomerData.codice_fiscale || null
+            customerData.pec = newCustomerData.pec || null
+          } else if (newCustomerData.tipo_cliente === 'pubblica_amministrazione') {
+            customerData.codice_univoco = newCustomerData.codice_univoco_pa
+            customerData.codice_fiscale = newCustomerData.codice_fiscale_pa
+            customerData.ente_o_ufficio = newCustomerData.ente_o_ufficio
+            customerData.citta = newCustomerData.citta
+            customerData.pec = newCustomerData.pec || null
           }
 
           const { data: newCustomer, error: customerError } = await supabase
@@ -603,8 +610,9 @@ export default function ReservationsTab() {
         full_name: newCustomerData.tipo_cliente === 'persona_fisica'
           ? `${newCustomerData.nome} ${newCustomerData.cognome}`
           : newCustomerData.tipo_cliente === 'azienda'
-          ? newCustomerData.ragione_sociale
-          : newCustomerData.denominazione
+          ? newCustomerData.denominazione
+          : newCustomerData.ente_o_ufficio,
+        phone: newCustomerData.telefono
       } : customers.find(c => c.id === customerId)
 
       // Create or update vehicle rental booking in bookings table (for website availability blocking)
@@ -820,15 +828,17 @@ export default function ReservationsTab() {
       nome: '',
       cognome: '',
       codice_fiscale: '',
-      ragione_sociale: '',
-      partita_iva: '',
-      codice_destinatario: '',
       pec: '',
       denominazione: '',
-      codice_ipa: '',
-      codice_univoco: '',
+      partita_iva: '',
+      codice_destinatario: '',
+      codice_univoco_pa: '',
+      codice_fiscale_pa: '',
+      ente_o_ufficio: '',
+      citta: '',
+      nazione: 'Italia',
+      telefono: '',
       email: '',
-      phone: '',
       indirizzo: '',
       driver_license_number: ''
     })
@@ -931,19 +941,38 @@ export default function ReservationsTab() {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Common fields for ALL types */}
+                  <Select
+                    label="Nazione"
+                    required
+                    value={newCustomerData.nazione}
+                    onChange={(e) => setNewCustomerData({ ...newCustomerData, nazione: e.target.value })}
+                    options={[
+                      { value: 'Italia', label: 'Italia' },
+                      { value: 'Francia', label: 'Francia' },
+                      { value: 'Germania', label: 'Germania' },
+                      { value: 'Spagna', label: 'Spagna' },
+                      { value: 'Regno Unito', label: 'Regno Unito' },
+                      { value: 'Altro', label: 'Altro' }
+                    ]}
+                  />
+
+                  {/* Type-specific fields */}
                   {newCustomerData.tipo_cliente === 'persona_fisica' && (
                     <>
-                      <Input label="Nome" required value={newCustomerData.nome} onChange={(e) => setNewCustomerData({ ...newCustomerData, nome: e.target.value })} />
-                      <Input label="Cognome" required value={newCustomerData.cognome} onChange={(e) => setNewCustomerData({ ...newCustomerData, cognome: e.target.value })} />
-                      <Input label="Codice Fiscale" required value={newCustomerData.codice_fiscale} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale: e.target.value })} />
+                      <Input label="Nome *" required value={newCustomerData.nome} onChange={(e) => setNewCustomerData({ ...newCustomerData, nome: e.target.value })} />
+                      <Input label="Cognome *" required value={newCustomerData.cognome} onChange={(e) => setNewCustomerData({ ...newCustomerData, cognome: e.target.value })} />
+                      <Input label="Codice Fiscale *" required value={newCustomerData.codice_fiscale} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale: e.target.value })} />
+                      <Input label="PEC" type="email" value={newCustomerData.pec} onChange={(e) => setNewCustomerData({ ...newCustomerData, pec: e.target.value })} />
                       <Input label="Patente" value={newCustomerData.driver_license_number} onChange={(e) => setNewCustomerData({ ...newCustomerData, driver_license_number: e.target.value })} />
                     </>
                   )}
 
                   {newCustomerData.tipo_cliente === 'azienda' && (
                     <>
-                      <Input label="Ragione Sociale" required value={newCustomerData.ragione_sociale} onChange={(e) => setNewCustomerData({ ...newCustomerData, ragione_sociale: e.target.value })} />
-                      <Input label="Partita IVA" required value={newCustomerData.partita_iva} onChange={(e) => setNewCustomerData({ ...newCustomerData, partita_iva: e.target.value })} />
+                      <Input label="Denominazione *" required value={newCustomerData.denominazione} onChange={(e) => setNewCustomerData({ ...newCustomerData, denominazione: e.target.value })} />
+                      <Input label="Partita IVA *" required value={newCustomerData.partita_iva} onChange={(e) => setNewCustomerData({ ...newCustomerData, partita_iva: e.target.value })} />
+                      <Input label="Codice Fiscale" value={newCustomerData.codice_fiscale} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale: e.target.value })} />
                       <Input label="Codice Destinatario" value={newCustomerData.codice_destinatario} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_destinatario: e.target.value })} />
                       <Input label="PEC" type="email" value={newCustomerData.pec} onChange={(e) => setNewCustomerData({ ...newCustomerData, pec: e.target.value })} />
                     </>
@@ -951,16 +980,19 @@ export default function ReservationsTab() {
 
                   {newCustomerData.tipo_cliente === 'pubblica_amministrazione' && (
                     <>
-                      <Input label="Denominazione" required value={newCustomerData.denominazione} onChange={(e) => setNewCustomerData({ ...newCustomerData, denominazione: e.target.value })} />
-                      <Input label="Codice IPA" required value={newCustomerData.codice_ipa} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_ipa: e.target.value })} />
-                      <Input label="Codice Univoco" required value={newCustomerData.codice_univoco} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_univoco: e.target.value })} />
+                      <Input label="Codice Univoco *" required value={newCustomerData.codice_univoco_pa} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_univoco_pa: e.target.value })} />
+                      <Input label="Codice Fiscale *" required value={newCustomerData.codice_fiscale_pa} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale_pa: e.target.value })} />
+                      <Input label="Ente o Ufficio *" required value={newCustomerData.ente_o_ufficio} onChange={(e) => setNewCustomerData({ ...newCustomerData, ente_o_ufficio: e.target.value })} />
+                      <Input label="Città *" required value={newCustomerData.citta} onChange={(e) => setNewCustomerData({ ...newCustomerData, citta: e.target.value })} />
+                      <Input label="PEC" type="email" value={newCustomerData.pec} onChange={(e) => setNewCustomerData({ ...newCustomerData, pec: e.target.value })} />
                     </>
                   )}
 
-                  <Input label="Email" type="email" required value={newCustomerData.email} onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })} />
-                  <Input label="Telefono" required value={newCustomerData.phone} onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })} />
+                  {/* Common mandatory fields */}
+                  <Input label="Telefono *" type="tel" required value={newCustomerData.telefono} onChange={(e) => setNewCustomerData({ ...newCustomerData, telefono: e.target.value })} />
+                  <Input label="Email *" type="email" required value={newCustomerData.email} onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })} />
                   <div className="md:col-span-2">
-                    <Input label="Indirizzo" required value={newCustomerData.indirizzo} onChange={(e) => setNewCustomerData({ ...newCustomerData, indirizzo: e.target.value })} />
+                    <Input label="Indirizzo *" required value={newCustomerData.indirizzo} onChange={(e) => setNewCustomerData({ ...newCustomerData, indirizzo: e.target.value })} />
                   </div>
                 </div>
               </div>
