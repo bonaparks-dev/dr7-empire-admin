@@ -264,6 +264,7 @@ export default function TicketsTab() {
       }))
 
       setShowNewClientModal(false)
+      // Move to payment step
       setManualSaleStep('payment')
     } catch (error) {
       console.error('Failed to fetch customer data:', error)
