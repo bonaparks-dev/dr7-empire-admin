@@ -293,8 +293,8 @@ export default function TicketsTab() {
         return
       }
 
-      // Create the ticket with default €20 price
-      const amount = 2000 // €20 in cents
+      // Create the ticket with default €25 price
+      const amount = 2500 // €25 in cents
       const { error: insertError } = await supabase
         .from('commercial_operation_tickets')
         .insert([{

@@ -12,8 +12,9 @@ import CarWashCalendarTab from './components/CarWashCalendarTab'
 import MechanicalBookingTab from './components/MechanicalBookingTab'
 import MechanicalCalendarTab from './components/MechanicalCalendarTab'
 import LotteriaBoard from './components/LotteriaBoard'
+import UnpaidBookingsTab from './components/UnpaidBookingsTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical' | 'mechanical-calendar' | 'lotteria' | 'fattura' | 'contratto'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical' | 'mechanical-calendar' | 'lotteria' | 'fattura' | 'contratto' | 'unpaid'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -205,6 +206,7 @@ export default function AdminDashboard() {
 
               {/* Other menu items */}
               {[
+                { id: 'unpaid', label: 'Da Saldare', icon: '💳' },
                 { id: 'customers', label: 'Clienti', icon: '👥' },
                 { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
                 { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
@@ -335,6 +337,16 @@ export default function AdminDashboard() {
 
               {/* Other menu items */}
               <button
+                onClick={() => setActiveTab('unpaid')}
+                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === 'unpaid'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                💳 Da Saldare
+              </button>
+              <button
                 onClick={() => setActiveTab('customers')}
                 className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'customers'
@@ -394,6 +406,7 @@ export default function AdminDashboard() {
             {activeTab === 'reservations' && '🚗 Prenotazioni Auto'}
             {activeTab === 'carwash' && '🚿 Prenotazioni Lavaggio'}
             {activeTab === 'mechanical' && '🔧 Prenotazioni Meccanica'}
+            {activeTab === 'unpaid' && '💳 Da Saldare'}
             {activeTab === 'customers' && '👥 Clienti'}
             {activeTab === 'vehicles' && '🚙 Veicoli'}
             {activeTab === 'calendar' && '📅 Calendario Noleggio'}
@@ -407,6 +420,7 @@ export default function AdminDashboard() {
 
         <div className="mt-8">
           {activeTab === 'reservations' && <ReservationsTab />}
+          {activeTab === 'unpaid' && <UnpaidBookingsTab />}
           {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'vehicles' && <VehiclesTab />}
           {activeTab === 'calendar' && <CalendarTab />}
