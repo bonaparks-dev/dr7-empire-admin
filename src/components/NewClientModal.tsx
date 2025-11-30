@@ -1,0 +1,694 @@
+import { useState } from 'react'
+import { supabase } from '../supabaseClient'
+
+interface NewClientModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onClientCreated?: (clientId: string) => void
+}
+
+type ClientType = 'persona_fisica' | 'azienda' | 'pubblica_amministrazione'
+
+interface ClientFormData {
+  tipo_cliente: ClientType
+  // Global fields
+  nazione: string
+  telefono: string
+  email: string
+
+  // Persona Fisica
+  nome: string
+  cognome: string
+  codice_fiscale: string
+  indirizzo: string
+  pec_persona: string
+
+  // Azienda
+  denominazione: string
+  partita_iva: string
+  codice_destinatario: string
+  indirizzo_azienda: string
+  cf_azienda: string
+  indirizzo_ddt: string
+  pec_azienda: string
+  contatti_cliente: string
+
+  // Pubblica Amministrazione
+  codice_univoco: string
+  cf_pa: string
+  ente_ufficio: string
+  citta: string
+  partita_iva_pa: string
+  pec_pa: string
+}
+
+export default function NewClientModal({ isOpen, onClose, onClientCreated }: NewClientModalProps) {
+  const [formData, setFormData] = useState<ClientFormData>({
+    tipo_cliente: 'persona_fisica',
+    nazione: 'Italia',
+    telefono: '',
+    email: '',
+    nome: '',
+    cognome: '',
+    codice_fiscale: '',
+    indirizzo: '',
+    pec_persona: '',
+    denominazione: '',
+    partita_iva: '',
+    codice_destinatario: '',
+    indirizzo_azienda: '',
+    cf_azienda: '',
+    indirizzo_ddt: '',
+    pec_azienda: '',
+    contatti_cliente: '',
+    codice_univoco: '',
+    cf_pa: '',
+    ente_ufficio: '',
+    citta: '',
+    partita_iva_pa: '',
+    pec_pa: ''
+  })
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Validation functions
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const validateItalianPhone = (phone: string): boolean => {
+    // Italian phone: +39 or 0039 or direct, 9-13 digits
+    const phoneRegex = /^(\+39|0039)?[\s]?[0-9]{9,13}$/
+    return phoneRegex.test(phone.replace(/\s/g, ''))
+  }
+
+  const validateCodiceFiscale = (cf: string): boolean => {
+    // Italian CF: 16 alphanumeric characters
+    const cfRegex = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i
+    return cf.length === 16 && cfRegex.test(cf.toUpperCase())
+  }
+
+  const validatePartitaIVA = (piva: string): boolean => {
+    // Italian P.IVA: 11 digits
+    const pivaRegex = /^[0-9]{11}$/
+    return pivaRegex.test(piva)
+  }
+
+  const validateCodiceUnivoco = (codice: string): boolean => {
+    // Codice Univoco: 6-7 alphanumeric characters
+    return codice.length >= 6 && codice.length <= 7 && /^[A-Z0-9]+$/i.test(codice)
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    // Global validations
+    if (!formData.email) {
+      newErrors.email = 'Email obbligatoria'
+    } else if (!validateEmail(formData.email)) {
+      newErrors.email = 'Formato email non valido'
+    }
+
+    if (!formData.telefono) {
+      newErrors.telefono = 'Telefono obbligatorio'
+    } else if (!validateItalianPhone(formData.telefono)) {
+      newErrors.telefono = 'Formato telefono non valido'
+    }
+
+    if (!formData.nazione) {
+      newErrors.nazione = 'Nazione obbligatoria'
+    }
+
+    // Type-specific validations
+    if (formData.tipo_cliente === 'persona_fisica') {
+      if (!formData.nome) newErrors.nome = 'Nome obbligatorio'
+      if (!formData.cognome) newErrors.cognome = 'Cognome obbligatorio'
+      if (!formData.codice_fiscale) {
+        newErrors.codice_fiscale = 'Codice Fiscale obbligatorio'
+      } else if (!validateCodiceFiscale(formData.codice_fiscale)) {
+        newErrors.codice_fiscale = 'Codice Fiscale non valido (16 caratteri)'
+      }
+      if (!formData.indirizzo) newErrors.indirizzo = 'Indirizzo obbligatorio'
+    }
+
+    if (formData.tipo_cliente === 'azienda') {
+      if (!formData.denominazione) newErrors.denominazione = 'Denominazione obbligatoria'
+      if (!formData.partita_iva) {
+        newErrors.partita_iva = 'Partita IVA obbligatoria'
+      } else if (!validatePartitaIVA(formData.partita_iva)) {
+        newErrors.partita_iva = 'Partita IVA non valida (11 cifre)'
+      }
+      if (!formData.indirizzo_azienda) newErrors.indirizzo_azienda = 'Indirizzo obbligatorio'
+
+      // Optional CF validation if provided
+      if (formData.cf_azienda && !validateCodiceFiscale(formData.cf_azienda)) {
+        newErrors.cf_azienda = 'Codice Fiscale non valido (16 caratteri)'
+      }
+    }
+
+    if (formData.tipo_cliente === 'pubblica_amministrazione') {
+      if (!formData.codice_univoco) {
+        newErrors.codice_univoco = 'Codice Univoco obbligatorio'
+      } else if (!validateCodiceUnivoco(formData.codice_univoco)) {
+        newErrors.codice_univoco = 'Codice Univoco non valido (6-7 caratteri)'
+      }
+      if (!formData.cf_pa) {
+        newErrors.cf_pa = 'Codice Fiscale obbligatorio'
+      } else if (!validateCodiceFiscale(formData.cf_pa)) {
+        newErrors.cf_pa = 'Codice Fiscale non valido (16 caratteri)'
+      }
+      if (!formData.ente_ufficio) newErrors.ente_ufficio = 'Ente o Ufficio obbligatorio'
+      if (!formData.citta) newErrors.citta = 'Città obbligatoria'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSave = async () => {
+    if (!validateForm()) return
+
+    setIsSaving(true)
+    try {
+      const customerData: any = {
+        tipo_cliente: formData.tipo_cliente,
+        email: formData.email,
+        telefono: formData.telefono,
+        nazione: formData.nazione,
+        source: 'admin',
+        created_at: new Date().toISOString()
+      }
+
+      // Add type-specific fields
+      if (formData.tipo_cliente === 'persona_fisica') {
+        customerData.nome = formData.nome
+        customerData.cognome = formData.cognome
+        customerData.codice_fiscale = formData.codice_fiscale.toUpperCase()
+        customerData.indirizzo = formData.indirizzo
+        if (formData.pec_persona) customerData.pec = formData.pec_persona
+      } else if (formData.tipo_cliente === 'azienda') {
+        customerData.ragione_sociale = formData.denominazione
+        customerData.partita_iva = formData.partita_iva
+        customerData.indirizzo = formData.indirizzo_azienda
+        if (formData.codice_destinatario) customerData.codice_destinatario = formData.codice_destinatario
+        if (formData.cf_azienda) customerData.codice_fiscale = formData.cf_azienda.toUpperCase()
+        if (formData.pec_azienda) customerData.pec = formData.pec_azienda
+        if (formData.indirizzo_ddt || formData.contatti_cliente) {
+          customerData.metadata = {
+            indirizzo_ddt: formData.indirizzo_ddt,
+            contatti_cliente: formData.contatti_cliente
+          }
+        }
+      } else if (formData.tipo_cliente === 'pubblica_amministrazione') {
+        customerData.denominazione = formData.ente_ufficio
+        customerData.codice_univoco = formData.codice_univoco.toUpperCase()
+        customerData.codice_fiscale = formData.cf_pa.toUpperCase()
+        customerData.indirizzo = formData.citta
+        if (formData.partita_iva_pa) customerData.partita_iva = formData.partita_iva_pa
+        if (formData.pec_pa) customerData.pec = formData.pec_pa
+      }
+
+      const { data: newClient, error } = await supabase
+        .from('customers_extended')
+        .insert([customerData])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      alert('Cliente creato con successo!')
+
+      if (onClientCreated && newClient) {
+        onClientCreated(newClient.id)
+      }
+
+      handleClose()
+    } catch (error) {
+      console.error('Errore durante la creazione del cliente:', error)
+      alert('Errore durante la creazione del cliente')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleClose = () => {
+    setFormData({
+      tipo_cliente: 'persona_fisica',
+      nazione: 'Italia',
+      telefono: '',
+      email: '',
+      nome: '',
+      cognome: '',
+      codice_fiscale: '',
+      indirizzo: '',
+      pec_persona: '',
+      denominazione: '',
+      partita_iva: '',
+      codice_destinatario: '',
+      indirizzo_azienda: '',
+      cf_azienda: '',
+      indirizzo_ddt: '',
+      pec_azienda: '',
+      contatti_cliente: '',
+      codice_univoco: '',
+      cf_pa: '',
+      ente_ufficio: '',
+      citta: '',
+      partita_iva_pa: '',
+      pec_pa: ''
+    })
+    setErrors({})
+    onClose()
+  }
+
+  const isSaveDisabled = () => {
+    // Check global fields
+    if (!formData.email || !formData.telefono || !formData.nazione) return true
+    if (!validateEmail(formData.email) || !validateItalianPhone(formData.telefono)) return true
+
+    // Check type-specific fields
+    if (formData.tipo_cliente === 'persona_fisica') {
+      return !formData.nome || !formData.cognome || !formData.codice_fiscale || !formData.indirizzo
+    }
+    if (formData.tipo_cliente === 'azienda') {
+      return !formData.denominazione || !formData.partita_iva || !formData.indirizzo_azienda
+    }
+    if (formData.tipo_cliente === 'pubblica_amministrazione') {
+      return !formData.codice_univoco || !formData.cf_pa || !formData.ente_ufficio || !formData.citta
+    }
+
+    return false
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-2xl w-full my-8 shadow-2xl">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Nuovo Cliente</h2>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors text-3xl leading-none"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Client Type Selection */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Tipo Cliente *
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="tipo_cliente"
+                  value="persona_fisica"
+                  checked={formData.tipo_cliente === 'persona_fisica'}
+                  onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value as ClientType })}
+                  className="mr-2 w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">Persona Fisica</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="tipo_cliente"
+                  value="azienda"
+                  checked={formData.tipo_cliente === 'azienda'}
+                  onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value as ClientType })}
+                  className="mr-2 w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">Azienda</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="tipo_cliente"
+                  value="pubblica_amministrazione"
+                  checked={formData.tipo_cliente === 'pubblica_amministrazione'}
+                  onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value as ClientType })}
+                  className="mr-2 w-4 h-4 text-blue-600"
+                />
+                <span className="text-sm text-gray-700">Pubblica Amministrazione</span>
+              </label>
+            </div>
+          </div>
+
+          {/* PERSONA FISICA FIELDS */}
+          {formData.tipo_cliente === 'persona_fisica' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cognome *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cognome}
+                    onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {errors.cognome && <p className="text-red-500 text-xs mt-1">{errors.cognome}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Codice Fiscale *
+                </label>
+                <input
+                  type="text"
+                  value={formData.codice_fiscale}
+                  onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value.toUpperCase() })}
+                  maxLength={16}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                  placeholder="RSSMRA80A01H501U"
+                />
+                {errors.codice_fiscale && <p className="text-red-500 text-xs mt-1">{errors.codice_fiscale}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Indirizzo *
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo}
+                  onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {errors.indirizzo && <p className="text-red-500 text-xs mt-1">{errors.indirizzo}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PEC
+                </label>
+                <input
+                  type="email"
+                  value={formData.pec_persona}
+                  onChange={(e) => setFormData({ ...formData, pec_persona: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* AZIENDA FIELDS */}
+          {formData.tipo_cliente === 'azienda' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Denominazione (Ragione Sociale) *
+                </label>
+                <input
+                  type="text"
+                  value={formData.denominazione}
+                  onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {errors.denominazione && <p className="text-red-500 text-xs mt-1">{errors.denominazione}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Partita IVA *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.partita_iva}
+                    onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                    maxLength={11}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="12345678901"
+                  />
+                  {errors.partita_iva && <p className="text-red-500 text-xs mt-1">{errors.partita_iva}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Fiscale
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cf_azienda}
+                    onChange={(e) => setFormData({ ...formData, cf_azienda: e.target.value.toUpperCase() })}
+                    maxLength={16}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                  />
+                  {errors.cf_azienda && <p className="text-red-500 text-xs mt-1">{errors.cf_azienda}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Codice Destinatario / SDI
+                </label>
+                <input
+                  type="text"
+                  value={formData.codice_destinatario}
+                  onChange={(e) => setFormData({ ...formData, codice_destinatario: e.target.value.toUpperCase() })}
+                  maxLength={7}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Indirizzo *
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo_azienda}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_azienda: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {errors.indirizzo_azienda && <p className="text-red-500 text-xs mt-1">{errors.indirizzo_azienda}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Indirizzo per DDT
+                </label>
+                <input
+                  type="text"
+                  value={formData.indirizzo_ddt}
+                  onChange={(e) => setFormData({ ...formData, indirizzo_ddt: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PEC
+                </label>
+                <input
+                  type="email"
+                  value={formData.pec_azienda}
+                  onChange={(e) => setFormData({ ...formData, pec_azienda: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contatti Cliente
+                </label>
+                <textarea
+                  value={formData.contatti_cliente}
+                  onChange={(e) => setFormData({ ...formData, contatti_cliente: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* PUBBLICA AMMINISTRAZIONE FIELDS */}
+          {formData.tipo_cliente === 'pubblica_amministrazione' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ente o Ufficio *
+                </label>
+                <input
+                  type="text"
+                  value={formData.ente_ufficio}
+                  onChange={(e) => setFormData({ ...formData, ente_ufficio: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Es: Comune di Roma"
+                />
+                {errors.ente_ufficio && <p className="text-red-500 text-xs mt-1">{errors.ente_ufficio}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Univoco *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.codice_univoco}
+                    onChange={(e) => setFormData({ ...formData, codice_univoco: e.target.value.toUpperCase() })}
+                    maxLength={7}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                    placeholder="ABC1234"
+                  />
+                  {errors.codice_univoco && <p className="text-red-500 text-xs mt-1">{errors.codice_univoco}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Fiscale *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cf_pa}
+                    onChange={(e) => setFormData({ ...formData, cf_pa: e.target.value.toUpperCase() })}
+                    maxLength={16}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                  />
+                  {errors.cf_pa && <p className="text-red-500 text-xs mt-1">{errors.cf_pa}</p>}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Città *
+                </label>
+                <input
+                  type="text"
+                  value={formData.citta}
+                  onChange={(e) => setFormData({ ...formData, citta: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {errors.citta && <p className="text-red-500 text-xs mt-1">{errors.citta}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Partita IVA
+                </label>
+                <input
+                  type="text"
+                  value={formData.partita_iva_pa}
+                  onChange={(e) => setFormData({ ...formData, partita_iva_pa: e.target.value })}
+                  maxLength={11}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PEC
+                </label>
+                <input
+                  type="email"
+                  value={formData.pec_pa}
+                  onChange={(e) => setFormData({ ...formData, pec_pa: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* GLOBAL FIELDS - Always visible */}
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-900">Informazioni di Contatto</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nazione *
+              </label>
+              <select
+                value={formData.nazione}
+                onChange={(e) => setFormData({ ...formData, nazione: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="Italia">Italia</option>
+                <option value="Francia">Francia</option>
+                <option value="Germania">Germania</option>
+                <option value="Spagna">Spagna</option>
+                <option value="Altro">Altro</option>
+              </select>
+              {errors.nazione && <p className="text-red-500 text-xs mt-1">{errors.nazione}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefono *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="+39 320 1234567"
+                />
+                {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="cliente@example.com"
+                />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={handleClose}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+            >
+              Annulla
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaveDisabled() || isSaving}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                isSaveDisabled() || isSaving
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {isSaving ? 'Salvataggio...' : 'Salva Cliente'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
