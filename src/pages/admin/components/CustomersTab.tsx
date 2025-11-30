@@ -19,6 +19,33 @@ interface Customer {
     stripeVerificationSessionId?: string
     verifiedAt?: string
   }
+  // Extended customer fields from customers_extended table
+  tipo_cliente?: 'persona_fisica' | 'azienda' | 'pubblica_amministrazione'
+  source?: string
+  // Persona Fisica fields
+  nome?: string
+  cognome?: string
+  codice_fiscale?: string
+  patente?: string
+  indirizzo?: string
+  pec?: string
+  // Azienda fields
+  ragione_sociale?: string
+  denominazione?: string
+  partita_iva?: string
+  codice_destinatario?: string
+  indirizzo_azienda?: string
+  indirizzo_ddt?: string
+  contatti_cliente?: string
+  // Pubblica Amministrazione fields
+  codice_ipa?: string
+  codice_univoco?: string
+  codice_fiscale_pa?: string
+  ente_ufficio?: string
+  citta?: string
+  // Common fields
+  nazione?: string
+  telefono?: string
 }
 
 export default function CustomersTab() {
@@ -33,6 +60,7 @@ export default function CustomersTab() {
   const [uploadingId, setUploadingId] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showNewClientModal, setShowNewClientModal] = useState(false)
+  const [viewingCustomerDetails, setViewingCustomerDetails] = useState<Customer | null>(null)
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -140,6 +168,7 @@ export default function CustomersTab() {
           }
 
           if (!customerMap.has(key)) {
+            // Store ALL customer data for fattura generation
             customerMap.set(key, {
               id: customer.id,
               full_name: fullName,
@@ -148,7 +177,34 @@ export default function CustomersTab() {
               driver_license_number: customer.patente || null,
               notes: null,
               created_at: customer.created_at,
-              updated_at: customer.updated_at
+              updated_at: customer.updated_at,
+              // Include all extended fields
+              tipo_cliente: customer.tipo_cliente,
+              source: customer.source,
+              // Persona Fisica
+              nome: customer.nome,
+              cognome: customer.cognome,
+              codice_fiscale: customer.codice_fiscale,
+              patente: customer.patente,
+              indirizzo: customer.indirizzo,
+              pec: customer.pec,
+              // Azienda
+              ragione_sociale: customer.ragione_sociale,
+              denominazione: customer.denominazione,
+              partita_iva: customer.partita_iva,
+              codice_destinatario: customer.codice_destinatario,
+              indirizzo_azienda: customer.indirizzo_azienda,
+              indirizzo_ddt: customer.indirizzo_ddt,
+              contatti_cliente: customer.contatti_cliente,
+              // Pubblica Amministrazione
+              codice_ipa: customer.codice_ipa,
+              codice_univoco: customer.codice_univoco,
+              codice_fiscale_pa: customer.codice_fiscale_pa,
+              ente_ufficio: customer.ente_ufficio,
+              citta: customer.citta,
+              // Common
+              nazione: customer.nazione,
+              telefono: customer.telefono
             })
           }
         })
@@ -468,6 +524,211 @@ export default function CustomersTab() {
 
   return (
     <div>
+      {/* Customer Details Modal - For Fattura Generation */}
+      {viewingCustomerDetails && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-white">
+                Dettagli Cliente Completi - {viewingCustomerDetails.full_name}
+              </h3>
+              <button
+                onClick={() => setViewingCustomerDetails(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Customer Type Badge */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Tipo Cliente:</span>
+                <span className={`px-3 py-1 rounded text-sm font-medium ${
+                  viewingCustomerDetails.tipo_cliente === 'persona_fisica'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : viewingCustomerDetails.tipo_cliente === 'azienda'
+                    ? 'bg-purple-500/20 text-purple-400'
+                    : 'bg-green-500/20 text-green-400'
+                }`}>
+                  {viewingCustomerDetails.tipo_cliente === 'persona_fisica' && 'Persona Fisica'}
+                  {viewingCustomerDetails.tipo_cliente === 'azienda' && 'Azienda'}
+                  {viewingCustomerDetails.tipo_cliente === 'pubblica_amministrazione' && 'Pubblica Amministrazione'}
+                </span>
+              </div>
+
+              {/* Persona Fisica Details */}
+              {viewingCustomerDetails.tipo_cliente === 'persona_fisica' && (
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-700 pb-2">
+                    Dati Persona Fisica
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-sm text-gray-400">Nome:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.nome || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Cognome:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.cognome || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Codice Fiscale:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_fiscale || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Patente:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.patente || '-'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="text-sm text-gray-400">Indirizzo:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.indirizzo || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">PEC:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.pec || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Azienda Details */}
+              {viewingCustomerDetails.tipo_cliente === 'azienda' && (
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-700 pb-2">
+                    Dati Azienda
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="md:col-span-2">
+                      <span className="text-sm text-gray-400">Ragione Sociale / Denominazione:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.ragione_sociale || viewingCustomerDetails.denominazione || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Partita IVA:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.partita_iva || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Codice Fiscale:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_fiscale || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Codice Destinatario:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_destinatario || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">PEC:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.pec || '-'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="text-sm text-gray-400">Indirizzo Sede:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.indirizzo_azienda || viewingCustomerDetails.indirizzo || '-'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="text-sm text-gray-400">Indirizzo DDT:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.indirizzo_ddt || '-'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="text-sm text-gray-400">Contatti Cliente:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.contatti_cliente || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Pubblica Amministrazione Details */}
+              {viewingCustomerDetails.tipo_cliente === 'pubblica_amministrazione' && (
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-700 pb-2">
+                    Dati Pubblica Amministrazione
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="md:col-span-2">
+                      <span className="text-sm text-gray-400">Ente o Ufficio:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.ente_ufficio || viewingCustomerDetails.denominazione || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Codice Univoco:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_univoco || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Codice Fiscale:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_fiscale_pa || viewingCustomerDetails.codice_fiscale || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Codice IPA:</span>
+                      <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_ipa || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-400">Citta:</span>
+                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.citta || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Common Contact Information */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-700 pb-2">
+                  Informazioni di Contatto
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-sm text-gray-400">Email:</span>
+                    <p className="text-sm text-white font-medium">{viewingCustomerDetails.email || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-400">Telefono:</span>
+                    <p className="text-sm text-white font-medium">{viewingCustomerDetails.telefono || viewingCustomerDetails.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-400">Nazione:</span>
+                    <p className="text-sm text-white font-medium">{viewingCustomerDetails.nazione || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-400">Fonte:</span>
+                    <p className="text-sm text-white font-medium">
+                      {viewingCustomerDetails.source === 'admin' ? 'Pannello Admin' : viewingCustomerDetails.source === 'website' ? 'Sito Web' : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Metadata */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-gray-300 mb-3 border-b border-gray-700 pb-2">
+                  Metadata
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-sm text-gray-400">Data Creazione:</span>
+                    <p className="text-sm text-white font-medium">
+                      {new Date(viewingCustomerDetails.created_at).toLocaleString('it-IT')}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-400">Ultimo Aggiornamento:</span>
+                    <p className="text-sm text-white font-medium">
+                      {new Date(viewingCustomerDetails.updated_at).toLocaleString('it-IT')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="flex justify-end pt-4 border-t border-gray-700">
+                <Button
+                  onClick={() => setViewingCustomerDetails(null)}
+                  variant="secondary"
+                >
+                  Chiudi
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Documents Modal */}
       {viewingDocuments && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -790,6 +1051,7 @@ export default function CustomersTab() {
             <thead className="bg-black">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Nome</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-white">Tipo Cliente</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Email</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Telefono</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Azioni</th>
@@ -809,10 +1071,36 @@ export default function CustomersTab() {
                 .map((customer) => (
                 <tr key={customer.id} className="border-t border-gray-700 hover:bg-gray-800">
                   <td className="px-4 py-3 text-sm text-white">{customer.full_name}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {customer.tipo_cliente ? (
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        customer.tipo_cliente === 'persona_fisica'
+                          ? 'bg-blue-500/20 text-blue-400'
+                          : customer.tipo_cliente === 'azienda'
+                          ? 'bg-purple-500/20 text-purple-400'
+                          : 'bg-green-500/20 text-green-400'
+                      }`}>
+                        {customer.tipo_cliente === 'persona_fisica' && 'Persona Fisica'}
+                        {customer.tipo_cliente === 'azienda' && 'Azienda'}
+                        {customer.tipo_cliente === 'pubblica_amministrazione' && 'PA'}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-white">{customer.email || '-'}</td>
                   <td className="px-4 py-3 text-sm text-white">{customer.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {customer.tipo_cliente && (
+                        <Button
+                          onClick={() => setViewingCustomerDetails(customer)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-dr7-gold/20 hover:bg-dr7-gold/30 text-dr7-gold"
+                        >
+                          Dettagli Completi
+                        </Button>
+                      )}
                       <Button
                         onClick={() => handleViewDocuments(customer)}
                         variant="secondary"
@@ -848,7 +1136,7 @@ export default function CustomersTab() {
                 )
               }).length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
                     {searchQuery ? `Nessun cliente trovato per "${searchQuery}"` : 'Nessun cliente trovato'}
                   </td>
                 </tr>
