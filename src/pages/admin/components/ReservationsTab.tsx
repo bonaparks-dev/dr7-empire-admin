@@ -176,7 +176,7 @@ export default function ReservationsTab() {
   })
 
   const [bookingSearchQuery, setBookingSearchQuery] = useState('')
-  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all')
+  const [showUnpaidOnly, setShowUnpaidOnly] = useState(false)
 
   // Auto-calculate return time (pickup time - 1h30 like main website)
   const calculateReturnTime = (pickupTime: string): string => {
@@ -863,13 +863,13 @@ export default function ReservationsTab() {
         />
       </div>
 
-      {/* Payment Filter Tabs */}
+      {/* Payment Filter Tab */}
       <div className="mb-6 border-b border-gray-800">
         <div className="flex gap-2">
           <button
-            onClick={() => setPaymentFilter('all')}
+            onClick={() => setShowUnpaidOnly(false)}
             className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              paymentFilter === 'all'
+              !showUnpaidOnly
                 ? 'border-dr7-gold text-dr7-gold'
                 : 'border-transparent text-gray-400 hover:text-white'
             }`}
@@ -877,24 +877,14 @@ export default function ReservationsTab() {
             Tutte
           </button>
           <button
-            onClick={() => setPaymentFilter('paid')}
+            onClick={() => setShowUnpaidOnly(true)}
             className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              paymentFilter === 'paid'
-                ? 'border-green-500 text-green-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Pagato
-          </button>
-          <button
-            onClick={() => setPaymentFilter('unpaid')}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              paymentFilter === 'unpaid'
+              showUnpaidOnly
                 ? 'border-red-500 text-red-400'
                 : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            Non Pagato
+            Da Saldare
           </button>
         </div>
       </div>
@@ -1188,11 +1178,8 @@ export default function ReservationsTab() {
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
         {bookings.filter(booking => {
-          // Payment filter
-          if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
-            return false
-          }
-          if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+          // Payment filter - show only unpaid/pending if filter is enabled
+          if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
             return false
           }
 
@@ -1209,11 +1196,8 @@ export default function ReservationsTab() {
 
         {/* Display bookings as cards on mobile */}
         {bookings.filter(booking => {
-          // Payment filter
-          if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
-            return false
-          }
-          if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+          // Payment filter - show only unpaid/pending if filter is enabled
+          if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
             return false
           }
 
@@ -1332,11 +1316,8 @@ export default function ReservationsTab() {
             <tbody>
               {/* Display bookings from bookings table (single source of truth) */}
               {bookings.filter(booking => {
-                // Payment filter
-                if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
-                  return false
-                }
-                if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                // Payment filter - show only unpaid/pending if filter is enabled
+                if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
                   return false
                 }
 
@@ -1428,11 +1409,8 @@ export default function ReservationsTab() {
               })}
 
               {bookings.filter(booking => {
-                // Payment filter
-                if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
-                  return false
-                }
-                if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                // Payment filter - show only unpaid/pending if filter is enabled
+                if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
                   return false
                 }
 

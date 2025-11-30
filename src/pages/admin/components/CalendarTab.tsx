@@ -40,6 +40,7 @@ export default function CalendarTab() {
     date: string
     bookings: Booking[]
   } | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     loadData()
@@ -321,7 +322,14 @@ export default function CalendarTab() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="text"
+              placeholder="Cerca veicolo..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-dr7-gold"
+            />
             <button
               onClick={() => navigateMonth('prev')}
               className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
@@ -371,7 +379,12 @@ export default function CalendarTab() {
                 </tr>
               </thead>
               <tbody>
-                {vehicles.map(vehicle => (
+                {vehicles.filter(vehicle => {
+                  if (!searchQuery) return true
+                  const query = searchQuery.toLowerCase()
+                  return vehicle.display_name.toLowerCase().includes(query) ||
+                         vehicle.targa?.toLowerCase().includes(query)
+                }).map(vehicle => (
                   <tr key={vehicle.id}>
                     <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-semibold text-sm">
                       <div className="flex flex-col gap-0.5">

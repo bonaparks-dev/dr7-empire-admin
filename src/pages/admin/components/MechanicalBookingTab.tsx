@@ -111,6 +111,9 @@ export default function MechanicalBookingTab() {
     phone: ''
   })
 
+  const [bookingSearchQuery, setBookingSearchQuery] = useState('')
+  const [showUnpaidOnly, setShowUnpaidOnly] = useState(false)
+
   useEffect(() => {
     loadData()
   }, [])
@@ -351,6 +354,43 @@ export default function MechanicalBookingTab() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Cerca prenotazione per nome cliente..."
+          value={bookingSearchQuery}
+          onChange={(e) => setBookingSearchQuery(e.target.value)}
+          className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dr7-gold"
+        />
+      </div>
+
+      {/* Payment Filter Tab */}
+      <div className="mb-6 border-b border-gray-800">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowUnpaidOnly(false)}
+            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+              !showUnpaidOnly
+                ? 'border-dr7-gold text-dr7-gold'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Tutte
+          </button>
+          <button
+            onClick={() => setShowUnpaidOnly(true)}
+            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+              showUnpaidOnly
+                ? 'border-red-500 text-red-400'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Da Saldare
+          </button>
+        </div>
+      </div>
+
       {/* Booking Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -580,7 +620,18 @@ export default function MechanicalBookingTab() {
             </tr>
           </thead>
           <tbody>
-            {bookings.map(booking => (
+            {bookings.filter(booking => {
+              // Payment filter - show only unpaid/pending if filter is enabled
+              if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                return false
+              }
+
+              // Search filter
+              if (!bookingSearchQuery) return true
+              const query = bookingSearchQuery.toLowerCase()
+              const customerName = (booking.customer_name || '').toLowerCase()
+              return customerName.includes(query)
+            }).map(booking => (
               <tr key={booking.id} className="border-t border-gray-800 hover:bg-gray-800/50">
                 <td className="px-4 py-3 text-sm text-white">
                   <div>{booking.customer_name}</div>
