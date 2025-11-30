@@ -178,7 +178,6 @@ const LotteriaBoard: React.FC = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [hideFinancials, setHideFinancials] = useState(false);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
-  const [newClientData, setNewClientData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -716,9 +715,8 @@ const LotteriaBoard: React.FC = () => {
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => setShowNewClientModal(false)}
-        onClientCreated={(clientId) => {
+        onClientCreated={() => {
           setShowNewClientModal(false);
-          // TODO: Optionally fetch the client data and auto-fill the ManualSaleModal fields
           alert('Cliente creato! Ora puoi inserire i dati nella vendita biglietto.');
         }}
       />
