@@ -18,6 +18,7 @@ interface Vehicle {
 interface Booking {
   id: string
   vehicle_name: string
+  vehicle_plate?: string
   pickup_date: string
   dropoff_date: string
   status: string
@@ -87,7 +88,7 @@ export default function CalendarTab() {
       // Load bookings (only car rentals, not car wash) - include ALL statuses except cancelled
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('id, vehicle_name, pickup_date, dropoff_date, status, customer_name, customer_email, price_total, service_type')
+        .select('id, vehicle_name, vehicle_plate, pickup_date, dropoff_date, status, customer_name, customer_email, price_total, service_type')
         .or('service_type.is.null,service_type.eq.car_rental')
         .neq('status', 'cancelled')
         .order('pickup_date', { ascending: true })
@@ -325,7 +326,7 @@ export default function CalendarTab() {
           <div className="flex items-center gap-2 flex-wrap">
             <input
               type="text"
-              placeholder="Cerca veicolo..."
+              placeholder="Cerca cliente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-dr7-gold"
@@ -382,8 +383,17 @@ export default function CalendarTab() {
                 {vehicles.filter(vehicle => {
                   if (!searchQuery) return true
                   const query = searchQuery.toLowerCase()
-                  return vehicle.display_name.toLowerCase().includes(query) ||
-                         vehicle.targa?.toLowerCase().includes(query)
+                  // Filter vehicles that have bookings matching the customer name search
+                  return bookings.some(booking => {
+                    const bookingVehicle = booking.vehicle_name?.trim().toLowerCase()
+                    const vehicleDisplay = vehicle.display_name?.trim().toLowerCase()
+                    const vehicleMatches = bookingVehicle === vehicleDisplay ||
+                                          (bookingVehicle && vehicleDisplay && (
+                                            bookingVehicle.includes(vehicleDisplay) ||
+                                            vehicleDisplay.includes(bookingVehicle)
+                                          ))
+                    return vehicleMatches && booking.customer_name.toLowerCase().includes(query)
+                  })
                 }).map(vehicle => (
                   <tr key={vehicle.id}>
                     <td className="sticky left-0 z-10 bg-gray-900 border border-gray-700 px-2 py-1 text-white font-semibold text-sm">
@@ -466,6 +476,9 @@ export default function CalendarTab() {
                 <div>
                   <h3 className="text-2xl font-bold text-white mb-2">
                     🚗 {selectedCell.vehicle}
+                    {selectedCell.bookings[0]?.vehicle_plate && (
+                      <span className="text-gray-400 font-normal text-lg"> ({selectedCell.bookings[0].vehicle_plate})</span>
+                    )}
                   </h3>
                   <p className="text-gray-400">{selectedCell.date}</p>
                 </div>
