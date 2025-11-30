@@ -1183,11 +1183,6 @@ export default function ReservationsTab() {
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
         {bookings.filter(booking => {
-          // Payment filter - show only unpaid/pending if filter is enabled
-          if (showUnpaidOnly && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
-            return false
-          }
-
           // Search filter
           if (!bookingSearchQuery) return true
           const query = bookingSearchQuery.toLowerCase()
