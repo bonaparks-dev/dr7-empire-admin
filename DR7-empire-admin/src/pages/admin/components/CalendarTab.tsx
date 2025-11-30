@@ -6,6 +6,7 @@ interface Booking {
   service_type: 'car_rental' | 'car_wash' | null
   service_name?: string
   vehicle_name: string
+  vehicle_plate?: string
   customer_name: string
   customer_email: string
   appointment_date?: string
@@ -21,7 +22,7 @@ export default function CalendarTab() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedVehicle, setSelectedVehicle] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
 
   useEffect(() => {
     loadBookings()
@@ -45,13 +46,36 @@ export default function CalendarTab() {
   async function loadBookings() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // First fetch bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select('id, service_type, service_name, vehicle_name, customer_name, customer_email, appointment_date, appointment_time, pickup_date, dropoff_date, price_total, status, payment_status')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      setBookings(data || [])
+      if (bookingsError) throw bookingsError
+
+      // Fetch all vehicles to match with bookings
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('display_name, plate')
+
+      if (vehiclesError) throw vehiclesError
+
+      // Create a map of vehicle names to plates
+      const vehiclePlateMap = new Map<string, string>()
+      vehiclesData?.forEach(vehicle => {
+        if (vehicle.plate) {
+          vehiclePlateMap.set(vehicle.display_name, vehicle.plate)
+        }
+      })
+
+      // Add plate information to bookings
+      const enrichedBookings = bookingsData?.map(booking => ({
+        ...booking,
+        vehicle_plate: vehiclePlateMap.get(booking.vehicle_name)
+      })) || []
+
+      setBookings(enrichedBookings)
     } catch (error) {
       console.error('Failed to load bookings:', error)
     } finally {
@@ -59,20 +83,19 @@ export default function CalendarTab() {
     }
   }
 
-  const vehicles = useMemo(() => {
-    const uniqueVehicles = new Set<string>()
-    bookings.forEach(booking => {
-      if (booking.vehicle_name) {
-        uniqueVehicles.add(booking.vehicle_name)
-      }
-    })
-    return Array.from(uniqueVehicles).sort()
-  }, [bookings])
-
   const filteredBookings = useMemo(() => {
-    if (selectedVehicle === 'all') return bookings
-    return bookings.filter(b => b.vehicle_name === selectedVehicle)
-  }, [bookings, selectedVehicle])
+    let filtered = bookings
+
+    // Filter by search query (customer name)
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(b =>
+        b.customer_name.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
+  }, [bookings, searchQuery])
 
   const getCalendarDays = () => {
     const year = currentDate.getFullYear()
@@ -166,23 +189,18 @@ export default function CalendarTab() {
       {/* Controls */}
       <div className="bg-gray-900 rounded-lg p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Vehicle Filter */}
+          {/* Customer Search */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Filtra per veicolo
+              Cerca cliente
             </label>
-            <select
-              value={selectedVehicle}
-              onChange={(e) => setSelectedVehicle(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
-            >
-              <option value="all">Tutti i veicoli</option>
-              {vehicles.map(vehicle => (
-                <option key={vehicle} value={vehicle}>
-                  {vehicle}
-                </option>
-              ))}
-            </select>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Nome cliente..."
+              className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white placeholder-gray-500"
+            />
           </div>
 
           {/* Month Navigation */}
@@ -259,19 +277,24 @@ export default function CalendarTab() {
 
                 {/* Booking indicators */}
                 <div className="space-y-1">
-                  {dayBookings.slice(0, 2).map(booking => (
-                    <div
-                      key={booking.id}
-                      className={`
-                        text-xs px-1 py-0.5 rounded truncate border
-                        ${getStatusColor(booking.status)}
-                      `}
-                      title={`${booking.vehicle_name} - ${booking.customer_name}`}
-                    >
-                      {booking.service_type === 'car_wash' ? '🚿' : '🚗'}{' '}
-                      {booking.appointment_time || 'Noleggio'}
-                    </div>
-                  ))}
+                  {dayBookings.slice(0, 2).map(booking => {
+                    const displayText = booking.vehicle_plate
+                      ? `${booking.vehicle_name} (${booking.vehicle_plate})`
+                      : booking.vehicle_name
+                    return (
+                      <div
+                        key={booking.id}
+                        className={`
+                          text-xs px-1 py-0.5 rounded truncate border
+                          ${getStatusColor(booking.status)}
+                        `}
+                        title={`${displayText} - ${booking.customer_name}`}
+                      >
+                        {booking.service_type === 'car_wash' ? '🚿' : '🚗'}{' '}
+                        {booking.appointment_time || 'Noleggio'}
+                      </div>
+                    )
+                  })}
                   {dayBookings.length > 2 && (
                     <div className="text-xs text-gray-400">
                       +{dayBookings.length - 2} altro
