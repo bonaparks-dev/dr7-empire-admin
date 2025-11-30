@@ -56,6 +56,7 @@ export default function CarWashCalendarTab() {
     time: string
     bookings: CarWashBooking[]
   } | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     loadData()
@@ -147,6 +148,17 @@ export default function CarWashCalendarTab() {
     year: 'numeric'
   })
 
+  // Filter bookings by customer search
+  const matchingBookings = useMemo(() => {
+    if (!searchQuery.trim()) return []
+
+    const query = searchQuery.toLowerCase()
+    return bookings.filter(booking => {
+      if (!booking.customer_name) return false
+      return booking.customer_name.toLowerCase().includes(query)
+    })
+  }, [bookings, searchQuery])
+
   // Get today's date for highlighting
   const today = new Date()
   const isCurrentMonth = today.getMonth() === currentDate.getMonth() &&
@@ -167,8 +179,27 @@ export default function CarWashCalendarTab() {
       {/* Header Controls */}
       <div className="bg-gray-900 rounded-lg p-3 lg:p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="text-lg font-bold text-white">Calendario Lavaggi</h2>
+          <div className="flex items-center gap-3 flex-wrap flex-1">
+            <h2 className="text-lg font-bold text-white">🧼 Calendario Lavaggi</h2>
+
+            {/* Search Input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Cerca clienti..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="px-3 py-1.5 bg-gray-800 text-white rounded-md border border-gray-700 focus:border-dr7-gold focus:outline-none text-sm w-48"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  ×
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400">Questo Mese:</span>
               <span className="text-dr7-gold font-bold text-sm">
@@ -231,6 +262,63 @@ export default function CarWashCalendarTab() {
           <h3 className="text-base text-white capitalize font-semibold">{monthName}</h3>
         </div>
       </div>
+
+      {/* Search Results */}
+      {searchQuery && (
+        <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+          <h3 className="text-lg font-bold text-white mb-3">
+            Risultati ricerca: "{searchQuery}"
+          </h3>
+          {matchingBookings.length === 0 ? (
+            <p className="text-gray-400 text-sm">Nessun cliente trovato</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {matchingBookings.map(booking => (
+                <div
+                  key={booking.id}
+                  className="bg-gray-800 border border-gray-700 rounded-lg p-3 hover:border-dr7-gold transition-colors cursor-pointer"
+                  onClick={() => {
+                    const dateString = booking.appointment_date.split('T')[0]
+                    setSelectedCell({
+                      date: `${new Date(booking.appointment_date).getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`,
+                      time: booking.appointment_time,
+                      bookings: [booking]
+                    })
+                    setSearchQuery('')
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-white font-bold text-sm">{booking.customer_name}</h4>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                      booking.status === 'confirmed' ? 'bg-green-600 text-white' :
+                      booking.status === 'pending' ? 'bg-yellow-600 text-black' :
+                      'bg-gray-600 text-white'
+                    }`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 text-xs mb-2">{booking.customer_email}</p>
+                  <div className="space-y-1 text-xs">
+                    <p className="text-white">
+                      <span className="text-gray-400">Servizio:</span> {booking.service_name}
+                    </p>
+                    {booking.booking_details?.additionalService && (
+                      <p className="text-white">
+                        <span className="text-gray-400">+ Aggiuntivo:</span> {booking.booking_details.additionalService}
+                      </p>
+                    )}
+                    <p className="text-white">
+                      <span className="text-gray-400">Data:</span>{' '}
+                      {new Date(booking.appointment_date).toLocaleDateString('it-IT')} - {booking.appointment_time}
+                    </p>
+                    <p className="text-dr7-gold font-bold">€{(booking.price_total / 100).toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Battleship-style Calendar Grid */}
       <div className="bg-gray-900 rounded-lg p-4 lg:p-6 overflow-x-auto">
