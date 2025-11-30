@@ -47,9 +47,9 @@ export default function TicketsTab() {
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('commercial')
-  const [showManualSaleModal, setShowManualSaleModal] = useState(false)
+  const [showTicketNumberModal, setShowTicketNumberModal] = useState(false)
   const [showNewClientModal, setShowNewClientModal] = useState(false)
-  const [manualSaleStep, setManualSaleStep] = useState<'number' | 'payment'>('number')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [manualSaleData, setManualSaleData] = useState({
     ticket_number: '',
     customer_id: '',
@@ -219,17 +219,17 @@ export default function TicketsTab() {
       payment_method: 'cash',
       amount: '20'
     })
-    setManualSaleStep('number')
   }
 
   function openManualSaleModal() {
     resetManualSaleForm()
-    setShowManualSaleModal(true)
+    setShowTicketNumberModal(true)
   }
 
-  function closeManualSaleModal() {
-    setShowManualSaleModal(false)
+  function closeAllModals() {
+    setShowTicketNumberModal(false)
     setShowNewClientModal(false)
+    setShowPaymentModal(false)
     resetManualSaleForm()
   }
 
@@ -264,8 +264,8 @@ export default function TicketsTab() {
       }))
 
       setShowNewClientModal(false)
-      // Move to payment step
-      setManualSaleStep('payment')
+      // Open payment modal
+      setShowPaymentModal(true)
     } catch (error) {
       console.error('Failed to fetch customer data:', error)
       alert('Errore nel recupero dati cliente')
@@ -311,7 +311,7 @@ export default function TicketsTab() {
       if (error) throw error
 
       alert('Biglietto venduto con successo!')
-      closeManualSaleModal()
+      closeAllModals()
       loadCommercialTickets()
     } catch (error) {
       console.error('Failed to create manual sale:', error)
@@ -573,102 +573,114 @@ export default function TicketsTab() {
         </div>
       )}
 
-      {/* Manual Sale Modal */}
-      {showManualSaleModal && (
+      {/* Step 1: Ticket Number Modal */}
+      {showTicketNumberModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 rounded-lg border border-gray-700 max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-white mb-4">Vendita Manuale Biglietto</h3>
-
-            {manualSaleStep === 'number' && (
-              <div className="space-y-4">
-                <Input
-                  label="Numero Biglietto (1-350,000)"
-                  type="number"
-                  min="1"
-                  max="350000"
-                  required
-                  value={manualSaleData.ticket_number}
-                  onChange={(e) => setManualSaleData({ ...manualSaleData, ticket_number: e.target.value })}
-                  placeholder="Es. 12345"
-                />
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => {
-                      if (!manualSaleData.ticket_number) {
-                        alert('Inserisci un numero di biglietto')
-                        return
-                      }
-                      // Open NewClientModal
-                      setShowNewClientModal(true)
-                    }}
-                  >
-                    Avanti
-                  </Button>
-                  <Button variant="secondary" onClick={closeManualSaleModal}>
-                    Annulla
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {manualSaleStep === 'payment' && (
-              <div className="space-y-4">
-                <Select
-                  label="Metodo di Pagamento"
-                  required
-                  value={manualSaleData.payment_method}
-                  onChange={(e) => setManualSaleData({ ...manualSaleData, payment_method: e.target.value })}
-                  options={[
-                    { value: 'cash', label: 'Contanti' },
-                    { value: 'card', label: 'Carta' },
-                    { value: 'bank_transfer', label: 'Bonifico' },
-                    { value: 'satispay', label: 'Satispay' },
-                    { value: 'other', label: 'Altro' }
-                  ]}
-                />
-                <Input
-                  label="Importo (€)"
-                  type="number"
-                  step="0.01"
-                  required
-                  value={manualSaleData.amount}
-                  onChange={(e) => setManualSaleData({ ...manualSaleData, amount: e.target.value })}
-                />
-
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="text-sm font-semibold text-white mb-2">Riepilogo</h4>
-                  <div className="text-sm text-gray-300 space-y-1">
-                    <p><span className="text-gray-400">Biglietto:</span> #{manualSaleData.ticket_number.padStart(6, '0')}</p>
-                    <p><span className="text-gray-400">Cliente:</span> {manualSaleData.customer_name}</p>
-                    <p><span className="text-gray-400">Email:</span> {manualSaleData.customer_email}</p>
-                    <p><span className="text-gray-400">Pagamento:</span> {manualSaleData.payment_method === 'cash' ? 'Contanti' : manualSaleData.payment_method === 'card' ? 'Carta' : manualSaleData.payment_method === 'bank_transfer' ? 'Bonifico' : manualSaleData.payment_method === 'satispay' ? 'Satispay' : 'Altro'}</p>
-                    <p><span className="text-gray-400">Importo:</span> €{parseFloat(manualSaleData.amount).toFixed(2)}</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <Button onClick={handleManualSaleSubmit}>
-                    Conferma Vendita
-                  </Button>
-                  <Button variant="secondary" onClick={() => {
-                    setManualSaleStep('number')
+            <div className="space-y-4">
+              <Input
+                label="Numero Biglietto (1-350,000)"
+                type="number"
+                min="1"
+                max="350000"
+                required
+                value={manualSaleData.ticket_number}
+                onChange={(e) => setManualSaleData({ ...manualSaleData, ticket_number: e.target.value })}
+                placeholder="Es. 12345"
+              />
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    if (!manualSaleData.ticket_number) {
+                      alert('Inserisci un numero di biglietto')
+                      return
+                    }
+                    // Close ticket number modal and open NewClientModal
+                    setShowTicketNumberModal(false)
                     setShowNewClientModal(true)
-                  }}>
-                    Cambia Cliente
-                  </Button>
-                </div>
+                  }}
+                >
+                  Avanti
+                </Button>
+                <Button variant="secondary" onClick={closeAllModals}>
+                  Annulla
+                </Button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* New Client Modal */}
+      {/* Step 2: New Client Modal */}
       <NewClientModal
         isOpen={showNewClientModal}
-        onClose={() => setShowNewClientModal(false)}
+        onClose={() => {
+          setShowNewClientModal(false)
+          setShowTicketNumberModal(true)
+        }}
         onClientCreated={handleClientCreated}
       />
+
+      {/* Step 3: Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-lg border border-gray-700 max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-white mb-4">Pagamento Biglietto</h3>
+            <div className="space-y-4">
+              <Select
+                label="Metodo di Pagamento"
+                required
+                value={manualSaleData.payment_method}
+                onChange={(e) => setManualSaleData({ ...manualSaleData, payment_method: e.target.value })}
+                options={[
+                  { value: 'cash', label: 'Contanti' },
+                  { value: 'card', label: 'Carta' },
+                  { value: 'bank_transfer', label: 'Bonifico' },
+                  { value: 'satispay', label: 'Satispay' },
+                  { value: 'other', label: 'Altro' }
+                ]}
+              />
+              <Input
+                label="Importo (€)"
+                type="number"
+                step="0.01"
+                required
+                value={manualSaleData.amount}
+                onChange={(e) => setManualSaleData({ ...manualSaleData, amount: e.target.value })}
+              />
+
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <h4 className="text-sm font-semibold text-white mb-2">Riepilogo</h4>
+                <div className="text-sm text-gray-300 space-y-1">
+                  <p><span className="text-gray-400">Biglietto:</span> #{manualSaleData.ticket_number.padStart(6, '0')}</p>
+                  <p><span className="text-gray-400">Cliente:</span> {manualSaleData.customer_name}</p>
+                  <p><span className="text-gray-400">Email:</span> {manualSaleData.customer_email}</p>
+                  <p><span className="text-gray-400">Pagamento:</span> {
+                    manualSaleData.payment_method === 'cash' ? 'Contanti' :
+                    manualSaleData.payment_method === 'card' ? 'Carta' :
+                    manualSaleData.payment_method === 'bank_transfer' ? 'Bonifico' :
+                    manualSaleData.payment_method === 'satispay' ? 'Satispay' : 'Altro'
+                  }</p>
+                  <p><span className="text-gray-400">Importo:</span> €{parseFloat(manualSaleData.amount).toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button onClick={handleManualSaleSubmit}>
+                  Conferma Vendita
+                </Button>
+                <Button variant="secondary" onClick={() => {
+                  setShowPaymentModal(false)
+                  setShowNewClientModal(true)
+                }}>
+                  Cambia Cliente
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
