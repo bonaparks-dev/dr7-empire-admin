@@ -263,7 +263,7 @@ export default function CalendarTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header Controls */}
+      {/* Header with Stats */}
       <div className="bg-gray-900 rounded-lg p-3 lg:p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-wrap">
@@ -322,34 +322,36 @@ export default function CalendarTab() {
               </button>
             )}
           </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <input
-              type="text"
-              placeholder="Cerca cliente..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-dr7-gold"
-            />
-            <button
-              onClick={() => navigateMonth('prev')}
-              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
-              aria-label="Mese precedente"
-            >
-              ← Precedente
-            </button>
-            <button
-              onClick={() => navigateMonth('next')}
-              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
-              aria-label="Mese successivo"
-            >
-              Successivo →
-            </button>
-          </div>
         </div>
+      </div>
 
-        <div className="mt-2 text-center">
-          <h3 className="text-base text-white capitalize font-semibold">{monthName}</h3>
+      {/* Search and Navigation Bar */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-xl font-bold text-white mb-2 capitalize">{monthName}</h3>
+          <input
+            type="text"
+            placeholder="Cerca cliente..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-dr7-gold w-64"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigateMonth('prev')}
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
+            aria-label="Mese precedente"
+          >
+            ← Precedente
+          </button>
+          <button
+            onClick={() => navigateMonth('next')}
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors text-sm font-semibold"
+            aria-label="Mese successivo"
+          >
+            Successivo →
+          </button>
         </div>
       </div>
 
