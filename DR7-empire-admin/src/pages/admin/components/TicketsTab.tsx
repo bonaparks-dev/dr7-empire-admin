@@ -277,8 +277,8 @@ export default function TicketsTab() {
     try {
       // Validate ticket number
       const ticketNum = parseInt(manualSaleData.ticket_number)
-      if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > 350000) {
-        alert('Il numero del biglietto deve essere tra 1 e 350,000')
+      if (isNaN(ticketNum) || ticketNum < 1 || ticketNum > 2000) {
+        alert('Il numero del biglietto deve essere tra 1 e 2000')
         return
       }
 
@@ -445,7 +445,7 @@ export default function TicketsTab() {
               </h3>
               <ul className="text-sm text-gray-300 space-y-1 list-disc list-inside">
                 <li>I biglietti vengono salvati automaticamente dopo ogni acquisto</li>
-                <li>Ogni biglietto ha un numero univoco da 1 a 350,000</li>
+                <li>Ogni biglietto ha un numero univoco da 1 a 2000</li>
                 <li>L'estrazione si terrà il 24 Dicembre 2025</li>
                 <li>I biglietti appariranno qui dopo il primo acquisto</li>
               </ul>
