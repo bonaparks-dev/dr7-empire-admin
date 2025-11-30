@@ -277,7 +277,6 @@ export default function MechanicalCalendarTab() {
                   key={booking.id}
                   className="bg-gray-800 border border-gray-700 rounded-lg p-3 hover:border-dr7-gold transition-colors cursor-pointer"
                   onClick={() => {
-                    const bookingDate = new Date(booking.appointment_date)
                     const dateString = booking.appointment_date.split('T')[0]
                     setSelectedCell({
                       date: dateString,
