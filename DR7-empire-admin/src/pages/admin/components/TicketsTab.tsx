@@ -223,8 +223,8 @@ export default function TicketsTab() {
 
   function openManualSaleModal() {
     resetManualSaleForm()
-    // Open NewClientModal directly
-    setShowNewClientModal(true)
+    // Open ticket number modal first
+    setShowTicketNumberModal(true)
   }
 
   function closeAllModals() {
@@ -265,8 +265,8 @@ export default function TicketsTab() {
       }))
 
       setShowNewClientModal(false)
-      // Open ticket number modal
-      setShowTicketNumberModal(true)
+      // Open payment modal
+      setShowPaymentModal(true)
     } catch (error) {
       console.error('Failed to fetch customer data:', error)
       alert('Errore nel recupero dati cliente')
@@ -574,21 +574,12 @@ export default function TicketsTab() {
         </div>
       )}
 
-      {/* Step 2: Ticket Number Modal (after customer created) */}
+      {/* Step 1: Ticket Number Modal (opens first) */}
       {showTicketNumberModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 rounded-lg border border-gray-700 max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Numero Biglietto</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Vendita Manuale Biglietto</h3>
             <div className="space-y-4">
-              {/* Show customer info */}
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h4 className="text-sm font-semibold text-white mb-2">Cliente Selezionato</h4>
-                <div className="text-sm text-gray-300">
-                  <p><span className="text-gray-400">Nome:</span> {manualSaleData.customer_name}</p>
-                  <p><span className="text-gray-400">Email:</span> {manualSaleData.customer_email}</p>
-                </div>
-              </div>
-
               <Input
                 label="Numero Biglietto (1-350,000)"
                 type="number"
@@ -606,18 +597,15 @@ export default function TicketsTab() {
                       alert('Inserisci un numero di biglietto')
                       return
                     }
-                    // Go to payment
+                    // Close ticket number modal and open NewClientModal
                     setShowTicketNumberModal(false)
-                    setShowPaymentModal(true)
+                    setShowNewClientModal(true)
                   }}
                 >
-                  Avanti al Pagamento
+                  Avanti
                 </Button>
-                <Button variant="secondary" onClick={() => {
-                  setShowTicketNumberModal(false)
-                  setShowNewClientModal(true)
-                }}>
-                  Cambia Cliente
+                <Button variant="secondary" onClick={closeAllModals}>
+                  Annulla
                 </Button>
               </div>
             </div>
@@ -625,11 +613,12 @@ export default function TicketsTab() {
         </div>
       )}
 
-      {/* Step 1: New Client Modal (opens first) */}
+      {/* Step 2: New Client Modal (after ticket number) */}
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => {
           setShowNewClientModal(false)
+          setShowTicketNumberModal(true)
         }}
         onClientCreated={handleClientCreated}
       />
