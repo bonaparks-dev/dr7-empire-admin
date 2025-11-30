@@ -178,7 +178,6 @@ export default function ReservationsTab() {
   })
 
   const [bookingSearchQuery, setBookingSearchQuery] = useState('')
-  const [showUnpaidOnly, setShowUnpaidOnly] = useState(false)
 
   // Auto-calculate return time (pickup time - 1h30 like main website)
   const calculateReturnTime = (pickupTime: string): string => {
@@ -871,32 +870,6 @@ export default function ReservationsTab() {
           value={bookingSearchQuery}
           onChange={(e) => setBookingSearchQuery(e.target.value)}
         />
-      </div>
-
-      {/* Payment Filter Tab */}
-      <div className="mb-6 border-b border-gray-800">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowUnpaidOnly(false)}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              !showUnpaidOnly
-                ? 'border-dr7-gold text-dr7-gold'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Tutte
-          </button>
-          <button
-            onClick={() => setShowUnpaidOnly(true)}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              showUnpaidOnly
-                ? 'border-red-500 text-red-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Da Saldare
-          </button>
-        </div>
       </div>
 
       {showForm && (

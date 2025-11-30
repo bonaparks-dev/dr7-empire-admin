@@ -145,7 +145,6 @@ export default function CarWashBookingsTab() {
   })
 
   const [bookingSearchQuery, setBookingSearchQuery] = useState('')
-  const [showUnpaidOnly, setShowUnpaidOnly] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -602,32 +601,6 @@ export default function CarWashBookingsTab() {
           onChange={(e) => setBookingSearchQuery(e.target.value)}
           className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-dr7-gold"
         />
-      </div>
-
-      {/* Payment Filter Tab */}
-      <div className="mb-6 border-b border-gray-800">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowUnpaidOnly(false)}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              !showUnpaidOnly
-                ? 'border-dr7-gold text-dr7-gold'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Tutte
-          </button>
-          <button
-            onClick={() => setShowUnpaidOnly(true)}
-            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-              showUnpaidOnly
-                ? 'border-red-500 text-red-400'
-                : 'border-transparent text-gray-400 hover:text-white'
-            }`}
-          >
-            Da Saldare
-          </button>
-        </div>
       </div>
 
       {showForm && (
