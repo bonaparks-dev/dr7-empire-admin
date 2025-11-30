@@ -175,6 +175,9 @@ export default function ReservationsTab() {
     driver_license_number: ''
   })
 
+  const [bookingSearchQuery, setBookingSearchQuery] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all')
+
   // Auto-calculate return time (pickup time - 1h30 like main website)
   const calculateReturnTime = (pickupTime: string): string => {
     if (!pickupTime) return ''
@@ -850,6 +853,52 @@ export default function ReservationsTab() {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-4">
+        <Input
+          label="Cerca per nome"
+          placeholder="Cerca prenotazione per nome cliente..."
+          value={bookingSearchQuery}
+          onChange={(e) => setBookingSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Payment Filter Tabs */}
+      <div className="mb-6 border-b border-gray-800">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPaymentFilter('all')}
+            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+              paymentFilter === 'all'
+                ? 'border-dr7-gold text-dr7-gold'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Tutte
+          </button>
+          <button
+            onClick={() => setPaymentFilter('paid')}
+            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+              paymentFilter === 'paid'
+                ? 'border-green-500 text-green-400'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Pagato
+          </button>
+          <button
+            onClick={() => setPaymentFilter('unpaid')}
+            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+              paymentFilter === 'unpaid'
+                ? 'border-red-500 text-red-400'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            Non Pagato
+          </button>
+        </div>
+      </div>
+
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-dr7-dark p-4 sm:p-6 rounded-lg mb-6 border border-gray-800">
           <h3 className="text-lg sm:text-xl font-semibold text-dr7-gold mb-4">
@@ -1138,14 +1187,42 @@ export default function ReservationsTab() {
 
       {/* Mobile Card View */}
       <div className="lg:hidden space-y-3">
-        {bookings.length === 0 && (
+        {bookings.filter(booking => {
+          // Payment filter
+          if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+            return false
+          }
+          if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+            return false
+          }
+
+          // Search filter
+          if (!bookingSearchQuery) return true
+          const query = bookingSearchQuery.toLowerCase()
+          const customerName = (booking.booking_details?.customer?.fullName || booking.customer_name || '').toLowerCase()
+          return customerName.includes(query)
+        }).length === 0 && (
           <div className="bg-dr7-dark rounded-lg border border-gray-800 p-8 text-center text-gray-500">
-            Nessuna prenotazione trovata
+            {bookingSearchQuery ? `Nessuna prenotazione trovata per "${bookingSearchQuery}"` : 'Nessuna prenotazione trovata'}
           </div>
         )}
 
         {/* Display bookings as cards on mobile */}
-        {bookings.map((booking) => {
+        {bookings.filter(booking => {
+          // Payment filter
+          if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+            return false
+          }
+          if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+            return false
+          }
+
+          // Search filter
+          if (!bookingSearchQuery) return true
+          const query = bookingSearchQuery.toLowerCase()
+          const customerName = (booking.booking_details?.customer?.fullName || booking.customer_name || '').toLowerCase()
+          return customerName.includes(query)
+        }).map((booking) => {
           const isCarWash = booking.service_type === 'car_wash'
           return (
             <div
@@ -1254,7 +1331,21 @@ export default function ReservationsTab() {
             </thead>
             <tbody>
               {/* Display bookings from bookings table (single source of truth) */}
-              {bookings.map((booking) => {
+              {bookings.filter(booking => {
+                // Payment filter
+                if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                  return false
+                }
+                if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                  return false
+                }
+
+                // Search filter
+                if (!bookingSearchQuery) return true
+                const query = bookingSearchQuery.toLowerCase()
+                const customerName = (booking.booking_details?.customer?.fullName || booking.customer_name || '').toLowerCase()
+                return customerName.includes(query)
+              }).map((booking) => {
                 const isCarWash = booking.service_type === 'car_wash'
                 return (
                   <tr key={`booking-${booking.id}`} className="border-t border-gray-800 hover:bg-dr7-darker/50 cursor-pointer" onClick={() => setSelectedBooking(booking)}>
@@ -1336,10 +1427,24 @@ export default function ReservationsTab() {
                 )
               })}
 
-              {bookings.length === 0 && (
+              {bookings.filter(booking => {
+                // Payment filter
+                if (paymentFilter === 'paid' && !(booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                  return false
+                }
+                if (paymentFilter === 'unpaid' && (booking.payment_status === 'completed' || booking.payment_status === 'paid')) {
+                  return false
+                }
+
+                // Search filter
+                if (!bookingSearchQuery) return true
+                const query = bookingSearchQuery.toLowerCase()
+                const customerName = (booking.booking_details?.customer?.fullName || booking.customer_name || '').toLowerCase()
+                return customerName.includes(query)
+              }).length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                    Nessuna prenotazione trovata
+                    {bookingSearchQuery ? `Nessuna prenotazione trovata per "${bookingSearchQuery}"` : 'Nessuna prenotazione trovata'}
                   </td>
                 </tr>
               )}

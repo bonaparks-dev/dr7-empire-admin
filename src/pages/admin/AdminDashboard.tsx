@@ -18,6 +18,7 @@ type TabType = 'reservations' | 'customers' | 'vehicles' | 'calendar' | 'carwash
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
   const navigate = useNavigate()
 
   async function handleSignOut() {
@@ -70,15 +71,142 @@ export default function AdminDashboard() {
               </button>
             </div>
             <nav className="p-2">
+              {/* Noleggio Menu with Submenu */}
+              <div className="mb-1">
+                <button
+                  onClick={() => setOpenSubmenu(openSubmenu === 'noleggio' ? null : 'noleggio')}
+                  className="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between text-gray-300 hover:bg-gray-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🚗</span>
+                    <span>Noleggio</span>
+                  </div>
+                  <span className={`transform transition-transform ${openSubmenu === 'noleggio' ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+                {openSubmenu === 'noleggio' && (
+                  <div className="ml-4 mt-1">
+                    <button
+                      onClick={() => {
+                        setActiveTab('reservations')
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${
+                        activeTab === 'reservations'
+                          ? 'bg-dr7-gold text-black font-semibold'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      📋 Prenotazioni
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('calendar')
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${
+                        activeTab === 'calendar'
+                          ? 'bg-dr7-gold text-black font-semibold'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      📅 Calendario
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Lavaggio Menu with Submenu */}
+              <div className="mb-1">
+                <button
+                  onClick={() => setOpenSubmenu(openSubmenu === 'lavaggio' ? null : 'lavaggio')}
+                  className="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between text-gray-300 hover:bg-gray-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🚿</span>
+                    <span>Lavaggio</span>
+                  </div>
+                  <span className={`transform transition-transform ${openSubmenu === 'lavaggio' ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+                {openSubmenu === 'lavaggio' && (
+                  <div className="ml-4 mt-1">
+                    <button
+                      onClick={() => {
+                        setActiveTab('carwash')
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${
+                        activeTab === 'carwash'
+                          ? 'bg-dr7-gold text-black font-semibold'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      📋 Prenotazioni
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('carwash-calendar')
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${
+                        activeTab === 'carwash-calendar'
+                          ? 'bg-dr7-gold text-black font-semibold'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      📅 Calendario
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Meccanica Menu with Submenu */}
+              <div className="mb-1">
+                <button
+                  onClick={() => setOpenSubmenu(openSubmenu === 'meccanica' ? null : 'meccanica')}
+                  className="w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center justify-between text-gray-300 hover:bg-gray-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🔧</span>
+                    <span>Meccanica</span>
+                  </div>
+                  <span className={`transform transition-transform ${openSubmenu === 'meccanica' ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+                {openSubmenu === 'meccanica' && (
+                  <div className="ml-4 mt-1">
+                    <button
+                      onClick={() => {
+                        setActiveTab('mechanical')
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${
+                        activeTab === 'mechanical'
+                          ? 'bg-dr7-gold text-black font-semibold'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      📋 Prenotazioni
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab('mechanical-calendar')
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${
+                        activeTab === 'mechanical-calendar'
+                          ? 'bg-dr7-gold text-black font-semibold'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      📅 Calendario
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Other menu items */}
               {[
-                { id: 'reservations', label: 'Prenotazioni Auto', icon: '🚗' },
-                { id: 'carwash', label: 'Prenotazioni Lavaggio', icon: '🚿' },
-                { id: 'mechanical', label: 'Prenotazioni Meccanica', icon: '🔧' },
                 { id: 'customers', label: 'Clienti', icon: '👥' },
                 { id: 'vehicles', label: 'Veicoli', icon: '🚙' },
-                { id: 'calendar', label: 'Calendario Noleggio', icon: '📅' },
-                { id: 'carwash-calendar', label: 'Calendario Lavaggi', icon: '🧼' },
-                { id: 'mechanical-calendar', label: 'Calendario Meccanica', icon: '🔧' },
                 { id: 'lotteria', label: 'Biglietti Lotteria', icon: '🎰' },
                 { id: 'fattura', label: 'Fatture', icon: '📄' },
                 { id: 'contratto', label: 'Contratti', icon: '📋' }
@@ -109,66 +237,103 @@ export default function AdminDashboard() {
         <div className="mb-6 hidden lg:block">
           <div className="border-b border-gray-800">
             <nav className="-mb-px flex gap-x-1 flex-wrap">
-              <button
-                onClick={() => setActiveTab('reservations')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'reservations'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🚗 Prenotazioni Auto
-              </button>
-              <button
-                onClick={() => setActiveTab('carwash')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'carwash'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🚿 Prenotazioni Lavaggio
-              </button>
-              <button
-                onClick={() => setActiveTab('mechanical')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'mechanical'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🔧 Prenotazioni Meccanica
-              </button>
-              <button
-                onClick={() => setActiveTab('calendar')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                📅 Calendario Cars
-              </button>
-              <button
-                onClick={() => setActiveTab('carwash-calendar')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'carwash-calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🧼 Calendario Lavaggio
-              </button>
-              <button
-                onClick={() => setActiveTab('mechanical-calendar')}
-                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                  activeTab === 'mechanical-calendar'
-                    ? 'border-white text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
-                }`}
-              >
-                🔧 Calendario Meccanica
-              </button>
+              {/* Noleggio Dropdown */}
+              <div className="relative group">
+                <button
+                  className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    activeTab === 'reservations' || activeTab === 'calendar'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                  }`}
+                >
+                  🚗 Noleggio
+                  <span className="text-xs">▼</span>
+                </button>
+                <div className="absolute left-0 mt-0 w-48 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <button
+                    onClick={() => setActiveTab('reservations')}
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-800 transition-colors ${
+                      activeTab === 'reservations' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
+                    }`}
+                  >
+                    📋 Prenotazioni
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('calendar')}
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-800 transition-colors rounded-b-lg ${
+                      activeTab === 'calendar' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
+                    }`}
+                  >
+                    📅 Calendario
+                  </button>
+                </div>
+              </div>
+
+              {/* Lavaggio Dropdown */}
+              <div className="relative group">
+                <button
+                  className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    activeTab === 'carwash' || activeTab === 'carwash-calendar'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                  }`}
+                >
+                  🚿 Lavaggio
+                  <span className="text-xs">▼</span>
+                </button>
+                <div className="absolute left-0 mt-0 w-48 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <button
+                    onClick={() => setActiveTab('carwash')}
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-800 transition-colors ${
+                      activeTab === 'carwash' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
+                    }`}
+                  >
+                    📋 Prenotazioni
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('carwash-calendar')}
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-800 transition-colors rounded-b-lg ${
+                      activeTab === 'carwash-calendar' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
+                    }`}
+                  >
+                    📅 Calendario
+                  </button>
+                </div>
+              </div>
+
+              {/* Meccanica Dropdown */}
+              <div className="relative group">
+                <button
+                  className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    activeTab === 'mechanical' || activeTab === 'mechanical-calendar'
+                      ? 'border-white text-white'
+                      : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                  }`}
+                >
+                  🔧 Meccanica
+                  <span className="text-xs">▼</span>
+                </button>
+                <div className="absolute left-0 mt-0 w-48 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <button
+                    onClick={() => setActiveTab('mechanical')}
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-800 transition-colors ${
+                      activeTab === 'mechanical' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
+                    }`}
+                  >
+                    📋 Prenotazioni
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('mechanical-calendar')}
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-800 transition-colors rounded-b-lg ${
+                      activeTab === 'mechanical-calendar' ? 'bg-dr7-gold text-black font-semibold' : 'text-gray-300'
+                    }`}
+                  >
+                    📅 Calendario
+                  </button>
+                </div>
+              </div>
+
+              {/* Other menu items */}
               <button
                 onClick={() => setActiveTab('customers')}
                 className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
