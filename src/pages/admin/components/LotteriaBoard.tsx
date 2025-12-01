@@ -180,7 +180,6 @@ const LotteriaBoard: React.FC = () => {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [pendingTicketNumbers, setPendingTicketNumbers] = useState<number[] | null>(null);
   const [isBulkSale, setIsBulkSale] = useState(false);
-  const [clientData, setClientData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -726,7 +725,6 @@ const LotteriaBoard: React.FC = () => {
         onClose={() => {
           setShowNewClientModal(false);
           setPendingTicketNumbers(null);
-          setClientData(null);
         }}
         onClientCreated={async (clientId) => {
           // Fetch the client data
@@ -763,7 +761,6 @@ const LotteriaBoard: React.FC = () => {
 
             // Reset state
             setPendingTicketNumbers(null);
-            setClientData(null);
           }
         }}
       />
