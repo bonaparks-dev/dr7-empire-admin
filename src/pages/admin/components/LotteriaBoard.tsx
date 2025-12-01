@@ -989,8 +989,10 @@ const LotteriaBoard: React.FC = () => {
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => {
+          console.log('[NewClientModal] onClose called - user cancelled');
           setShowNewClientModal(false);
           setPendingTicketNumbers(null);
+          setPendingClientData(null);
         }}
         onClientCreated={async (clientId) => {
           console.log('[NewClientModal] Client created with ID:', clientId);
@@ -1023,12 +1025,15 @@ const LotteriaBoard: React.FC = () => {
             }
 
             console.log('[NewClientModal] Extracted client data:', { email, fullName, phone });
-            console.log('[NewClientModal] Pending ticket numbers:', pendingTicketNumbers);
+            console.log('[NewClientModal] Pending ticket numbers BEFORE closing modal:', pendingTicketNumbers);
 
+            // DON'T reset pendingTicketNumbers here - we need them for PaymentModal!
+            // Store client data FIRST
+            setPendingClientData({ email, fullName, phone });
+
+            // Close modal WITHOUT triggering onClose (which would reset pendingTicketNumbers)
             setShowNewClientModal(false);
 
-            // Store client data and show payment method modal
-            setPendingClientData({ email, fullName, phone });
             console.log('[NewClientModal] Opening PaymentMethodModal');
             setShowPaymentModal(true);
           }
