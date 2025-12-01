@@ -102,10 +102,9 @@ const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({ isOpen, onClose
             required
           >
             <option value="Contanti">Contanti</option>
-            <option value="Carta di Credito / bancomat">Carta di Credito / bancomat</option>
+            <option value="Carta">Carta</option>
             <option value="Bonifico">Bonifico</option>
             <option value="Paypal">Paypal</option>
-            <option value="Stripe">Stripe</option>
           </select>
         </div>
 
@@ -262,10 +261,9 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
               required
             >
               <option value="Contanti">Contanti</option>
-              <option value="Carta di Credito / bancomat">Carta di Credito / bancomat</option>
+              <option value="Carta">Carta</option>
               <option value="Bonifico">Bonifico</option>
               <option value="Paypal">Paypal</option>
-              <option value="Stripe">Stripe</option>
             </select>
           </div>
           {discount > 0 && (
