@@ -885,6 +885,9 @@ const LotteriaBoard: React.FC = () => {
                   <div><strong>Email:</strong> {ticket.email}</div>
                   {ticket.customer_phone && <div><strong>Telefono:</strong> {ticket.customer_phone}</div>}
                   <div><strong>Data:</strong> {new Date(ticket.purchase_date).toLocaleDateString('it-IT')}</div>
+                  {(ticket as any).payment_method && (
+                    <div><strong>Pagamento:</strong> {(ticket as any).payment_method}</div>
+                  )}
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
                     <div className="border-8 border-transparent border-t-black"></div>
                   </div>
