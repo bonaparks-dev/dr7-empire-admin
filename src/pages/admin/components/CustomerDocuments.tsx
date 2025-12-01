@@ -245,7 +245,7 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
         })
 
       // Method 2: Query database directly
-      const { data: dbFiles, error: dbError } = await supabase
+      const { data: dbFiles, error: _dbError } = await supabase
         .from('storage.objects')
         .select('*')
         .eq('bucket_id', DOCUMENTS_BUCKET)
