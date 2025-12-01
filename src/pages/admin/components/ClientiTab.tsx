@@ -71,11 +71,11 @@ export default function ClientiTab() {
   const getTipoLabel = (tipo: string) => {
     switch (tipo) {
       case 'azienda':
-        return '🏢 Azienda'
+        return 'Azienda'
       case 'persona_fisica':
-        return '👤 Persona Fisica'
+        return 'Persona Fisica'
       case 'pubblica_amministrazione':
-        return '🏛️ Pubblica Amministrazione'
+        return 'Pubblica Amministrazione'
       default:
         return tipo
     }
@@ -134,7 +134,7 @@ export default function ClientiTab() {
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              🏢 Aziende ({customers.filter(c => c.tipo_cliente === 'azienda').length})
+              Aziende ({customers.filter(c => c.tipo_cliente === 'azienda').length})
             </button>
             <button
               onClick={() => setFilter('persona_fisica')}
@@ -144,7 +144,7 @@ export default function ClientiTab() {
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              👤 Persone ({customers.filter(c => c.tipo_cliente === 'persona_fisica').length})
+              Persone ({customers.filter(c => c.tipo_cliente === 'persona_fisica').length})
             </button>
             <button
               onClick={() => setFilter('pubblica_amministrazione')}
@@ -154,7 +154,7 @@ export default function ClientiTab() {
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              🏛️ P.A. ({customers.filter(c => c.tipo_cliente === 'pubblica_amministrazione').length})
+              P.A. ({customers.filter(c => c.tipo_cliente === 'pubblica_amministrazione').length})
             </button>
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function ClientiTab() {
                         onClick={() => setSelectedCustomer(customer)}
                         className="px-3 py-1.5 bg-dr7-gold hover:bg-yellow-500 text-black rounded text-xs font-medium transition-colors"
                       >
-                        📁 Documenti
+                        Documenti
                       </button>
                     </td>
                   </tr>
