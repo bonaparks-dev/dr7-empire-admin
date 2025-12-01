@@ -62,7 +62,7 @@ interface ManualSaleModalProps {
   ticketNumber?: number;
   ticketNumbers?: number[];
   onClose: () => void;
-  onConfirm: (ticketNumbers: number[], email: string, fullName: string, phone: string) => void;
+  onConfirm: (ticketNumbers: number[], email: string, fullName: string, phone: string, paymentMethod: string) => void;
   onOpenNewClientModal: () => void;
 }
 
@@ -70,14 +70,32 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   const [email, setEmail] = useState(prefillData?.email || '');
   const [fullName, setFullName] = useState(prefillData?.fullName || '');
   const [phone, setPhone] = useState(prefillData?.phone || '');
+  const [paymentMethod, setPaymentMethod] = useState('Contanti');
 
   const tickets = ticketNumbers || (ticketNumber ? [ticketNumber] : []);
   const isBulkSale = tickets.length > 1;
 
+  // Calculate discounted price based on quantity
+  const calculateTotalPrice = (qty: number): number => {
+    if (qty < 10) {
+      return qty * 25;
+    } else if (qty >= 10 && qty < 100) {
+      return qty * 22;
+    } else if (qty === 100) {
+      return 1999;
+    } else {
+      return qty * 20;
+    }
+  };
+
+  const totalPrice = calculateTotalPrice(tickets.length);
+  const originalPrice = tickets.length * 25;
+  const discount = originalPrice - totalPrice;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && fullName && phone) {
-      onConfirm(tickets, email, fullName, phone);
+    if (email && fullName && phone && paymentMethod) {
+      onConfirm(tickets, email, fullName, phone, paymentMethod);
     }
   };
 
@@ -143,6 +161,42 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
               placeholder="+39 123 456 7890"
             />
           </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Metodo di Pagamento</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="Contanti">Contanti</option>
+              <option value="Carta di Credito / bancomat">Carta di Credito / bancomat</option>
+              <option value="Bonifico">Bonifico</option>
+              <option value="Paypal">Paypal</option>
+              <option value="Stripe">Stripe</option>
+            </select>
+          </div>
+          {discount > 0 && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded">
+              <p className="text-sm font-semibold text-yellow-800 mb-1">Sconto applicato!</p>
+              <p className="text-xs text-yellow-700">
+                Prezzo originale: €{originalPrice.toFixed(2)}
+              </p>
+              <p className="text-xs text-yellow-700">
+                Sconto: -€{discount.toFixed(2)}
+              </p>
+              <p className="text-sm font-bold text-yellow-900 mt-1">
+                Totale: €{totalPrice.toFixed(2)}
+              </p>
+            </div>
+          )}
+          {discount === 0 && (
+            <div className="mb-4 p-3 bg-gray-100 rounded">
+              <p className="text-sm font-bold text-gray-900">
+                Totale: €{totalPrice.toFixed(2)}
+              </p>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -212,11 +266,28 @@ const LotteriaBoard: React.FC = () => {
     fetchSoldTickets();
   }, []);
 
-  const handleBulkManualSale = async (ticketNumbers: number[], email: string, fullName: string, phone: string) => {
+  // Calculate discounted price based on quantity
+  const calculateTotalPrice = (qty: number): number => {
+    if (qty < 10) {
+      return qty * 25;
+    } else if (qty >= 10 && qty < 100) {
+      return qty * 22;
+    } else if (qty === 100) {
+      return 1999;
+    } else {
+      return qty * 20;
+    }
+  };
+
+  const handleBulkManualSale = async (ticketNumbers: number[], email: string, fullName: string, phone: string, paymentMethod: string = 'Contanti') => {
     try {
       setGeneratingPdf(true);
       let successCount = 0;
       let failedTickets: number[] = [];
+
+      // Calculate total discounted price for all tickets
+      const totalPrice = calculateTotalPrice(ticketNumbers.length);
+      const pricePerTicket = Math.round((totalPrice / ticketNumbers.length) * 100); // in cents
 
       for (const ticketNumber of ticketNumbers) {
         try {
@@ -242,11 +313,12 @@ const LotteriaBoard: React.FC = () => {
               email,
               full_name: fullName,
               customer_phone: phone,
-              payment_intent_id: `manual_bulk_${Date.now()}_${ticketNumber}`,
-              amount_paid: 2500,
+              payment_intent_id: `manual_bulk_${paymentMethod}_${Date.now()}_${ticketNumber}`,
+              amount_paid: pricePerTicket, // Discounted price per ticket
               currency: 'eur',
               purchase_date: new Date().toISOString(),
-              quantity: 1
+              quantity: 1,
+              payment_method: paymentMethod
             }]);
 
           if (error) {
@@ -321,9 +393,9 @@ const LotteriaBoard: React.FC = () => {
     }
   };
 
-  const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string) => {
+  const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string, paymentMethod: string = 'Contanti') => {
     try {
-      // Double-check ticket is still available before attempting sale
+      // Double-check ticket is still available before attempted sale
       const { data: existingTicket } = await supabase
         .from('commercial_operation_tickets')
         .select('ticket_number')
@@ -347,11 +419,12 @@ const LotteriaBoard: React.FC = () => {
           email,
           full_name: fullName,
           customer_phone: phone,
-          payment_intent_id: `manual_${Date.now()}`,
-          amount_paid: 2500, // 25€
+          payment_intent_id: `manual_${paymentMethod}_${Date.now()}`,
+          amount_paid: 2500, // 25€ for single ticket
           currency: 'eur',
           purchase_date: new Date().toISOString(),
-          quantity: 1
+          quantity: 1,
+          payment_method: paymentMethod
         }]);
 
       if (error) {
@@ -699,7 +772,7 @@ const LotteriaBoard: React.FC = () => {
         <ManualSaleModal
           ticketNumber={selectedTicket}
           onClose={() => setSelectedTicket(null)}
-          onConfirm={(tickets, email, fullName, phone) => handleManualSale(tickets[0], email, fullName, phone)}
+          onConfirm={(tickets, email, fullName, phone, paymentMethod) => handleManualSale(tickets[0], email, fullName, phone, paymentMethod)}
           onOpenNewClientModal={() => {
             setShowNewClientModal(true);
           }}
@@ -753,9 +826,9 @@ const LotteriaBoard: React.FC = () => {
             // Directly complete the sale with the client data
             if (pendingTicketNumbers) {
               if (isBulkSale) {
-                await handleBulkManualSale(pendingTicketNumbers, email, fullName, phone);
+                await handleBulkManualSale(pendingTicketNumbers, email, fullName, phone, 'Contanti');
               } else {
-                await handleManualSale(pendingTicketNumbers[0], email, fullName, phone);
+                await handleManualSale(pendingTicketNumbers[0], email, fullName, phone, 'Contanti');
               }
             }
 
