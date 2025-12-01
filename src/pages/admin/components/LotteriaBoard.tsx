@@ -629,11 +629,15 @@ const LotteriaBoard: React.FC = () => {
   };
 
   const handleTicketClick = (ticketNumber: number) => {
+    console.log('[TicketClick] Clicked ticket:', ticketNumber);
+
     if (soldTickets.has(ticketNumber)) {
+      console.log('[TicketClick] Ticket already sold, ignoring');
       return; // Can't select sold tickets
     }
 
     if (multiSelectMode) {
+      console.log('[TicketClick] Multi-select mode');
       // Toggle selection in multi-select mode
       setSelectedTickets(prev => {
         if (prev.includes(ticketNumber)) {
@@ -644,6 +648,7 @@ const LotteriaBoard: React.FC = () => {
       });
     } else {
       // Single ticket sale - Open NewClientModal first
+      console.log('[TicketClick] Opening NewClientModal for ticket:', ticketNumber);
       setPendingTicketNumbers([ticketNumber]);
       setIsBulkSale(false);
       setShowNewClientModal(true);
@@ -988,6 +993,8 @@ const LotteriaBoard: React.FC = () => {
           setPendingTicketNumbers(null);
         }}
         onClientCreated={async (clientId) => {
+          console.log('[NewClientModal] Client created with ID:', clientId);
+
           // Fetch the client data
           const { data, error } = await supabase
             .from('customers_extended')
@@ -995,7 +1002,13 @@ const LotteriaBoard: React.FC = () => {
             .eq('id', clientId)
             .single();
 
-          if (!error && data) {
+          if (error) {
+            console.error('[NewClientModal] Error fetching client data:', error);
+            alert(`Errore nel recuperare i dati del cliente: ${error.message}`);
+            return;
+          }
+
+          if (data) {
             // Extract data based on client type
             let fullName = '';
             const email = data.email || '';
@@ -1009,10 +1022,14 @@ const LotteriaBoard: React.FC = () => {
               fullName = data.ente_o_ufficio || '';
             }
 
+            console.log('[NewClientModal] Extracted client data:', { email, fullName, phone });
+            console.log('[NewClientModal] Pending ticket numbers:', pendingTicketNumbers);
+
             setShowNewClientModal(false);
 
             // Store client data and show payment method modal
             setPendingClientData({ email, fullName, phone });
+            console.log('[NewClientModal] Opening PaymentMethodModal');
             setShowPaymentModal(true);
           }
         }}
