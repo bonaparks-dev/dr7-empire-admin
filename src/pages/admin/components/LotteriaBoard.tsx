@@ -66,10 +66,10 @@ interface ManualSaleModalProps {
   onOpenNewClientModal: () => void;
 }
 
-const ManualSaleModal: React.FC<ManualSaleModalProps> = ({ ticketNumber, ticketNumbers, onClose, onConfirm, onOpenNewClientModal }) => {
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: string; fullName: string; phone: string } | null }> = ({ ticketNumber, ticketNumbers, onClose, onConfirm, onOpenNewClientModal, prefillData }) => {
+  const [email, setEmail] = useState(prefillData?.email || '');
+  const [fullName, setFullName] = useState(prefillData?.fullName || '');
+  const [phone, setPhone] = useState(prefillData?.phone || '');
 
   const tickets = ticketNumbers || (ticketNumber ? [ticketNumber] : []);
   const isBulkSale = tickets.length > 1;
@@ -178,6 +178,9 @@ const LotteriaBoard: React.FC = () => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [hideFinancials, setHideFinancials] = useState(false);
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [pendingTicketNumbers, setPendingTicketNumbers] = useState<number[] | null>(null);
+  const [isBulkSale, setIsBulkSale] = useState(false);
+  const [clientData, setClientData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -446,8 +449,10 @@ const LotteriaBoard: React.FC = () => {
         }
       });
     } else {
-      // Single ticket sale
-      setSelectedTicket(ticketNumber);
+      // Single ticket sale - Open NewClientModal first
+      setPendingTicketNumbers([ticketNumber]);
+      setIsBulkSale(false);
+      setShowNewClientModal(true);
     }
   };
 
@@ -626,7 +631,11 @@ const LotteriaBoard: React.FC = () => {
                   Pulisci ({selectedTickets.length})
                 </button>
                 <button
-                  onClick={() => setSelectedTicket(-1)}
+                  onClick={() => {
+                    setPendingTicketNumbers(selectedTickets);
+                    setIsBulkSale(true);
+                    setShowNewClientModal(true);
+                  }}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
                 >
                   Vendi {selectedTickets.length} Biglietti
@@ -714,10 +723,48 @@ const LotteriaBoard: React.FC = () => {
 
       <NewClientModal
         isOpen={showNewClientModal}
-        onClose={() => setShowNewClientModal(false)}
-        onClientCreated={() => {
+        onClose={() => {
           setShowNewClientModal(false);
-          alert('Cliente creato! Ora puoi inserire i dati nella vendita biglietto.');
+          setPendingTicketNumbers(null);
+          setClientData(null);
+        }}
+        onClientCreated={async (clientId) => {
+          // Fetch the client data
+          const { data, error } = await supabase
+            .from('customers_extended')
+            .select('*')
+            .eq('id', clientId)
+            .single();
+
+          if (!error && data) {
+            // Extract data based on client type
+            let fullName = '';
+            const email = data.email || '';
+            const phone = data.telefono || '';
+
+            if (data.tipo_cliente === 'persona_fisica') {
+              fullName = `${data.nome || ''} ${data.cognome || ''}`.trim();
+            } else if (data.tipo_cliente === 'azienda') {
+              fullName = data.ragione_sociale || '';
+            } else if (data.tipo_cliente === 'pubblica_amministrazione') {
+              fullName = data.ente_o_ufficio || '';
+            }
+
+            setShowNewClientModal(false);
+
+            // Directly complete the sale with the client data
+            if (pendingTicketNumbers) {
+              if (isBulkSale) {
+                await handleBulkManualSale(pendingTicketNumbers, email, fullName, phone);
+              } else {
+                await handleManualSale(pendingTicketNumbers[0], email, fullName, phone);
+              }
+            }
+
+            // Reset state
+            setPendingTicketNumbers(null);
+            setClientData(null);
+          }
         }}
       />
 
