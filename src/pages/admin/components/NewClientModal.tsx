@@ -271,7 +271,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
       <div className="bg-white rounded-xl max-w-3xl w-full my-8 shadow-2xl">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Nuovo Cliente</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Modulo Cliente - Dati Completi</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
@@ -639,7 +639,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              {submitting ? 'Salvataggio...' : 'Salva Cliente'}
+              {submitting ? 'Salvataggio...' : 'Salva'}
             </button>
           </div>
         </form>
