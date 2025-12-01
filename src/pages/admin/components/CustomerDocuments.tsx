@@ -173,26 +173,59 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
   async function debugListAllFiles() {
     try {
       console.log('[DEBUG] Listing ALL files in bucket...')
+      console.log('[DEBUG] Customer ID:', customerId)
 
-      // List all files in root
-      const { data: allFiles, error } = await supabase.storage
+      // Method 1: List files in customer folder
+      const { data: customerFiles, error: customerError } = await supabase.storage
+        .from(DOCUMENTS_BUCKET)
+        .list(customerId, {
+          limit: 1000
+        })
+
+      console.log('[DEBUG] Files in customer folder:', customerFiles)
+      console.log('[DEBUG] Customer folder error:', customerError)
+
+      // Method 2: List all files in root
+      const { data: allFiles, error: rootError } = await supabase.storage
         .from(DOCUMENTS_BUCKET)
         .list('', {
           limit: 1000
         })
 
-      console.log('[DEBUG] All files in bucket root:', allFiles)
+      console.log('[DEBUG] All folders/files in bucket root:', allFiles)
+      console.log('[DEBUG] Root error:', rootError)
 
-      if (error) {
-        console.error('[DEBUG] Error:', error)
-        setDebugInfo(`ERROR: ${error.message}`)
-        return
+      // Method 3: Query database directly
+      const { data: dbFiles, error: dbError } = await supabase
+        .from('storage.objects')
+        .select('*')
+        .eq('bucket_id', DOCUMENTS_BUCKET)
+        .ilike('name', `${customerId}%`)
+
+      console.log('[DEBUG] Database query result:', dbFiles)
+      console.log('[DEBUG] Database error:', dbError)
+
+      let info = `Customer ID: ${customerId}\n\n`
+      info += `Files in customer folder: ${customerFiles?.length || 0}\n`
+      info += `Folders in bucket root: ${allFiles?.length || 0}\n`
+      info += `Files in database: ${dbFiles?.length || 0}\n\n`
+
+      if (customerFiles && customerFiles.length > 0) {
+        info += 'Customer folder files:\n'
+        customerFiles.forEach(f => {
+          info += `- ${f.name} (${f.metadata?.size || 0} bytes)\n`
+        })
       }
 
-      const fileInfo = allFiles?.map(f => `${f.name} (${f.id ? 'folder' : 'file'})`).join('\n') || 'No files'
-      setDebugInfo(`Total items: ${allFiles?.length || 0}\n\n${fileInfo}`)
+      if (dbFiles && dbFiles.length > 0) {
+        info += '\nDatabase files:\n'
+        dbFiles.forEach(f => {
+          info += `- ${f.name}\n`
+        })
+      }
 
-      alert(`Found ${allFiles?.length || 0} items in bucket. Check console for details.`)
+      setDebugInfo(info)
+      alert(`Debug complete. Customer folder: ${customerFiles?.length || 0} files. Check console and UI for details.`)
     } catch (error: any) {
       console.error('[DEBUG] Failed:', error)
       setDebugInfo(`ERROR: ${error.message}`)
