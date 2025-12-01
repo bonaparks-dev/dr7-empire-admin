@@ -31,6 +31,9 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
   async function loadDocuments() {
     setLoading(true)
     try {
+      console.log('🔍 Loading documents for customer:', customerId)
+      console.log('📦 Bucket name:', DOCUMENTS_BUCKET)
+
       // List all documents for this customer
       const { data: files, error } = await supabase.storage
         .from(DOCUMENTS_BUCKET)
@@ -39,17 +42,36 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
           sortBy: { column: 'created_at', order: 'desc' }
         })
 
+      console.log('📋 List result - files:', files)
+      console.log('❌ List result - error:', error)
+
       if (error) {
         console.error('Error listing documents:', error)
+        alert(`❌ Errore nel caricamento documenti:\n\n${error.message}\n\nDettagli: ${JSON.stringify(error, null, 2)}`)
         throw error
       }
+
+      if (!files || files.length === 0) {
+        console.log('📭 No documents found for customer:', customerId)
+        setDocuments([])
+        return
+      }
+
+      console.log(`✅ Found ${files.length} documents`)
 
       // Get signed URLs for each document
       const documentsWithUrls = await Promise.all(
         (files || []).map(async (file) => {
-          const { data: urlData } = await supabase.storage
+          const filePath = `${customerId}/${file.name}`
+          console.log('🔗 Creating signed URL for:', filePath)
+
+          const { data: urlData, error: urlError } = await supabase.storage
             .from(DOCUMENTS_BUCKET)
-            .createSignedUrl(`${customerId}/${file.name}`, 3600) // 1 hour expiry
+            .createSignedUrl(filePath, 3600) // 1 hour expiry
+
+          if (urlError) {
+            console.error('❌ Error creating signed URL for', filePath, urlError)
+          }
 
           return {
             name: file.name,
@@ -60,10 +82,11 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
         })
       )
 
+      console.log('✅ Documents loaded successfully:', documentsWithUrls.length)
       setDocuments(documentsWithUrls)
     } catch (error: any) {
-      console.error('Failed to load documents:', error)
-      alert(`Errore nel caricamento documenti: ${error.message}`)
+      console.error('❌ Failed to load documents:', error)
+      alert(`❌ Errore nel caricamento documenti:\n\n${error.message}\n\nVai alla console del browser (F12) per vedere i dettagli completi.`)
     } finally {
       setLoading(false)
     }
@@ -81,20 +104,38 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `${customerId}/${fileName}`
 
-      const { error: uploadError } = await supabase.storage
+      console.log('📤 Uploading document...')
+      console.log('📦 Bucket:', DOCUMENTS_BUCKET)
+      console.log('📁 Path:', filePath)
+      console.log('📄 File name:', selectedFile.name)
+      console.log('📏 File size:', selectedFile.size, 'bytes')
+
+      const { data, error: uploadError } = await supabase.storage
         .from(DOCUMENTS_BUCKET)
         .upload(filePath, selectedFile, {
           cacheControl: '3600',
           upsert: false
         })
 
-      if (uploadError) throw uploadError
+      console.log('📤 Upload result - data:', data)
+      console.log('❌ Upload result - error:', uploadError)
 
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError)
+        alert(`❌ Errore nel caricamento:\n\n${uploadError.message}\n\nDettagli: ${JSON.stringify(uploadError, null, 2)}`)
+        throw uploadError
+      }
+
+      console.log('✅ Upload successful! Now reloading documents...')
       alert('✅ Documento caricato con successo!')
       setSelectedFile(null)
-      await loadDocuments()
+
+      // Add a small delay before reloading to ensure file is fully written
+      setTimeout(async () => {
+        await loadDocuments()
+      }, 500)
     } catch (error: any) {
-      console.error('Error uploading document:', error)
+      console.error('❌ Error uploading document:', error)
       alert(`❌ Errore nel caricamento: ${error.message}`)
     } finally {
       setUploading(false)
@@ -207,9 +248,18 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
 
           {/* Documents List */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-dr7-gold mb-4">
-              📁 Documenti Caricati ({documents.length})
-            </h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold text-dr7-gold">
+                📁 Documenti Caricati ({documents.length})
+              </h4>
+              <button
+                onClick={loadDocuments}
+                disabled={loading}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? '⏳ Caricamento...' : '🔄 Ricarica'}
+              </button>
+            </div>
 
             {loading ? (
               <div className="text-center py-8">
@@ -277,14 +327,28 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
             )}
           </div>
 
-          {/* Storage Info */}
+          {/* Storage Info & Debug */}
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-            <p className="text-xs text-gray-400">
-              💾 <strong>Bucket Storage:</strong> {DOCUMENTS_BUCKET}/{customerId}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              📌 <strong>Formati supportati:</strong> PDF, Immagini (JPG, PNG, GIF), Word, Excel, ZIP
-            </p>
+            <h5 className="text-sm font-semibold text-white mb-2">ℹ️ Informazioni Storage</h5>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-400">
+                💾 <strong>Bucket:</strong> <code className="bg-gray-700 px-2 py-0.5 rounded">{DOCUMENTS_BUCKET}</code>
+              </p>
+              <p className="text-xs text-gray-400">
+                📁 <strong>Path:</strong> <code className="bg-gray-700 px-2 py-0.5 rounded">{customerId}/</code>
+              </p>
+              <p className="text-xs text-gray-400">
+                📌 <strong>Formati supportati:</strong> PDF, Immagini (JPG, PNG, GIF), Word, Excel, ZIP
+              </p>
+              <p className="text-xs text-gray-400">
+                🔐 <strong>Accesso:</strong> Solo utenti autenticati
+              </p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-700">
+              <p className="text-xs text-amber-400">
+                ⚠️ <strong>Problemi?</strong> Apri la console del browser (F12) per vedere i log dettagliati dell'upload e del caricamento documenti.
+              </p>
+            </div>
           </div>
         </div>
 
