@@ -973,7 +973,7 @@ export default function ReservationsTab() {
               <div className="space-y-3">
                 {/* Search Input for Mobile */}
                 <Input
-                  label="🔍 Cerca Cliente (nome, email, telefono)"
+                  label="Cerca Cliente (nome, email, telefono)"
                   placeholder="Inizia a scrivere per cercare..."
                   value={customerSearchQuery}
                   onChange={(e) => setCustomerSearchQuery(e.target.value)}
@@ -1010,13 +1010,13 @@ export default function ReservationsTab() {
                   )
                 }).length === 0 && (
                   <p className="text-sm text-yellow-400 mt-2">
-                    ⚠️ Nessun cliente trovato con "{customerSearchQuery}"
+                    Nessun cliente trovato con "{customerSearchQuery}"
                   </p>
                 )}
 
                 {customers.length === 0 && (
                   <p className="text-sm text-yellow-400 mt-2">
-                    ⚠️ Nessun cliente trovato. Verifica che l'API sia attiva o crea un nuovo cliente.
+                    Nessun cliente trovato. Verifica che l'API sia attiva o crea un nuovo cliente.
                   </p>
                 )}
               </div>
@@ -1041,7 +1041,7 @@ export default function ReservationsTab() {
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-dr7-darker rounded-lg border border-gray-700">
                 <div className="space-y-3">
                   <Input
-                    label="📅 Data Ritiro"
+                    label="Data Ritiro"
                     type="date"
                     required
                     value={formData.pickup_date}
@@ -1050,7 +1050,7 @@ export default function ReservationsTab() {
                     }}
                   />
                   <Input
-                    label="🕐 Ora Ritiro"
+                    label="Ora Ritiro"
                     type="time"
                     required
                     value={formData.pickup_time}
@@ -1060,10 +1060,10 @@ export default function ReservationsTab() {
                       setFormData({ ...formData, pickup_time: pickupTime, return_time: returnTime })
                     }}
                   />
-                  <p className="text-xs text-green-400 mt-1">✅ Admin: Qualsiasi orario disponibile</p>
+                  <p className="text-xs text-green-400 mt-1">Admin: Qualsiasi orario disponibile</p>
                 </div>
                 <Select
-                  label="📍 Luogo Ritiro"
+                  label="Luogo Ritiro"
                   required
                   value={formData.pickup_location}
                   onChange={(e) => setFormData({ ...formData, pickup_location: e.target.value })}
@@ -1071,24 +1071,24 @@ export default function ReservationsTab() {
                 />
                 <div className="space-y-3">
                   <Input
-                    label="📅 Data Riconsegna"
+                    label="Data Riconsegna"
                     type="date"
                     required
                     value={formData.return_date}
                     onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
                   />
                   <Input
-                    label="🕐 Ora Riconsegna"
+                    label="Ora Riconsegna"
                     type="time"
                     required
                     value={formData.return_time}
                     onChange={(e) => setFormData({ ...formData, return_time: e.target.value })}
                   />
-                  <p className="text-xs text-blue-400 mt-1">💡 Suggerito: Ritiro - 1h30</p>
-                  <p className="text-xs text-green-400">✅ Admin: Qualsiasi orario disponibile</p>
+                  <p className="text-xs text-blue-400 mt-1">Suggerito: Ritiro - 1h30</p>
+                  <p className="text-xs text-green-400">Admin: Qualsiasi orario disponibile</p>
                 </div>
                 <Select
-                  label="📍 Luogo Riconsegna"
+                  label="Luogo Riconsegna"
                   required
                   value={formData.dropoff_location}
                   onChange={(e) => setFormData({ ...formData, dropoff_location: e.target.value })}
@@ -1227,25 +1227,23 @@ export default function ReservationsTab() {
                 <div className="flex items-center gap-2 text-white">
                   {isCarWash ? (
                     <>
-                      <span className="text-blue-400">🚿</span>
                       <span className="text-sm">{booking.service_name || 'Autolavaggio'}</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-green-400">🚗</span>
                       <span className="text-sm">{booking.vehicle_name}</span>
                     </>
                   )}
                 </div>
                 {!isCarWash && booking.vehicle_plate && (
-                  <div className="text-xs text-gray-400 ml-6 mt-1">Targa: {booking.vehicle_plate}</div>
+                  <div className="text-xs text-gray-400 mt-1">Targa: {booking.vehicle_plate}</div>
                 )}
               </div>
 
               <div className="text-xs text-gray-400 mb-2">
                 {isCarWash
-                  ? `📅 ${booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' }) : '-'}${booking.appointment_time ? ` alle ${booking.appointment_time}` : ''}`
-                  : `📅 ${booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-'} → ${booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-'}`
+                  ? `${booking.appointment_date ? new Date(booking.appointment_date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Rome' }) : '-'}${booking.appointment_time ? ` alle ${booking.appointment_time}` : ''}`
+                  : `${booking.pickup_date ? new Date(typeof booking.pickup_date === 'number' ? booking.pickup_date * 1000 : booking.pickup_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-'} → ${booking.dropoff_date ? new Date(typeof booking.dropoff_date === 'number' ? booking.dropoff_date * 1000 : booking.dropoff_date).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome', hour12: false }) : '-'}`
                 }
               </div>
 
@@ -1329,17 +1327,15 @@ export default function ReservationsTab() {
                     <td className="px-3 py-3 text-sm text-white whitespace-nowrap">
                       {isCarWash ? (
                         <span className="flex items-center gap-2">
-                          <span className="text-blue-400">🚿</span>
                           <span>{booking.service_name || 'Autolavaggio'}</span>
                         </span>
                       ) : (
                         <div className="flex flex-col">
                           <span className="flex items-center gap-2">
-                            <span className="text-green-400">🚗</span>
                             <span>{booking.vehicle_name}</span>
                           </span>
                           {booking.vehicle_plate && (
-                            <span className="text-xs text-gray-400 ml-6">Targa: {booking.vehicle_plate}</span>
+                            <span className="text-xs text-gray-400">Targa: {booking.vehicle_plate}</span>
                           )}
                         </div>
                       )}
@@ -1436,7 +1432,7 @@ export default function ReservationsTab() {
               {/* Customer Info */}
               <div className="bg-dr7-darker p-4 rounded-lg">
                 <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                  <span>👤</span> Cliente
+                  Cliente
                 </h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="text-gray-400">Nome:</span> <span className="text-white">{selectedBooking.booking_details?.customer?.fullName || selectedBooking.customer_name || 'N/A'}</span></div>
@@ -1449,7 +1445,7 @@ export default function ReservationsTab() {
                         href={`tel:${selectedBooking.customer_phone}`}
                         className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors"
                       >
-                        📞 Chiama
+                        Chiama
                       </a>
                     )}
                   </div>
@@ -1489,7 +1485,7 @@ export default function ReservationsTab() {
               {/* Payment Info */}
               <div className="bg-dr7-darker p-4 rounded-lg">
                 <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                  <span>💳</span> Pagamento
+                  Pagamento
                 </h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
@@ -1521,7 +1517,7 @@ export default function ReservationsTab() {
               {selectedBooking.booking_details?.notes && (
                 <div className="bg-dr7-darker p-4 rounded-lg">
                   <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                    <span>📝</span> Note
+                    Note
                   </h4>
                   <p className="text-sm text-gray-300">{selectedBooking.booking_details.notes}</p>
                 </div>
@@ -1537,7 +1533,7 @@ export default function ReservationsTab() {
                     }}
                     className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
                   >
-                    🗑️ Cancella Prenotazione
+                    Cancella Prenotazione
                   </button>
                 )}
                 <button
