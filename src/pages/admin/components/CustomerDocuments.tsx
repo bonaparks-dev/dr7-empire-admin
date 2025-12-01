@@ -101,6 +101,7 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
           upsert: true
         })
 
+      console.log('Upload result:', uploadData)
       if (uploadError) throw uploadError
 
       // Check if document already exists for this type
@@ -183,17 +184,6 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
     } catch (error: any) {
       console.error('Error deleting document:', error)
       alert(`ERRORE nell'eliminazione: ${error.message}`)
-    }
-  }
-
-  const getDocumentTypeLabel = (type: string) => {
-    switch (type) {
-      case 'drivers_license':
-        return 'Patente di Guida'
-      case 'identity_document':
-        return 'Documento di Identità'
-      default:
-        return type
     }
   }
 
