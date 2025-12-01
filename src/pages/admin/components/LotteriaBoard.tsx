@@ -293,16 +293,16 @@ const LotteriaBoard: React.FC = () => {
       // Build alert message
       let message = '';
       if (successCount > 0 && failedTickets.length === 0) {
-        message = `✅ ${successCount} biglietti venduti con successo!\n\nPDF inviati a: ${email}`;
+        message = `${successCount} biglietti venduti con successo!\n\nPDF inviati a: ${email}`;
       } else if (successCount > 0 && failedTickets.length > 0) {
-        message = `⚠️ ${successCount} biglietti venduti.\n\n❌ ${failedTickets.length} biglietti già venduti:\n${failedTickets.map(n => '#' + String(n).padStart(4, '0')).join(', ')}`;
+        message = `${successCount} biglietti venduti.\n\n${failedTickets.length} biglietti già venduti:\n${failedTickets.map(n => '#' + String(n).padStart(4, '0')).join(', ')}`;
       } else {
-        message = `❌ Nessun biglietto venduto. Tutti i biglietti selezionati sono già stati venduti.`;
+        message = `Nessun biglietto venduto. Tutti i biglietti selezionati sono già stati venduti.`;
       }
 
       // Add WhatsApp warning if failed
       if (successCount > 0 && !whatsappResult.success) {
-        message += `\n\n⚠️ ATTENZIONE: Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
+        message += `\n\nATTENZIONE: Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
       }
 
       alert(message);
@@ -314,7 +314,7 @@ const LotteriaBoard: React.FC = () => {
     } catch (error: any) {
       setGeneratingPdf(false);
       console.error('Error in bulk sale:', error);
-      alert(`❌ Errore: ${error.message || 'Errore durante la vendita multipla.'}`);
+      alert(`Errore: ${error.message || 'Errore durante la vendita multipla.'}`);
       await fetchSoldTickets();
     }
   };
@@ -329,7 +329,7 @@ const LotteriaBoard: React.FC = () => {
         .single();
 
       if (existingTicket) {
-        alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è già stato venduto!`);
+        alert(`Biglietto #${String(ticketNumber).padStart(4, '0')} è già stato venduto!`);
         await fetchSoldTickets(); // Refresh to show current state
         setSelectedTicket(null);
         return;
@@ -355,7 +355,7 @@ const LotteriaBoard: React.FC = () => {
       if (error) {
         // Check if it's a duplicate key error (ticket was just sold)
         if (error.code === '23505') {
-          alert(`❌ Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
+          alert(`Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
           await fetchSoldTickets(); // Refresh to show current state
           setSelectedTicket(null);
           return; // Stop execution here
@@ -393,16 +393,16 @@ const LotteriaBoard: React.FC = () => {
           setGeneratingPdf(false);
 
           // Build success message with WhatsApp warning if needed
-          let message = `✅ Biglietto #${String(ticketNumber).padStart(4, '0')} venduto!\n\n`;
+          let message = `Biglietto #${String(ticketNumber).padStart(4, '0')} venduto!\n\n`;
 
           if (pdfResult.success) {
             message += `PDF inviato con successo a:\n${email}`;
           } else {
-            message += `⚠️ PDF non inviato automaticamente.\nMotivo: ${pdfResult.error}\n\nEmail: ${email}`;
+            message += `PDF non inviato automaticamente.\nMotivo: ${pdfResult.error}\n\nEmail: ${email}`;
           }
 
           if (!whatsappResult.success) {
-            message += `\n\n⚠️ ATTENZIONE: Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
+            message += `\n\nATTENZIONE: Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
           }
 
           alert(message);
@@ -410,10 +410,10 @@ const LotteriaBoard: React.FC = () => {
           setGeneratingPdf(false);
           console.error('Error sending PDF:', pdfError);
 
-          let message = `⚠️ Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: Errore nell'invio del PDF.\nErrore: ${pdfError.message || 'Network error'}\n\nEmail: ${email}`;
+          let message = `Biglietto #${String(ticketNumber).padStart(4, '0')} salvato nel sistema.\n\nATTENZIONE: Errore nell'invio del PDF.\nErrore: ${pdfError.message || 'Network error'}\n\nEmail: ${email}`;
 
           if (!whatsappResult.success) {
-            message += `\n\n⚠️ Notifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
+            message += `\n\nNotifica WhatsApp NON inviata!\nMotivo: ${whatsappResult.error}`;
           }
 
           alert(message);
@@ -425,7 +425,7 @@ const LotteriaBoard: React.FC = () => {
       setSelectedTicket(null);
     } catch (error: any) {
       console.error('Error saving manual sale:', error);
-      alert(`❌ Errore: ${error.message || 'Errore durante il salvataggio.'}`);
+      alert(`Errore: ${error.message || 'Errore durante il salvataggio.'}`);
       await fetchSoldTickets(); // Refresh to show current state
       setSelectedTicket(null);
     }
@@ -496,7 +496,7 @@ const LotteriaBoard: React.FC = () => {
 
       if (error) throw error;
 
-      alert(`✅ Biglietto #${String(ticketNumber).padStart(4, '0')} cancellato con successo!`);
+      alert(`Biglietto #${String(ticketNumber).padStart(4, '0')} cancellato con successo!`);
 
       // Refresh tickets and search results
       await fetchSoldTickets();
@@ -505,7 +505,7 @@ const LotteriaBoard: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error canceling ticket:', error);
-      alert(`❌ Errore nella cancellazione: ${error.message}`);
+      alert(`Errore nella cancellazione: ${error.message}`);
     }
   };
 
