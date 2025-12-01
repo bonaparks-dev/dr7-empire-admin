@@ -427,7 +427,7 @@ export default function MechanicalCalendarTab() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-xl font-bold text-white mb-1">
-                  🔧 Prenotazioni Meccanica
+                 Prenotazioni Meccanica
                 </h3>
                 <p className="text-gray-400 text-sm">
                   {new Date(selectedCell.date).toLocaleDateString('it-IT', {
