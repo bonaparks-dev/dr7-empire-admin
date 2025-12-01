@@ -8,24 +8,30 @@ interface CustomerDocumentsProps {
   onClose: () => void
 }
 
-interface Document {
-  name: string
-  created_at: string
-  size: number
-  url: string | null
+interface CustomerDocument {
+  id: string
+  customer_id: string
+  document_type: 'drivers_license' | 'identity_document'
+  file_name: string
+  file_path: string
+  file_size: number
+  mime_type: string
+  bucket_id: string
+  uploaded_at: string
 }
 
-// Configure your storage bucket here
-const DOCUMENTS_BUCKET = 'customer-documents' // Change this to your bucket name
+const DRIVERS_LICENSE_BUCKET = 'driver-licenses'
+const IDENTITY_DOCS_BUCKET = 'customer-documents'
 
 export default function CustomerDocuments({ customerId, customerName, onClose }: CustomerDocumentsProps) {
-  const [documents, setDocuments] = useState<Document[]>([])
+  const [documents, setDocuments] = useState<CustomerDocument[]>([])
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [debugInfo, setDebugInfo] = useState<string>('')
-  const [autoDebugInfo, setAutoDebugInfo] = useState<string>('')
-  const [uploadCount, setUploadCount] = useState(0)
+  const [uploading, setUploading] = useState<{ [key: string]: boolean }>({})
+  const [selectedFiles, setSelectedFiles] = useState<{ [key: string]: File | null }>({
+    drivers_license: null,
+    identity_document: null
+  })
+  const [previewUrls, setPreviewUrls] = useState<{ [key: string]: string | null }>({})
 
   useEffect(() => {
     loadDocuments()
@@ -34,196 +40,143 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
   async function loadDocuments() {
     setLoading(true)
     try {
-      console.log('[LOAD] Loading documents for customer:', customerId)
-      console.log('[LOAD] Bucket name:', DOCUMENTS_BUCKET)
+      // Load document metadata from database
+      const { data, error } = await supabase
+        .from('customer_documents')
+        .select('*')
+        .eq('customer_id', customerId)
 
-      // List all documents for this customer
-      const { data: files, error } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .list(customerId, {
-          limit: 100,
-          sortBy: { column: 'created_at', order: 'desc' }
-        })
+      if (error) throw error
 
-      console.log('[LOAD] List result - files:', files)
-      console.log('[LOAD] List result - error:', error)
-      console.log('[LOAD] Number of files returned:', files?.length || 0)
+      setDocuments(data || [])
 
-      // Log each file with details
-      if (files && files.length > 0) {
-        console.log('[LOAD] Files detail:')
-        files.forEach((file, index) => {
-          console.log(`  [${index}] name: "${file.name}", id: ${file.id}, size: ${file.metadata?.size}`)
-        })
+      // Load preview URLs for existing documents
+      if (data && data.length > 0) {
+        const urls: { [key: string]: string | null } = {}
+        for (const doc of data) {
+          const { data: urlData } = await supabase.storage
+            .from(doc.bucket_id)
+            .createSignedUrl(doc.file_path, 3600)
+
+          urls[doc.document_type] = urlData?.signedUrl || null
+        }
+        setPreviewUrls(urls)
       }
-
-      if (error) {
-        console.error('[ERROR] Listing documents failed:', error)
-        alert(`ERRORE nel caricamento documenti:\n\n${error.message}\n\nDettagli: ${JSON.stringify(error, null, 2)}`)
-        throw error
-      }
-
-      // Check if we got any files at all
-      if (!files || files.length === 0) {
-        console.log('[LOAD] No files returned from storage API')
-        console.log('[LOAD] This could mean:')
-        console.log('[LOAD]   1. No files uploaded yet')
-        console.log('[LOAD]   2. Files uploaded to different path')
-        console.log('[LOAD]   3. Permission issue preventing list operation')
-        setDocuments([])
-        setLoading(false)
-        return
-      }
-
-      // Filter out folder placeholders and system files
-      console.log('[LOAD] Applying filters...')
-      const actualFiles = (files || []).filter(file => {
-        const hasName = !!file.name
-        const notPlaceholder = !file.name?.includes('.emptyFolderPlaceholder')
-        const hasId = file.id !== null
-
-        if (!hasName) console.log(`[LOAD] Filtering out file with no name:`, file)
-        if (!notPlaceholder) console.log(`[LOAD] Filtering out placeholder:`, file.name)
-        if (!hasId) console.log(`[LOAD] Filtering out file with no ID:`, file.name)
-
-        return hasName && notPlaceholder && hasId
-      })
-
-      console.log(`[LOAD] Raw files: ${files?.length || 0}, Actual files after filter: ${actualFiles.length}`)
-
-      if (actualFiles.length === 0) {
-        console.log('[LOAD] No documents after filtering!')
-        console.log('[LOAD] All files were filtered out as placeholders or invalid')
-        setDocuments([])
-        setLoading(false)
-        return
-      }
-
-      // Get signed URLs for each document
-      const documentsWithUrls = await Promise.all(
-        actualFiles.map(async (file) => {
-          const filePath = `${customerId}/${file.name}`
-          console.log('[LOAD] Creating signed URL for:', filePath)
-
-          const { data: urlData, error: urlError } = await supabase.storage
-            .from(DOCUMENTS_BUCKET)
-            .createSignedUrl(filePath, 3600) // 1 hour expiry
-
-          if (urlError) {
-            console.error('[ERROR] Error creating signed URL for', filePath, urlError)
-          }
-
-          return {
-            name: file.name,
-            created_at: file.created_at || new Date().toISOString(),
-            size: file.metadata?.size || 0,
-            url: urlData?.signedUrl || null
-          }
-        })
-      )
-
-      console.log('[LOAD] Documents loaded successfully:', documentsWithUrls.length)
-      setDocuments(documentsWithUrls)
     } catch (error: any) {
-      console.error('[ERROR] Failed to load documents:', error)
-      alert(`ERRORE nel caricamento documenti:\n\n${error.message}\n\nVai alla console del browser (F12) per vedere i dettagli completi.`)
+      console.error('Error loading documents:', error)
+      alert(`Errore nel caricamento documenti: ${error.message}`)
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleUpload() {
-    if (!selectedFile) {
+  async function handleUpload(documentType: 'drivers_license' | 'identity_document') {
+    const file = selectedFiles[documentType]
+    if (!file) {
       alert('Seleziona un file da caricare')
       return
     }
 
-    setUploading(true)
+    setUploading({ ...uploading, [documentType]: true })
     try {
-      // Check authentication first
+      // Check authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('[AUTH] Current user:', user)
-      console.log('[AUTH] Auth error:', authError)
-
-      if (!user) {
+      if (!user || authError) {
         alert('ERRORE: Non sei autenticato. Effettua il login e riprova.')
-        setUploading(false)
         return
       }
 
-      // Verify bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets()
-      console.log('[BUCKET] Available buckets:', buckets)
-      console.log('[BUCKET] Buckets error:', bucketsError)
-
-      const bucketExists = buckets?.some(b => b.id === DOCUMENTS_BUCKET)
-      if (!bucketExists) {
-        alert(`ERRORE: Il bucket "${DOCUMENTS_BUCKET}" non esiste!\n\nBuckets disponibili: ${buckets?.map(b => b.id).join(', ')}`)
-        setUploading(false)
-        return
-      }
-
-      const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${Date.now()}.${fileExt}`
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${documentType}_${Date.now()}.${fileExt}`
       const filePath = `${customerId}/${fileName}`
 
-      console.log('[UPLOAD] Uploading document...')
-      console.log('[UPLOAD] Authenticated user ID:', user.id)
-      console.log('[UPLOAD] Authenticated user email:', user.email)
-      console.log('[UPLOAD] Bucket:', DOCUMENTS_BUCKET)
-      console.log('[UPLOAD] Path:', filePath)
-      console.log('[UPLOAD] File name:', selectedFile.name)
-      console.log('[UPLOAD] File size:', selectedFile.size, 'bytes')
-      console.log('[UPLOAD] File type:', selectedFile.type)
+      // Select correct bucket based on document type
+      const bucket = documentType === 'drivers_license' ? DRIVERS_LICENSE_BUCKET : IDENTITY_DOCS_BUCKET
 
-      const { data, error: uploadError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .upload(filePath, selectedFile, {
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         })
 
-      console.log('[UPLOAD] Upload result - data:', data)
-      console.log('[UPLOAD] Upload result - error:', uploadError)
+      if (uploadError) throw uploadError
 
-      if (uploadError) {
-        console.error('[ERROR] Upload error:', uploadError)
-        alert(`ERRORE nel caricamento:\n\n${uploadError.message}\n\nDettagli: ${JSON.stringify(uploadError, null, 2)}`)
-        throw uploadError
+      // Check if document already exists for this type
+      const existingDoc = documents.find(d => d.document_type === documentType)
+
+      if (existingDoc) {
+        // Update existing document
+        const { error: updateError } = await supabase
+          .from('customer_documents')
+          .update({
+            file_name: file.name,
+            file_path: filePath,
+            file_size: file.size,
+            mime_type: file.type,
+            bucket_id: bucket,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingDoc.id)
+
+        if (updateError) throw updateError
+
+        // Delete old file from storage
+        if (existingDoc.file_path !== filePath) {
+          await supabase.storage
+            .from(existingDoc.bucket_id)
+            .remove([existingDoc.file_path])
+        }
+      } else {
+        // Insert new document record
+        const { error: insertError } = await supabase
+          .from('customer_documents')
+          .insert({
+            customer_id: customerId,
+            document_type: documentType,
+            file_name: file.name,
+            file_path: filePath,
+            file_size: file.size,
+            mime_type: file.type,
+            bucket_id: bucket,
+            uploaded_by: user.id
+          })
+
+        if (insertError) throw insertError
       }
 
-      console.log('[UPLOAD] Upload successful! Now reloading documents...')
       alert('Documento caricato con successo!')
-      setSelectedFile(null)
-      setUploadCount(prev => prev + 1)
-
-      // Add a small delay before reloading to ensure file is fully written
-      setTimeout(async () => {
-        await loadDocuments()
-        // After reload, check if documents still don't appear
-        setTimeout(async () => {
-          await runAutoDebug()
-        }, 500)
-      }, 500)
+      setSelectedFiles({ ...selectedFiles, [documentType]: null })
+      await loadDocuments()
     } catch (error: any) {
-      console.error('[ERROR] Error uploading document:', error)
+      console.error('Error uploading document:', error)
       alert(`ERRORE nel caricamento: ${error.message}`)
     } finally {
-      setUploading(false)
+      setUploading({ ...uploading, [documentType]: false })
     }
   }
 
-  async function handleDelete(fileName: string) {
-    if (!confirm(`Sei sicuro di voler eliminare "${fileName}"?`)) {
+  async function handleDelete(documentId: string, filePath: string, bucketId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo documento?')) {
       return
     }
 
     try {
-      const { error } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .remove([`${customerId}/${fileName}`])
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from(bucketId)
+        .remove([filePath])
 
-      if (error) throw error
+      if (storageError) throw storageError
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('customer_documents')
+        .delete()
+        .eq('id', documentId)
+
+      if (dbError) throw dbError
 
       alert('Documento eliminato')
       await loadDocuments()
@@ -233,157 +186,14 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
     }
   }
 
-  async function runAutoDebug() {
-    try {
-      console.log('[AUTO-DEBUG] Running automatic diagnostics...')
-
-      // Method 1: List files in customer folder
-      const { data: customerFiles, error: customerError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .list(customerId, {
-          limit: 1000
-        })
-
-      // Method 2: Query database directly
-      const { data: dbFiles, error: _dbError } = await supabase
-        .from('storage.objects')
-        .select('*')
-        .eq('bucket_id', DOCUMENTS_BUCKET)
-        .ilike('name', `${customerId}%`)
-
-      console.log('[AUTO-DEBUG] Customer folder files:', customerFiles)
-      console.log('[AUTO-DEBUG] Database files:', dbFiles)
-
-      // Build diagnostic message
-      let info = ''
-      if (customerError) {
-        info = `ERRORE: Impossibile leggere i file dalla cartella del cliente.\nErrore: ${customerError.message}\n\n`
-        info += 'POSSIBILE CAUSA: Le policy di storage non permettono la lettura dei file.\n'
-        info += 'SOLUZIONE: Verifica le policy nel file FIX_DOCUMENT_UPLOAD_ISSUE.sql'
-      } else if (dbFiles && dbFiles.length > 0 && (!customerFiles || customerFiles.length === 0)) {
-        info = `PROBLEMA TROVATO!\n\n`
-        info += `File nel database: ${dbFiles.length}\n`
-        info += `File visibili tramite API: ${customerFiles?.length || 0}\n\n`
-        info += 'I file esistono nel database ma non sono accessibili tramite Storage API.\n'
-        info += 'CAUSA: Le policy di SELECT su storage.objects non sono configurate correttamente.\n\n'
-        info += 'File trovati nel database:\n'
-        dbFiles.forEach(f => {
-          info += `- ${f.name}\n`
-        })
-      } else if (customerFiles && customerFiles.length > 0) {
-        info = `File trovati: ${customerFiles.length}\n\n`
-        customerFiles.forEach(f => {
-          const filtered = !f.name || f.name.includes('.emptyFolderPlaceholder') || f.id === null
-          info += `- ${f.name} ${filtered ? '(FILTRATO - non sara mostrato)' : '(OK)'}\n`
-        })
-      }
-
-      setAutoDebugInfo(info)
-    } catch (error: any) {
-      console.error('[AUTO-DEBUG] Failed:', error)
-      setAutoDebugInfo(`ERRORE AUTO-DEBUG: ${error.message}`)
-    }
-  }
-
-  async function debugListAllFiles() {
-    try {
-      console.log('[DEBUG] =======================================')
-      console.log('[DEBUG] STARTING COMPREHENSIVE DEBUG')
-      console.log('[DEBUG] =======================================')
-
-      // Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      console.log('[DEBUG] Current user:', user)
-      console.log('[DEBUG] User ID:', user?.id)
-      console.log('[DEBUG] User email:', user?.email)
-      console.log('[DEBUG] Auth error:', authError)
-
-      // List all available buckets
-      const { data: allBuckets, error: bucketsError } = await supabase.storage.listBuckets()
-      console.log('[DEBUG] All available buckets:', allBuckets)
-      console.log('[DEBUG] Buckets error:', bucketsError)
-
-      console.log('[DEBUG] Configured bucket:', DOCUMENTS_BUCKET)
-      console.log('[DEBUG] Customer ID:', customerId)
-
-      // Method 1: List files in customer folder
-      const { data: customerFiles, error: customerError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .list(customerId, {
-          limit: 1000
-        })
-
-      console.log('[DEBUG] Files in customer folder:', customerFiles)
-      console.log('[DEBUG] Customer folder error:', customerError)
-
-      // Method 2: List all files in root
-      const { data: allFiles, error: rootError } = await supabase.storage
-        .from(DOCUMENTS_BUCKET)
-        .list('', {
-          limit: 1000
-        })
-
-      console.log('[DEBUG] All folders/files in bucket root:', allFiles)
-      console.log('[DEBUG] Root error:', rootError)
-
-      // Method 3: Query database directly
-      const { data: dbFiles, error: dbError } = await supabase
-        .from('storage.objects')
-        .select('*')
-        .eq('bucket_id', DOCUMENTS_BUCKET)
-        .ilike('name', `${customerId}%`)
-
-      console.log('[DEBUG] Database query result:', dbFiles)
-      console.log('[DEBUG] Database error:', dbError)
-
-      let info = `=== AUTHENTICATION ===\n`
-      info += `User ID: ${user?.id || 'NOT AUTHENTICATED'}\n`
-      info += `Email: ${user?.email || 'N/A'}\n`
-      info += `Auth Error: ${authError ? authError.message : 'None'}\n\n`
-
-      info += `=== STORAGE CONFIGURATION ===\n`
-      info += `Configured Bucket: ${DOCUMENTS_BUCKET}\n`
-      info += `Available Buckets: ${allBuckets?.map(b => b.id).join(', ') || 'None'}\n`
-      info += `Bucket Exists: ${allBuckets?.some(b => b.id === DOCUMENTS_BUCKET) ? 'YES' : 'NO'}\n\n`
-
-      info += `=== CUSTOMER DATA ===\n`
-      info += `Customer ID: ${customerId}\n`
-      info += `Path: ${customerId}/\n\n`
-
-      info += `=== FILE COUNTS ===\n`
-      info += `Files in customer folder: ${customerFiles?.length || 0}\n`
-      info += `Folders in bucket root: ${allFiles?.length || 0}\n`
-      info += `Files in database: ${dbFiles?.length || 0}\n\n`
-
-      if (customerError) {
-        info += `\nCustomer folder error: ${customerError.message}\n`
-      }
-
-      if (customerFiles && customerFiles.length > 0) {
-        info += '\n=== CUSTOMER FOLDER FILES ===\n'
-        customerFiles.forEach(f => {
-          info += `- ${f.name} (${f.metadata?.size || 0} bytes)\n`
-        })
-      }
-
-      if (dbFiles && dbFiles.length > 0) {
-        info += '\n=== DATABASE FILES ===\n'
-        dbFiles.forEach(f => {
-          info += `- ${f.name}\n`
-        })
-      }
-
-      setDebugInfo(info)
-      setAutoDebugInfo(info)
-
-      const alertMsg = user
-        ? `Debug completato!\n\nBucket: ${DOCUMENTS_BUCKET}\nFiles nel folder cliente: ${customerFiles?.length || 0}\nUser: ${user.email}\n\nVedi console e UI per dettagli completi.`
-        : `ATTENZIONE: Non sei autenticato!\n\nFiles trovati: ${customerFiles?.length || 0}\n\nEffettua il login e riprova.`
-
-      alert(alertMsg)
-    } catch (error: any) {
-      console.error('[DEBUG] Failed:', error)
-      setDebugInfo(`ERROR: ${error.message}`)
+  const getDocumentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'drivers_license':
+        return 'Patente di Guida'
+      case 'identity_document':
+        return 'Documento di Identità'
+      default:
+        return type
     }
   }
 
@@ -395,28 +205,145 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
   }
 
-  const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop()?.toLowerCase()
-    switch (ext) {
-      case 'pdf':
-        return 'PDF'
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-        return 'IMG'
-      case 'doc':
-      case 'docx':
-        return 'DOC'
-      case 'xls':
-      case 'xlsx':
-        return 'XLS'
-      case 'zip':
-      case 'rar':
-        return 'ZIP'
-      default:
-        return 'FILE'
-    }
+  const isImage = (mimeType: string) => {
+    return mimeType.startsWith('image/')
+  }
+
+  const getDocument = (type: 'drivers_license' | 'identity_document') => {
+    return documents.find(d => d.document_type === type)
+  }
+
+  const renderDocumentSection = (
+    type: 'drivers_license' | 'identity_document',
+    label: string,
+    description: string
+  ) => {
+    const doc = getDocument(type)
+    const previewUrl = previewUrls[type]
+    const isUploading = uploading[type]
+    const selectedFile = selectedFiles[type]
+
+    return (
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h4 className="text-lg font-semibold text-dr7-gold">{label}</h4>
+            <p className="text-sm text-gray-400 mt-1">{description}</p>
+          </div>
+          {doc && (
+            <span className="px-3 py-1 bg-green-900/50 text-green-400 text-xs font-medium rounded">
+              Caricato
+            </span>
+          )}
+        </div>
+
+        {/* Existing Document Preview */}
+        {doc && previewUrl && (
+          <div className="mb-4 bg-gray-900 border border-gray-600 rounded-lg p-4">
+            <div className="flex gap-4">
+              {/* Preview */}
+              {isImage(doc.mime_type) ? (
+                <div className="w-32 h-32 flex-shrink-0 bg-gray-950 rounded overflow-hidden">
+                  <img
+                    src={previewUrl}
+                    alt={label}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-32 h-32 flex-shrink-0 bg-gray-950 rounded flex items-center justify-center">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-xs text-gray-500">{doc.mime_type.split('/')[1].toUpperCase()}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Document Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium truncate mb-1">{doc.file_name}</p>
+                <p className="text-xs text-gray-400 mb-2">
+                  {formatFileSize(doc.file_size)} • Caricato il{' '}
+                  {new Date(doc.uploaded_at).toLocaleDateString('it-IT', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+                <div className="flex gap-2">
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+                  >
+                    Visualizza
+                  </a>
+                  <a
+                    href={previewUrl}
+                    download={doc.file_name}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
+                  >
+                    Scarica
+                  </a>
+                  <button
+                    onClick={() => handleDelete(doc.id, doc.file_path, doc.bucket_id)}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
+                  >
+                    Elimina
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload New/Replace Document */}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              {doc ? 'Sostituisci Documento' : 'Carica Documento'}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => setSelectedFiles({ ...selectedFiles, [type]: e.target.files?.[0] || null })}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm
+                file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
+                file:text-sm file:font-semibold file:bg-dr7-gold file:text-black
+                hover:file:bg-yellow-500 file:cursor-pointer"
+              accept="image/*,.pdf"
+              disabled={isUploading}
+            />
+            {selectedFile && (
+              <p className="text-xs text-gray-400 mt-2">
+                File selezionato: {selectedFile.name} ({formatFileSize(selectedFile.size)})
+              </p>
+            )}
+          </div>
+          <Button
+            onClick={() => handleUpload(type)}
+            disabled={!selectedFile || isUploading}
+          >
+            {isUploading ? 'Caricamento...' : doc ? 'Sostituisci' : 'Carica'}
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+          <p className="text-white">Caricamento documenti...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -437,201 +364,51 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Bucket Configuration Warning */}
+          {/* Info Box */}
           <div className="bg-blue-900/30 border-2 border-blue-500 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <div className="text-blue-400 text-2xl">ℹ️</div>
               <div className="flex-1">
-                <h4 className="text-blue-300 font-semibold mb-2">Configurazione Storage</h4>
-                <div className="space-y-1 text-sm">
-                  <p className="text-white">
-                    <strong>Bucket attivo:</strong>{' '}
-                    <code className="bg-gray-800 px-2 py-0.5 rounded text-blue-300">{DOCUMENTS_BUCKET}</code>
-                  </p>
-                  <p className="text-white">
-                    <strong>Customer ID:</strong>{' '}
-                    <code className="bg-gray-800 px-2 py-0.5 rounded text-blue-300">{customerId}</code>
-                  </p>
-                  <p className="text-blue-200 text-xs mt-2">
-                    Se l'upload fallisce, controlla la console del browser (F12) per vedere i log dettagliati
-                    inclusi i bucket disponibili e lo stato di autenticazione.
-                  </p>
+                <h4 className="text-blue-300 font-semibold mb-2">Carica i Documenti del Cliente</h4>
+                <div className="space-y-1 text-sm text-blue-200">
+                  <p>Carica la patente di guida e il documento di identità (carta d'identità o passaporto) del cliente.</p>
+                  <p className="text-xs mt-2 text-blue-300">Formati supportati: JPG, PNG, PDF • Massimo 50MB per file</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Upload Section */}
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-            <h4 className="text-lg font-semibold text-dr7-gold mb-4">Carica Nuovo Documento</h4>
-
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Seleziona File
-                </label>
-                <input
-                  type="file"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm
-                    file:mr-4 file:py-2 file:px-4 file:rounded file:border-0
-                    file:text-sm file:font-semibold file:bg-dr7-gold file:text-black
-                    hover:file:bg-yellow-500 file:cursor-pointer"
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip"
-                  disabled={uploading}
-                />
-                {selectedFile && (
-                  <p className="text-xs text-gray-400 mt-2">
-                    File selezionato: {selectedFile.name} ({formatFileSize(selectedFile.size)})
-                  </p>
-                )}
-              </div>
-              <Button
-                onClick={handleUpload}
-                disabled={!selectedFile || uploading}
-              >
-                {uploading ? 'Caricamento...' : 'Carica'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Auto Debug Warning Banner */}
-          {autoDebugInfo && uploadCount > 0 && documents.length === 0 && (
-            <div className="bg-red-900/50 border border-red-600 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="text-red-400 text-2xl mt-1">!</div>
-                <div className="flex-1">
-                  <h5 className="text-lg font-semibold text-red-300 mb-2">Problema Rilevato</h5>
-                  <p className="text-sm text-red-200 mb-3">
-                    Hai caricato {uploadCount} file ma non sono visibili nella lista.
-                  </p>
-                  <pre className="bg-black/30 p-3 rounded text-xs text-white whitespace-pre-wrap overflow-auto max-h-60 mb-3">
-                    {autoDebugInfo}
-                  </pre>
-                  <button
-                    onClick={debugListAllFiles}
-                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
-                  >
-                    Esegui Debug Completo
-                  </button>
-                </div>
-              </div>
-            </div>
+          {/* Driver's License Section */}
+          {renderDocumentSection(
+            'drivers_license',
+            'Patente di Guida',
+            'Carica la patente di guida del cliente'
           )}
 
-          {/* Documents List */}
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-dr7-gold">
-                Documenti Caricati ({documents.length})
-              </h4>
-              <button
-                onClick={loadDocuments}
-                disabled={loading}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Caricamento...' : 'Ricarica'}
-              </button>
-            </div>
+          {/* Identity Document Section */}
+          {renderDocumentSection(
+            'identity_document',
+            'Documento di Identità',
+            'Carica carta d\'identità o passaporto del cliente'
+          )}
 
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-                <p className="text-gray-400 text-sm">Caricamento...</p>
-              </div>
-            ) : documents.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>Nessun documento caricato</p>
-                <p className="text-sm mt-2">Carica il primo documento usando il form sopra</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {documents.map((doc) => (
-                  <div
-                    key={doc.name}
-                    className="flex items-center justify-between p-3 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-2xl">{getFileIcon(doc.name)}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate">{doc.name}</p>
-                        <p className="text-xs text-gray-400">
-                          {formatFileSize(doc.size)} • {new Date(doc.created_at).toLocaleDateString('it-IT', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {doc.url && (
-                        <>
-                          <a
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
-                          >
-                            Visualizza
-                          </a>
-                          <a
-                            href={doc.url}
-                            download={doc.name}
-                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
-                          >
-                            Scarica
-                          </a>
-                        </>
-                      )}
-                      <button
-                        onClick={() => handleDelete(doc.name)}
-                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
-                      >
-                        Elimina
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Storage Info & Debug */}
+          {/* Storage Info */}
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <h5 className="text-sm font-semibold text-white mb-2">Informazioni Storage</h5>
             <div className="space-y-1">
               <p className="text-xs text-gray-400">
-                <strong>Bucket:</strong> <code className="bg-gray-700 px-2 py-0.5 rounded">{DOCUMENTS_BUCKET}</code>
+                <strong>Buckets:</strong> <code className="bg-gray-700 px-2 py-0.5 rounded mr-1">{DRIVERS_LICENSE_BUCKET}</code>
+                <code className="bg-gray-700 px-2 py-0.5 rounded">{IDENTITY_DOCS_BUCKET}</code>
               </p>
               <p className="text-xs text-gray-400">
                 <strong>Path:</strong> <code className="bg-gray-700 px-2 py-0.5 rounded">{customerId}/</code>
               </p>
               <p className="text-xs text-gray-400">
-                <strong>Formati supportati:</strong> PDF, Immagini (JPG, PNG, GIF), Word, Excel, ZIP
+                <strong>Formati supportati:</strong> Immagini (JPG, PNG), PDF
               </p>
               <p className="text-xs text-gray-400">
-                <strong>Accesso:</strong> Solo utenti autenticati
+                <strong>Documenti caricati:</strong> {documents.length}/2
               </p>
-            </div>
-            <div className="mt-3 pt-3 border-t border-gray-700">
-              <p className="text-xs text-amber-400 mb-2">
-                <strong>Problemi?</strong> Apri la console del browser (F12) per vedere i log dettagliati dell'upload e del caricamento documenti.
-              </p>
-              <button
-                onClick={debugListAllFiles}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors"
-              >
-                DEBUG: Mostra tutti i file nel bucket
-              </button>
-              {debugInfo && (
-                <pre className="mt-2 p-2 bg-gray-700 rounded text-xs text-white overflow-auto max-h-40">
-                  {debugInfo}
-                </pre>
-              )}
             </div>
           </div>
         </div>
