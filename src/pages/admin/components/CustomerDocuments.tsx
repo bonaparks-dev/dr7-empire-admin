@@ -23,6 +23,7 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
   useEffect(() => {
     loadDocuments()
@@ -46,22 +47,29 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
       console.log('[LOAD] List result - error:', error)
 
       if (error) {
-        console.error('Error listing documents:', error)
+        console.error('[ERROR] Listing documents failed:', error)
         alert(`ERRORE nel caricamento documenti:\n\n${error.message}\n\nDettagli: ${JSON.stringify(error, null, 2)}`)
         throw error
       }
 
-      if (!files || files.length === 0) {
+      // Filter out folder placeholders and system files
+      const actualFiles = (files || []).filter(file =>
+        file.name &&
+        !file.name.includes('.emptyFolderPlaceholder') &&
+        file.id !== null
+      )
+
+      console.log(`[LOAD] Raw files: ${files?.length || 0}, Actual files after filter: ${actualFiles.length}`)
+
+      if (actualFiles.length === 0) {
         console.log('[LOAD] No documents found for customer:', customerId)
         setDocuments([])
         return
       }
 
-      console.log(`[LOAD] Found ${files.length} documents`)
-
       // Get signed URLs for each document
       const documentsWithUrls = await Promise.all(
-        (files || []).map(async (file) => {
+        actualFiles.map(async (file) => {
           const filePath = `${customerId}/${file.name}`
           console.log('[LOAD] Creating signed URL for:', filePath)
 
@@ -159,6 +167,35 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
     } catch (error: any) {
       console.error('Error deleting document:', error)
       alert(`ERRORE nell'eliminazione: ${error.message}`)
+    }
+  }
+
+  async function debugListAllFiles() {
+    try {
+      console.log('[DEBUG] Listing ALL files in bucket...')
+
+      // List all files in root
+      const { data: allFiles, error } = await supabase.storage
+        .from(DOCUMENTS_BUCKET)
+        .list('', {
+          limit: 1000
+        })
+
+      console.log('[DEBUG] All files in bucket root:', allFiles)
+
+      if (error) {
+        console.error('[DEBUG] Error:', error)
+        setDebugInfo(`ERROR: ${error.message}`)
+        return
+      }
+
+      const fileInfo = allFiles?.map(f => `${f.name} (${f.id ? 'folder' : 'file'})`).join('\n') || 'No files'
+      setDebugInfo(`Total items: ${allFiles?.length || 0}\n\n${fileInfo}`)
+
+      alert(`Found ${allFiles?.length || 0} items in bucket. Check console for details.`)
+    } catch (error: any) {
+      console.error('[DEBUG] Failed:', error)
+      setDebugInfo(`ERROR: ${error.message}`)
     }
   }
 
@@ -345,9 +382,20 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
               </p>
             </div>
             <div className="mt-3 pt-3 border-t border-gray-700">
-              <p className="text-xs text-amber-400">
+              <p className="text-xs text-amber-400 mb-2">
                 <strong>Problemi?</strong> Apri la console del browser (F12) per vedere i log dettagliati dell'upload e del caricamento documenti.
               </p>
+              <button
+                onClick={debugListAllFiles}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium transition-colors"
+              >
+                DEBUG: Mostra tutti i file nel bucket
+              </button>
+              {debugInfo && (
+                <pre className="mt-2 p-2 bg-gray-700 rounded text-xs text-white overflow-auto max-h-40">
+                  {debugInfo}
+                </pre>
+              )}
             </div>
           </div>
         </div>
