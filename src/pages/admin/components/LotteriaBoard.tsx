@@ -411,16 +411,22 @@ const LotteriaBoard: React.FC = () => {
             quantity: 1
           };
 
-          // Only add payment_method if column exists in database
-          if (paymentMethod) {
-            ticketData.payment_method = paymentMethod;
+          // Try with payment_method first
+          let insertResult = await supabase
+            .from('commercial_operation_tickets')
+            .insert([{ ...ticketData, payment_method: paymentMethod }]);
+
+          // If payment_method column doesn't exist, try without it
+          if (insertResult.error && insertResult.error.code === '42703') {
+            insertResult = await supabase
+              .from('commercial_operation_tickets')
+              .insert([ticketData]);
           }
 
-          const { error } = await supabase
-            .from('commercial_operation_tickets')
-            .insert([ticketData]);
+          const { error } = insertResult;
 
           if (error) {
+            console.error(`[Lottery] Bulk sale - ticket ${ticketNumber} error:`, error);
             if (error.code === '23505') {
               failedTickets.push(ticketNumber);
             } else {
@@ -523,16 +529,25 @@ const LotteriaBoard: React.FC = () => {
         quantity: 1
       };
 
-      // Only add payment_method if column exists in database
-      if (paymentMethod) {
-        ticketData.payment_method = paymentMethod;
+      console.log('[Lottery] Attempting to insert ticket with data:', ticketData);
+
+      // Try with payment_method first
+      let insertResult = await supabase
+        .from('commercial_operation_tickets')
+        .insert([{ ...ticketData, payment_method: paymentMethod }]);
+
+      // If payment_method column doesn't exist, try without it
+      if (insertResult.error && insertResult.error.code === '42703') {
+        console.warn('[Lottery] payment_method column not found, retrying without it');
+        insertResult = await supabase
+          .from('commercial_operation_tickets')
+          .insert([ticketData]);
       }
 
-      const { error } = await supabase
-        .from('commercial_operation_tickets')
-        .insert([ticketData]);
+      const { error } = insertResult;
 
       if (error) {
+        console.error('[Lottery] Database insert error:', error);
         // Check if it's a duplicate key error (ticket was just sold)
         if (error.code === '23505') {
           alert(`Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
@@ -540,6 +555,8 @@ const LotteriaBoard: React.FC = () => {
           setSelectedTicket(null);
           return; // Stop execution here
         } else {
+          // Show detailed error to user
+          alert(`Errore nel salvare il biglietto: ${error.message}\n\nCodice: ${error.code}\n\nDettagli: ${JSON.stringify(error.details || {})}`);
           throw error;
         }
       } else {
