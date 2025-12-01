@@ -79,8 +79,8 @@ interface Booking {
 function calculateCarWashEndTime(appointmentDate: string, appointmentTime: string, priceTotal: number): string {
   // Map prices to actual durations (in hours) from the main website
   const priceToDuration: Record<number, number> = {
-    2500: 0.75,  // 25€ = 30-45 min (use 45 min = 0.75hr)
-    4900: 1.25,  // 49€ = 1-1.5 hrs (use 1.5hr)
+    2500: 1,  // 25€ 
+    4900: 2,  // 49€ 
     7500: 3,     // 75€ VIP = 3 hours
     9900: 4      // 99€ DR7 LUXURY = 4 hours
   };
