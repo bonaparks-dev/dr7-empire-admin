@@ -387,7 +387,7 @@ export default function CarWashCalendarTab() {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="text-2xl font-bold text-white mb-2">
-                    🧼 Prenotazione Lavaggio
+                    Prenotazione Lavaggio
                   </h3>
                   <p className="text-gray-400">{selectedCell.date} - {selectedCell.time}</p>
                 </div>
