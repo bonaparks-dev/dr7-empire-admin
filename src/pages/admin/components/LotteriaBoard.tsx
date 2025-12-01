@@ -234,6 +234,7 @@ const LotteriaBoard: React.FC = () => {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [pendingTicketNumbers, setPendingTicketNumbers] = useState<number[] | null>(null);
   const [isBulkSale, setIsBulkSale] = useState(false);
+  const [prefillData, setPrefillData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -783,11 +784,18 @@ const LotteriaBoard: React.FC = () => {
       {selectedTicket && selectedTicket !== -1 && (
         <ManualSaleModal
           ticketNumber={selectedTicket}
-          onClose={() => setSelectedTicket(null)}
-          onConfirm={(tickets, email, fullName, phone, paymentMethod) => handleManualSale(tickets[0], email, fullName, phone, paymentMethod)}
+          onClose={() => {
+            setSelectedTicket(null);
+            setPrefillData(null);
+          }}
+          onConfirm={(tickets, email, fullName, phone, paymentMethod) => {
+            handleManualSale(tickets[0], email, fullName, phone, paymentMethod);
+            setPrefillData(null);
+          }}
           onOpenNewClientModal={() => {
             setShowNewClientModal(true);
           }}
+          prefillData={prefillData}
         />
       )}
 
@@ -797,11 +805,16 @@ const LotteriaBoard: React.FC = () => {
           onClose={() => {
             setSelectedTicket(null);
             setSelectedTickets([]);
+            setPrefillData(null);
           }}
-          onConfirm={handleBulkManualSale}
+          onConfirm={(tickets, email, fullName, phone, paymentMethod) => {
+            handleBulkManualSale(tickets, email, fullName, phone, paymentMethod);
+            setPrefillData(null);
+          }}
           onOpenNewClientModal={() => {
             setShowNewClientModal(true);
           }}
+          prefillData={prefillData}
         />
       )}
 
@@ -835,16 +848,18 @@ const LotteriaBoard: React.FC = () => {
 
             setShowNewClientModal(false);
 
-            // Directly complete the sale with the client data
+            // Show ManualSaleModal with prefilled data to select payment method
             if (pendingTicketNumbers) {
+              setPrefillData({ email, fullName, phone });
               if (isBulkSale) {
-                await handleBulkManualSale(pendingTicketNumbers, email, fullName, phone, 'Contanti');
+                setSelectedTicket(-1);
+                setSelectedTickets(pendingTicketNumbers);
               } else {
-                await handleManualSale(pendingTicketNumbers[0], email, fullName, phone, 'Contanti');
+                setSelectedTicket(pendingTicketNumbers[0]);
               }
             }
 
-            // Reset state
+            // Reset pending state
             setPendingTicketNumbers(null);
           }
         }}
