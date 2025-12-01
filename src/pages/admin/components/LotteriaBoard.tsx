@@ -305,21 +305,27 @@ const LotteriaBoard: React.FC = () => {
 
           const uuid = generateTicketUuid(ticketNumber);
 
+          const ticketData: any = {
+            uuid: uuid,
+            ticket_number: ticketNumber,
+            email,
+            full_name: fullName,
+            customer_phone: phone,
+            payment_intent_id: `manual_bulk_${paymentMethod}_${Date.now()}_${ticketNumber}`,
+            amount_paid: pricePerTicket, // Discounted price per ticket
+            currency: 'eur',
+            purchase_date: new Date().toISOString(),
+            quantity: 1
+          };
+
+          // Only add payment_method if column exists in database
+          if (paymentMethod) {
+            ticketData.payment_method = paymentMethod;
+          }
+
           const { error } = await supabase
             .from('commercial_operation_tickets')
-            .insert([{
-              uuid: uuid,
-              ticket_number: ticketNumber,
-              email,
-              full_name: fullName,
-              customer_phone: phone,
-              payment_intent_id: `manual_bulk_${paymentMethod}_${Date.now()}_${ticketNumber}`,
-              amount_paid: pricePerTicket, // Discounted price per ticket
-              currency: 'eur',
-              purchase_date: new Date().toISOString(),
-              quantity: 1,
-              payment_method: paymentMethod
-            }]);
+            .insert([ticketData]);
 
           if (error) {
             if (error.code === '23505') {
@@ -411,21 +417,27 @@ const LotteriaBoard: React.FC = () => {
 
       const uuid = generateTicketUuid(ticketNumber);
 
+      const ticketData: any = {
+        uuid: uuid,
+        ticket_number: ticketNumber,
+        email,
+        full_name: fullName,
+        customer_phone: phone,
+        payment_intent_id: `manual_${paymentMethod}_${Date.now()}`,
+        amount_paid: 2500, // 25€ for single ticket
+        currency: 'eur',
+        purchase_date: new Date().toISOString(),
+        quantity: 1
+      };
+
+      // Only add payment_method if column exists in database
+      if (paymentMethod) {
+        ticketData.payment_method = paymentMethod;
+      }
+
       const { error } = await supabase
         .from('commercial_operation_tickets')
-        .insert([{
-          uuid: uuid,
-          ticket_number: ticketNumber,
-          email,
-          full_name: fullName,
-          customer_phone: phone,
-          payment_intent_id: `manual_${paymentMethod}_${Date.now()}`,
-          amount_paid: 2500, // 25€ for single ticket
-          currency: 'eur',
-          purchase_date: new Date().toISOString(),
-          quantity: 1,
-          payment_method: paymentMethod
-        }]);
+        .insert([ticketData]);
 
       if (error) {
         // Check if it's a duplicate key error (ticket was just sold)
