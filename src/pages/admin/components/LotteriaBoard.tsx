@@ -554,7 +554,7 @@ const LotteriaBoard: React.FC = () => {
             </button>
           </div>
           <p className="text-xs text-gray-400 mt-2">
-            💡 Cerca un cliente per vedere tutti i suoi biglietti e numeri associati
+            Cerca un cliente per vedere tutti i suoi biglietti e numeri associati
           </p>
         </div>
 
@@ -643,9 +643,9 @@ const LotteriaBoard: React.FC = () => {
             )}
             <button
               onClick={fetchSoldTickets}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-grey-700"
             >
-              🔄 Aggiorna
+               Aggiorna
             </button>
           </div>
         </div>
@@ -826,7 +826,7 @@ const LotteriaBoard: React.FC = () => {
                       onClick={() => handleCancelTicket(ticket.ticket_number, ticket.email, ticket.full_name)}
                       className="ml-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold"
                     >
-                      🗑️ Cancella
+                      Cancella
                     </button>
                   </div>
                 </div>
