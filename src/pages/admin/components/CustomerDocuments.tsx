@@ -47,6 +47,15 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
 
       console.log('[LOAD] List result - files:', files)
       console.log('[LOAD] List result - error:', error)
+      console.log('[LOAD] Number of files returned:', files?.length || 0)
+
+      // Log each file with details
+      if (files && files.length > 0) {
+        console.log('[LOAD] Files detail:')
+        files.forEach((file, index) => {
+          console.log(`  [${index}] name: "${file.name}", id: ${file.id}, size: ${file.metadata?.size}`)
+        })
+      }
 
       if (error) {
         console.error('[ERROR] Listing documents failed:', error)
@@ -54,18 +63,39 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
         throw error
       }
 
+      // Check if we got any files at all
+      if (!files || files.length === 0) {
+        console.log('[LOAD] No files returned from storage API')
+        console.log('[LOAD] This could mean:')
+        console.log('[LOAD]   1. No files uploaded yet')
+        console.log('[LOAD]   2. Files uploaded to different path')
+        console.log('[LOAD]   3. Permission issue preventing list operation')
+        setDocuments([])
+        setLoading(false)
+        return
+      }
+
       // Filter out folder placeholders and system files
-      const actualFiles = (files || []).filter(file =>
-        file.name &&
-        !file.name.includes('.emptyFolderPlaceholder') &&
-        file.id !== null
-      )
+      console.log('[LOAD] Applying filters...')
+      const actualFiles = (files || []).filter(file => {
+        const hasName = !!file.name
+        const notPlaceholder = !file.name?.includes('.emptyFolderPlaceholder')
+        const hasId = file.id !== null
+
+        if (!hasName) console.log(`[LOAD] Filtering out file with no name:`, file)
+        if (!notPlaceholder) console.log(`[LOAD] Filtering out placeholder:`, file.name)
+        if (!hasId) console.log(`[LOAD] Filtering out file with no ID:`, file.name)
+
+        return hasName && notPlaceholder && hasId
+      })
 
       console.log(`[LOAD] Raw files: ${files?.length || 0}, Actual files after filter: ${actualFiles.length}`)
 
       if (actualFiles.length === 0) {
-        console.log('[LOAD] No documents found for customer:', customerId)
+        console.log('[LOAD] No documents after filtering!')
+        console.log('[LOAD] All files were filtered out as placeholders or invalid')
         setDocuments([])
+        setLoading(false)
         return
       }
 
@@ -306,20 +336,38 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
       console.log('[DEBUG] Database query result:', dbFiles)
       console.log('[DEBUG] Database error:', dbError)
 
-      let info = `Customer ID: ${customerId}\n\n`
+      let info = `=== AUTHENTICATION ===\n`
+      info += `User ID: ${user?.id || 'NOT AUTHENTICATED'}\n`
+      info += `Email: ${user?.email || 'N/A'}\n`
+      info += `Auth Error: ${authError ? authError.message : 'None'}\n\n`
+
+      info += `=== STORAGE CONFIGURATION ===\n`
+      info += `Configured Bucket: ${DOCUMENTS_BUCKET}\n`
+      info += `Available Buckets: ${allBuckets?.map(b => b.id).join(', ') || 'None'}\n`
+      info += `Bucket Exists: ${allBuckets?.some(b => b.id === DOCUMENTS_BUCKET) ? 'YES' : 'NO'}\n\n`
+
+      info += `=== CUSTOMER DATA ===\n`
+      info += `Customer ID: ${customerId}\n`
+      info += `Path: ${customerId}/\n\n`
+
+      info += `=== FILE COUNTS ===\n`
       info += `Files in customer folder: ${customerFiles?.length || 0}\n`
       info += `Folders in bucket root: ${allFiles?.length || 0}\n`
       info += `Files in database: ${dbFiles?.length || 0}\n\n`
 
+      if (customerError) {
+        info += `\nCustomer folder error: ${customerError.message}\n`
+      }
+
       if (customerFiles && customerFiles.length > 0) {
-        info += 'Customer folder files:\n'
+        info += '\n=== CUSTOMER FOLDER FILES ===\n'
         customerFiles.forEach(f => {
           info += `- ${f.name} (${f.metadata?.size || 0} bytes)\n`
         })
       }
 
       if (dbFiles && dbFiles.length > 0) {
-        info += '\nDatabase files:\n'
+        info += '\n=== DATABASE FILES ===\n'
         dbFiles.forEach(f => {
           info += `- ${f.name}\n`
         })
@@ -327,7 +375,12 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
 
       setDebugInfo(info)
       setAutoDebugInfo(info)
-      alert(`Debug complete. Customer folder: ${customerFiles?.length || 0} files. Check console and UI for details.`)
+
+      const alertMsg = user
+        ? `Debug completato!\n\nBucket: ${DOCUMENTS_BUCKET}\nFiles nel folder cliente: ${customerFiles?.length || 0}\nUser: ${user.email}\n\nVedi console e UI per dettagli completi.`
+        : `ATTENZIONE: Non sei autenticato!\n\nFiles trovati: ${customerFiles?.length || 0}\n\nEffettua il login e riprova.`
+
+      alert(alertMsg)
     } catch (error: any) {
       console.error('[DEBUG] Failed:', error)
       setDebugInfo(`ERROR: ${error.message}`)
