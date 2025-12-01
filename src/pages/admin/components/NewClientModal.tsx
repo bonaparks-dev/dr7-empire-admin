@@ -220,7 +220,8 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
         onClientCreated(newClient.id)
       }
 
-      onClose()
+      // DON'T call onClose() here - let the parent handle closing the modal
+      // This prevents resetting state (like pendingTicketNumbers) prematurely
     } catch (error: any) {
       console.error('Failed to create client:', error)
       alert(`❌ Errore: ${error.message}`)
