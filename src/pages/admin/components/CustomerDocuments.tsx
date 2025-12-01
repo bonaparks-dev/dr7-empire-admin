@@ -24,6 +24,8 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [debugInfo, setDebugInfo] = useState<string>('')
+  const [autoDebugInfo, setAutoDebugInfo] = useState<string>('')
+  const [uploadCount, setUploadCount] = useState(0)
 
   useEffect(() => {
     loadDocuments()
@@ -108,15 +110,41 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
 
     setUploading(true)
     try {
+      // Check authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('[AUTH] Current user:', user)
+      console.log('[AUTH] Auth error:', authError)
+
+      if (!user) {
+        alert('ERRORE: Non sei autenticato. Effettua il login e riprova.')
+        setUploading(false)
+        return
+      }
+
+      // Verify bucket exists
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets()
+      console.log('[BUCKET] Available buckets:', buckets)
+      console.log('[BUCKET] Buckets error:', bucketsError)
+
+      const bucketExists = buckets?.some(b => b.id === DOCUMENTS_BUCKET)
+      if (!bucketExists) {
+        alert(`ERRORE: Il bucket "${DOCUMENTS_BUCKET}" non esiste!\n\nBuckets disponibili: ${buckets?.map(b => b.id).join(', ')}`)
+        setUploading(false)
+        return
+      }
+
       const fileExt = selectedFile.name.split('.').pop()
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `${customerId}/${fileName}`
 
       console.log('[UPLOAD] Uploading document...')
+      console.log('[UPLOAD] Authenticated user ID:', user.id)
+      console.log('[UPLOAD] Authenticated user email:', user.email)
       console.log('[UPLOAD] Bucket:', DOCUMENTS_BUCKET)
       console.log('[UPLOAD] Path:', filePath)
       console.log('[UPLOAD] File name:', selectedFile.name)
       console.log('[UPLOAD] File size:', selectedFile.size, 'bytes')
+      console.log('[UPLOAD] File type:', selectedFile.type)
 
       const { data, error: uploadError } = await supabase.storage
         .from(DOCUMENTS_BUCKET)
@@ -137,10 +165,15 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
       console.log('[UPLOAD] Upload successful! Now reloading documents...')
       alert('Documento caricato con successo!')
       setSelectedFile(null)
+      setUploadCount(prev => prev + 1)
 
       // Add a small delay before reloading to ensure file is fully written
       setTimeout(async () => {
         await loadDocuments()
+        // After reload, check if documents still don't appear
+        setTimeout(async () => {
+          await runAutoDebug()
+        }, 500)
       }, 500)
     } catch (error: any) {
       console.error('[ERROR] Error uploading document:', error)
@@ -170,9 +203,77 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
     }
   }
 
+  async function runAutoDebug() {
+    try {
+      console.log('[AUTO-DEBUG] Running automatic diagnostics...')
+
+      // Method 1: List files in customer folder
+      const { data: customerFiles, error: customerError } = await supabase.storage
+        .from(DOCUMENTS_BUCKET)
+        .list(customerId, {
+          limit: 1000
+        })
+
+      // Method 2: Query database directly
+      const { data: dbFiles, error: dbError } = await supabase
+        .from('storage.objects')
+        .select('*')
+        .eq('bucket_id', DOCUMENTS_BUCKET)
+        .ilike('name', `${customerId}%`)
+
+      console.log('[AUTO-DEBUG] Customer folder files:', customerFiles)
+      console.log('[AUTO-DEBUG] Database files:', dbFiles)
+
+      // Build diagnostic message
+      let info = ''
+      if (customerError) {
+        info = `ERRORE: Impossibile leggere i file dalla cartella del cliente.\nErrore: ${customerError.message}\n\n`
+        info += 'POSSIBILE CAUSA: Le policy di storage non permettono la lettura dei file.\n'
+        info += 'SOLUZIONE: Verifica le policy nel file FIX_DOCUMENT_UPLOAD_ISSUE.sql'
+      } else if (dbFiles && dbFiles.length > 0 && (!customerFiles || customerFiles.length === 0)) {
+        info = `PROBLEMA TROVATO!\n\n`
+        info += `File nel database: ${dbFiles.length}\n`
+        info += `File visibili tramite API: ${customerFiles?.length || 0}\n\n`
+        info += 'I file esistono nel database ma non sono accessibili tramite Storage API.\n'
+        info += 'CAUSA: Le policy di SELECT su storage.objects non sono configurate correttamente.\n\n'
+        info += 'File trovati nel database:\n'
+        dbFiles.forEach(f => {
+          info += `- ${f.name}\n`
+        })
+      } else if (customerFiles && customerFiles.length > 0) {
+        info = `File trovati: ${customerFiles.length}\n\n`
+        customerFiles.forEach(f => {
+          const filtered = !f.name || f.name.includes('.emptyFolderPlaceholder') || f.id === null
+          info += `- ${f.name} ${filtered ? '(FILTRATO - non sara mostrato)' : '(OK)'}\n`
+        })
+      }
+
+      setAutoDebugInfo(info)
+    } catch (error: any) {
+      console.error('[AUTO-DEBUG] Failed:', error)
+      setAutoDebugInfo(`ERRORE AUTO-DEBUG: ${error.message}`)
+    }
+  }
+
   async function debugListAllFiles() {
     try {
-      console.log('[DEBUG] Listing ALL files in bucket...')
+      console.log('[DEBUG] =======================================')
+      console.log('[DEBUG] STARTING COMPREHENSIVE DEBUG')
+      console.log('[DEBUG] =======================================')
+
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      console.log('[DEBUG] Current user:', user)
+      console.log('[DEBUG] User ID:', user?.id)
+      console.log('[DEBUG] User email:', user?.email)
+      console.log('[DEBUG] Auth error:', authError)
+
+      // List all available buckets
+      const { data: allBuckets, error: bucketsError } = await supabase.storage.listBuckets()
+      console.log('[DEBUG] All available buckets:', allBuckets)
+      console.log('[DEBUG] Buckets error:', bucketsError)
+
+      console.log('[DEBUG] Configured bucket:', DOCUMENTS_BUCKET)
       console.log('[DEBUG] Customer ID:', customerId)
 
       // Method 1: List files in customer folder
@@ -225,6 +326,7 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
       }
 
       setDebugInfo(info)
+      setAutoDebugInfo(info)
       alert(`Debug complete. Customer folder: ${customerFiles?.length || 0} files. Check console and UI for details.`)
     } catch (error: any) {
       console.error('[DEBUG] Failed:', error)
@@ -282,6 +384,30 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Bucket Configuration Warning */}
+          <div className="bg-blue-900/30 border-2 border-blue-500 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="text-blue-400 text-2xl">ℹ️</div>
+              <div className="flex-1">
+                <h4 className="text-blue-300 font-semibold mb-2">Configurazione Storage</h4>
+                <div className="space-y-1 text-sm">
+                  <p className="text-white">
+                    <strong>Bucket attivo:</strong>{' '}
+                    <code className="bg-gray-800 px-2 py-0.5 rounded text-blue-300">{DOCUMENTS_BUCKET}</code>
+                  </p>
+                  <p className="text-white">
+                    <strong>Customer ID:</strong>{' '}
+                    <code className="bg-gray-800 px-2 py-0.5 rounded text-blue-300">{customerId}</code>
+                  </p>
+                  <p className="text-blue-200 text-xs mt-2">
+                    Se l'upload fallisce, controlla la console del browser (F12) per vedere i log dettagliati
+                    inclusi i bucket disponibili e lo stato di autenticazione.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Upload Section */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
             <h4 className="text-lg font-semibold text-dr7-gold mb-4">Carica Nuovo Documento</h4>
@@ -315,6 +441,30 @@ export default function CustomerDocuments({ customerId, customerName, onClose }:
               </Button>
             </div>
           </div>
+
+          {/* Auto Debug Warning Banner */}
+          {autoDebugInfo && uploadCount > 0 && documents.length === 0 && (
+            <div className="bg-red-900/50 border border-red-600 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="text-red-400 text-2xl mt-1">!</div>
+                <div className="flex-1">
+                  <h5 className="text-lg font-semibold text-red-300 mb-2">Problema Rilevato</h5>
+                  <p className="text-sm text-red-200 mb-3">
+                    Hai caricato {uploadCount} file ma non sono visibili nella lista.
+                  </p>
+                  <pre className="bg-black/30 p-3 rounded text-xs text-white whitespace-pre-wrap overflow-auto max-h-60 mb-3">
+                    {autoDebugInfo}
+                  </pre>
+                  <button
+                    onClick={debugListAllFiles}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
+                  >
+                    Esegui Debug Completo
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Documents List */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
