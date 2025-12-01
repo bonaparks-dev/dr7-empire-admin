@@ -58,6 +58,98 @@ interface Ticket {
   payment_intent_id: string;
 }
 
+// Simple Payment Method Selection Modal
+interface PaymentMethodModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (paymentMethod: string) => void;
+  ticketCount: number;
+}
+
+const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({ isOpen, onClose, onConfirm, ticketCount }) => {
+  const [paymentMethod, setPaymentMethod] = useState('Contanti');
+
+  // Calculate discounted price
+  const calculateTotalPrice = (qty: number): number => {
+    if (qty < 10) return qty * 25;
+    else if (qty >= 10 && qty < 100) return qty * 22;
+    else if (qty === 100) return 1999;
+    else return qty * 20;
+  };
+
+  const totalPrice = calculateTotalPrice(ticketCount);
+  const originalPrice = ticketCount * 25;
+  const discount = originalPrice - totalPrice;
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-96">
+        <h3 className="text-xl font-bold mb-4">
+          Seleziona Metodo di Pagamento
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+          {ticketCount} bigliett{ticketCount > 1 ? 'i' : 'o'}
+        </p>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Metodo di Pagamento</label>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            className="w-full border rounded px-3 py-2"
+            required
+          >
+            <option value="Contanti">Contanti</option>
+            <option value="Carta di Credito / bancomat">Carta di Credito / bancomat</option>
+            <option value="Bonifico">Bonifico</option>
+            <option value="Paypal">Paypal</option>
+            <option value="Stripe">Stripe</option>
+          </select>
+        </div>
+
+        {discount > 0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded">
+            <p className="text-sm font-semibold text-yellow-800 mb-1">Sconto applicato!</p>
+            <p className="text-xs text-yellow-700">
+              Prezzo originale: €{originalPrice.toFixed(2)}
+            </p>
+            <p className="text-xs text-yellow-700">
+              Sconto: -€{discount.toFixed(2)}
+            </p>
+            <p className="text-sm font-bold text-yellow-900 mt-1">
+              Totale: €{totalPrice.toFixed(2)}
+            </p>
+          </div>
+        )}
+        {discount === 0 && (
+          <div className="mb-4 p-3 bg-gray-100 rounded">
+            <p className="text-sm font-bold text-gray-900">
+              Totale: €{totalPrice.toFixed(2)}
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={() => onConfirm(paymentMethod)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Conferma Vendita
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface ManualSaleModalProps {
   ticketNumber?: number;
   ticketNumbers?: number[];
@@ -235,6 +327,8 @@ const LotteriaBoard: React.FC = () => {
   const [pendingTicketNumbers, setPendingTicketNumbers] = useState<number[] | null>(null);
   const [isBulkSale, setIsBulkSale] = useState(false);
   const [prefillData, setPrefillData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingClientData, setPendingClientData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
 
   const fetchSoldTickets = async () => {
     try {
@@ -818,6 +912,44 @@ const LotteriaBoard: React.FC = () => {
         />
       )}
 
+      <PaymentMethodModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setPendingTicketNumbers(null);
+          setPendingClientData(null);
+        }}
+        onConfirm={async (paymentMethod) => {
+          setShowPaymentModal(false);
+
+          // Complete the sale with the selected payment method
+          if (pendingTicketNumbers && pendingClientData) {
+            if (isBulkSale) {
+              await handleBulkManualSale(
+                pendingTicketNumbers,
+                pendingClientData.email,
+                pendingClientData.fullName,
+                pendingClientData.phone,
+                paymentMethod
+              );
+            } else {
+              await handleManualSale(
+                pendingTicketNumbers[0],
+                pendingClientData.email,
+                pendingClientData.fullName,
+                pendingClientData.phone,
+                paymentMethod
+              );
+            }
+          }
+
+          // Reset state
+          setPendingTicketNumbers(null);
+          setPendingClientData(null);
+        }}
+        ticketCount={pendingTicketNumbers?.length || 1}
+      />
+
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => {
@@ -848,19 +980,9 @@ const LotteriaBoard: React.FC = () => {
 
             setShowNewClientModal(false);
 
-            // Show ManualSaleModal with prefilled data to select payment method
-            if (pendingTicketNumbers) {
-              setPrefillData({ email, fullName, phone });
-              if (isBulkSale) {
-                setSelectedTicket(-1);
-                setSelectedTickets(pendingTicketNumbers);
-              } else {
-                setSelectedTicket(pendingTicketNumbers[0]);
-              }
-            }
-
-            // Reset pending state
-            setPendingTicketNumbers(null);
+            // Store client data and show payment method modal
+            setPendingClientData({ email, fullName, phone });
+            setShowPaymentModal(true);
           }
         }}
       />
