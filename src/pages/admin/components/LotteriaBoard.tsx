@@ -935,27 +935,43 @@ const LotteriaBoard: React.FC = () => {
           setPendingClientData(null);
         }}
         onConfirm={async (paymentMethod) => {
+          console.log('[PaymentModal] Confirm clicked with payment method:', paymentMethod);
+          console.log('[PaymentModal] Pending tickets:', pendingTicketNumbers);
+          console.log('[PaymentModal] Client data:', pendingClientData);
+          console.log('[PaymentModal] Is bulk sale:', isBulkSale);
+
           setShowPaymentModal(false);
 
           // Complete the sale with the selected payment method
           if (pendingTicketNumbers && pendingClientData) {
-            if (isBulkSale) {
-              await handleBulkManualSale(
-                pendingTicketNumbers,
-                pendingClientData.email,
-                pendingClientData.fullName,
-                pendingClientData.phone,
-                paymentMethod
-              );
-            } else {
-              await handleManualSale(
-                pendingTicketNumbers[0],
-                pendingClientData.email,
-                pendingClientData.fullName,
-                pendingClientData.phone,
-                paymentMethod
-              );
+            try {
+              if (isBulkSale) {
+                console.log('[PaymentModal] Calling handleBulkManualSale...');
+                await handleBulkManualSale(
+                  pendingTicketNumbers,
+                  pendingClientData.email,
+                  pendingClientData.fullName,
+                  pendingClientData.phone,
+                  paymentMethod
+                );
+              } else {
+                console.log('[PaymentModal] Calling handleManualSale...');
+                await handleManualSale(
+                  pendingTicketNumbers[0],
+                  pendingClientData.email,
+                  pendingClientData.fullName,
+                  pendingClientData.phone,
+                  paymentMethod
+                );
+              }
+              console.log('[PaymentModal] Sale completed successfully');
+            } catch (error) {
+              console.error('[PaymentModal] Error during sale:', error);
+              alert(`Errore durante la vendita: ${error}`);
             }
+          } else {
+            console.error('[PaymentModal] Missing data - tickets:', pendingTicketNumbers, 'client:', pendingClientData);
+            alert('Errore: dati mancanti per completare la vendita');
           }
 
           // Reset state
