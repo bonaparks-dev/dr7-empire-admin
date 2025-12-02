@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../supabaseClient';
 import { useAdminRole } from '../../../hooks/useAdminRole';
 import NewClientModal from './NewClientModal';
@@ -186,7 +186,6 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
     const loadCustomers = async () => {
       console.log('[ManualSaleModal] Loading customers from all sources...');
 
-      const allCustomers: Customer[] = [];
       const customerMap = new Map<string, Customer>();
 
       // 1. Load from bookings table
@@ -520,6 +519,7 @@ const LotteriaBoard: React.FC = () => {
   const [prefillData, setPrefillData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingClientData, setPendingClientData] = useState<{ email: string; fullName: string; phone: string } | null>(null);
+  const isCreatingClient = useRef(false);
 
   const fetchSoldTickets = async () => {
     try {
@@ -1225,17 +1225,16 @@ const LotteriaBoard: React.FC = () => {
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => {
-          console.log('[NewClientModal] onClose called - checking if should reset state');
-          console.log('[NewClientModal] pendingClientData:', pendingClientData);
+          console.log('[NewClientModal] onClose called');
+          console.log('[NewClientModal] isCreatingClient.current:', isCreatingClient.current);
           setShowNewClientModal(false);
-          // Only reset state if user cancelled
-          // Don't reset if pendingClientData exists OR if it's the loading marker
-          if (!pendingClientData || (pendingClientData.email !== '_LOADING_' && !pendingClientData.email)) {
+          // Only reset state if user cancelled (not in the middle of creating a client)
+          if (!isCreatingClient.current) {
             console.log('[NewClientModal] User cancelled, resetting state');
             setPendingTicketNumbers(null);
             setPendingClientData(null);
           } else {
-            console.log('[NewClientModal] Client creation in progress or completed, keeping state');
+            console.log('[NewClientModal] Client creation in progress, keeping state');
           }
         }}
         onClientCreated={async (clientId) => {
@@ -1244,9 +1243,8 @@ const LotteriaBoard: React.FC = () => {
           console.log('[NewClientModal] pendingTicketNumbers:', pendingTicketNumbers);
           console.log('[NewClientModal] isBulkSale:', isBulkSale);
 
-          // Set a flag to prevent onClose from resetting state
-          // We'll use a temporary marker value in pendingClientData
-          setPendingClientData({ email: '_LOADING_', fullName: '_LOADING_', phone: '_LOADING_' });
+          // Set flag to prevent onClose from resetting state
+          isCreatingClient.current = true;
 
           try {
             // Fetch the client data
@@ -1259,6 +1257,7 @@ const LotteriaBoard: React.FC = () => {
             if (error) {
               console.error('[NewClientModal] Error fetching client data:', error);
               alert(`Errore nel recuperare i dati del cliente: ${error.message}`);
+              isCreatingClient.current = false;
               setPendingClientData(null);
               return;
             }
@@ -1284,6 +1283,7 @@ const LotteriaBoard: React.FC = () => {
               if (!pendingTicketNumbers || pendingTicketNumbers.length === 0) {
                 console.error('[NewClientModal] ERROR: pendingTicketNumbers is empty!');
                 alert('Errore: nessun biglietto selezionato. Riprova.');
+                isCreatingClient.current = false;
                 setShowNewClientModal(false);
                 setPendingClientData(null);
                 return;
@@ -1292,8 +1292,11 @@ const LotteriaBoard: React.FC = () => {
               // Store the actual client data
               setPendingClientData({ email, fullName, phone });
 
-              // Close NewClientModal - onClose will NOT reset because pendingClientData will be set
+              // Close NewClientModal - onClose will NOT reset because isCreatingClient is true
               setShowNewClientModal(false);
+
+              // Reset flag after modal closes
+              isCreatingClient.current = false;
 
               // Open PaymentModal immediately after closing
               // Use setTimeout to ensure modal transition completes
@@ -1304,6 +1307,7 @@ const LotteriaBoard: React.FC = () => {
             }
           } catch (err) {
             console.error('[NewClientModal] Unexpected error:', err);
+            isCreatingClient.current = false;
             setPendingClientData(null);
           }
         }}
