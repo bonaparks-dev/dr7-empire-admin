@@ -143,6 +143,9 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
         newErrors.codice_fiscale = 'Codice Fiscale non valido (16 caratteri)'
       }
       if (!formData.indirizzo) newErrors.indirizzo = 'Indirizzo obbligatorio'
+      if (!formData.citta_residenza) newErrors.citta_residenza = 'Città obbligatoria'
+      if (!formData.codice_postale) newErrors.codice_postale = 'CAP obbligatorio'
+      if (!formData.provincia_residenza) newErrors.provincia_residenza = 'Provincia obbligatoria'
     }
 
     if (formData.tipo_cliente === 'azienda') {
@@ -294,7 +297,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
 
     // Check type-specific fields
     if (formData.tipo_cliente === 'persona_fisica') {
-      return !formData.nome || !formData.cognome || !formData.codice_fiscale || !formData.indirizzo
+      return !formData.nome || !formData.cognome || !formData.codice_fiscale || !formData.indirizzo || !formData.citta_residenza || !formData.codice_postale || !formData.provincia_residenza
     }
     if (formData.tipo_cliente === 'azienda') {
       return !formData.denominazione || !formData.partita_iva || !formData.indirizzo_azienda
@@ -470,7 +473,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Città di Residenza
+                    Città di Residenza *
                   </label>
                   <input
                     type="text"
@@ -479,10 +482,11 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Milano"
                   />
+                  {errors.citta_residenza && <p className="text-red-500 text-xs mt-1">{errors.citta_residenza}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CAP
+                    CAP *
                   </label>
                   <input
                     type="text"
@@ -492,10 +496,11 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="20100"
                   />
+                  {errors.codice_postale && <p className="text-red-500 text-xs mt-1">{errors.codice_postale}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Provincia
+                    Provincia *
                   </label>
                   <input
                     type="text"
@@ -505,6 +510,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
                     placeholder="MI"
                   />
+                  {errors.provincia_residenza && <p className="text-red-500 text-xs mt-1">{errors.provincia_residenza}</p>}
                 </div>
               </div>
 
