@@ -56,11 +56,13 @@ export default function CustomersTab() {
   const [viewingDocuments, setViewingDocuments] = useState<Customer | null>(null)
   const [documentsUrls, setDocumentsUrls] = useState<{
     licenses: Array<{ url: string; fileName: string }>;
-    ids: Array<{ url: string; fileName: string }>
-  }>({ licenses: [], ids: [] })
+    ids: Array<{ url: string; fileName: string }>;
+    codiceFiscale: Array<{ url: string; fileName: string }>
+  }>({ licenses: [], ids: [], codiceFiscale: [] })
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingId, setUploadingId] = useState(false)
+  const [uploadingCodiceFiscale, setUploadingCodiceFiscale] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showNewClientModal, setShowNewClientModal] = useState(false)
   const [viewingCustomerDetails, setViewingCustomerDetails] = useState<Customer | null>(null)
@@ -393,7 +395,7 @@ export default function CustomersTab() {
 
   async function fetchCustomerDocuments(userId: string) {
     setLoadingDocuments(true)
-    setDocumentsUrls({ licenses: [], ids: [] })
+    setDocumentsUrls({ licenses: [], ids: [], codiceFiscale: [] })
 
     try {
       // List files in driver-licenses bucket for this user
@@ -414,15 +416,27 @@ export default function CustomersTab() {
         console.error('Error listing ID files:', idError)
       }
 
+      // List files in codice-fiscale bucket for this user
+      const { data: codiceFiscaleFiles, error: codiceFiscaleError } = await supabase.storage
+        .from('codice-fiscale')
+        .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
+
+      if (codiceFiscaleError) {
+        console.error('Error listing Codice Fiscale files:', codiceFiscaleError)
+      }
+
       const licenseUrls: Array<{ url: string; fileName: string }> = []
       const idUrls: Array<{ url: string; fileName: string }> = []
+      const codiceFiscaleUrls: Array<{ url: string; fileName: string }> = []
 
       // Filter out folders and empty placeholders, get only actual files
       const actualLicenseFiles = licenseFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
       const actualIdFiles = idFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
+      const actualCodiceFiscaleFiles = codiceFiscaleFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
 
       console.log('License files found:', actualLicenseFiles.length, actualLicenseFiles)
       console.log('ID files found:', actualIdFiles.length, actualIdFiles)
+      console.log('Codice Fiscale files found:', actualCodiceFiscaleFiles.length, actualCodiceFiscaleFiles)
 
       // Get signed URLs for ALL driver licenses
       for (const licenseFile of actualLicenseFiles) {
@@ -450,7 +464,20 @@ export default function CustomersTab() {
         }
       }
 
-      setDocumentsUrls({ licenses: licenseUrls, ids: idUrls })
+      // Get signed URLs for ALL Codice Fiscale documents
+      for (const cfFile of actualCodiceFiscaleFiles) {
+        const { data: signedCF, error: signError } = await supabase.storage
+          .from('codice-fiscale')
+          .createSignedUrl(`${userId}/${cfFile.name}`, 3600) // 1 hour expiry
+
+        if (signError) {
+          console.error('Error creating signed URL for Codice Fiscale:', signError)
+        } else if (signedCF?.signedUrl) {
+          codiceFiscaleUrls.push({ url: signedCF.signedUrl, fileName: cfFile.name })
+        }
+      }
+
+      setDocumentsUrls({ licenses: licenseUrls, ids: idUrls, codiceFiscale: codiceFiscaleUrls })
     } catch (error) {
       console.error('Error fetching documents:', error)
     } finally {
@@ -557,6 +584,54 @@ export default function CustomersTab() {
       await fetchCustomerDocuments(userId)
     } catch (error: any) {
       console.error('Error deleting ID:', error)
+      alert('❌ Errore nell\'eliminazione: ' + (error.message || JSON.stringify(error)))
+    }
+  }
+
+  async function handleUploadCodiceFiscale(file: File, userId: string) {
+    if (!file) return
+
+    setUploadingCodiceFiscale(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `${userId}/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('codice-fiscale')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) throw uploadError
+
+      alert('Codice Fiscale caricato con successo!')
+      await fetchCustomerDocuments(userId)
+    } catch (error: any) {
+      console.error('Error uploading Codice Fiscale:', error)
+      alert('Errore nel caricamento del Codice Fiscale: ' + (error.message || JSON.stringify(error)))
+    } finally {
+      setUploadingCodiceFiscale(false)
+    }
+  }
+
+  async function handleDeleteCodiceFiscale(fileName: string, userId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo documento?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase.storage
+        .from('codice-fiscale')
+        .remove([`${userId}/${fileName}`])
+
+      if (error) throw error
+
+      alert('✅ Documento eliminato con successo!')
+      await fetchCustomerDocuments(userId)
+    } catch (error: any) {
+      console.error('Error deleting Codice Fiscale:', error)
       alert('❌ Errore nell\'eliminazione: ' + (error.message || JSON.stringify(error)))
     }
   }
@@ -1021,6 +1096,84 @@ export default function CustomersTab() {
                           {documentsUrls.ids.length < 2 && (
                             <p className="text-xs text-yellow-400 mt-2 text-center">
                               ⚠️ Ricorda di caricare entrambi i lati del documento (fronte e retro)
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Codice Fiscale */}
+                    <div className="border border-gray-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-300">
+                          📋 Codice Fiscale ({documentsUrls.codiceFiscale.length}/2)
+                        </span>
+                      </div>
+                      {documentsUrls.codiceFiscale.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                          {documentsUrls.codiceFiscale.map((doc, index) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-400">
+                                  {index === 0 ? 'Fronte' : index === 1 ? 'Retro' : `Documento ${index + 1}`}
+                                </span>
+                                <div className="flex gap-2">
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                  >
+                                    👁️ Apri
+                                  </a>
+                                  <button
+                                    onClick={() => viewingDocuments?.id && handleDeleteCodiceFiscale(doc.fileName, viewingDocuments.id)}
+                                    className="text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    🗑️ Elimina
+                                  </button>
+                                </div>
+                              </div>
+                              <img
+                                src={doc.url}
+                                alt={`Codice Fiscale - ${index === 0 ? 'Fronte' : 'Retro'}`}
+                                className="w-full rounded border border-gray-600"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic mb-3">Nessun documento caricato</p>
+                      )}
+                      {/* Upload Section */}
+                      {viewingDocuments.id && viewingDocuments.id.length > 10 && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <label className="block">
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file && viewingDocuments.id) {
+                                  handleUploadCodiceFiscale(file, viewingDocuments.id)
+                                  e.target.value = '' // Reset input to allow same file again
+                                }
+                              }}
+                              className="hidden"
+                              disabled={uploadingCodiceFiscale}
+                              id="codice-fiscale-upload"
+                            />
+                            <span className={`inline-block px-4 py-2 rounded text-sm font-medium text-center w-full cursor-pointer ${
+                              uploadingCodiceFiscale
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-dr7-gold text-black hover:bg-dr7-gold/90'
+                            }`}>
+                              {uploadingCodiceFiscale ? 'Caricamento...' : documentsUrls.codiceFiscale.length === 0 ? '📤 Carica Fronte Codice Fiscale' : documentsUrls.codiceFiscale.length === 1 ? '📤 Carica Retro Codice Fiscale' : '📤 Carica Altro Documento'}
+                            </span>
+                          </label>
+                          {documentsUrls.codiceFiscale.length < 2 && (
+                            <p className="text-xs text-yellow-400 mt-2 text-center">
+                              ⚠️ Ricorda di caricare entrambi i lati del Codice Fiscale (fronte e retro)
                             </p>
                           )}
                         </div>
