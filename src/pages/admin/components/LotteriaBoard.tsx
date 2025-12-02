@@ -187,16 +187,19 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
       console.log('[ManualSaleModal] Loading customers from customers_extended...');
       const { data, error } = await supabase
         .from('customers_extended')
-        .select('id, email, tipo_cliente, nome, cognome, ragione_sociale, ente_ufficio, telefono')
+        .select('*')
         .order('email', { ascending: true });
 
       if (error) {
         console.error('[ManualSaleModal] Error loading customers:', error);
+        alert(`Errore nel caricamento clienti: ${error.message}`);
       } else if (data) {
         console.log('[ManualSaleModal] Loaded customers:', data.length);
         console.log('[ManualSaleModal] Sample customer:', data[0]);
         setCustomers(data);
         setFilteredCustomers(data);
+      } else {
+        console.log('[ManualSaleModal] No customers found');
       }
     };
     loadCustomers();
