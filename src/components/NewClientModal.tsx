@@ -24,6 +24,7 @@ interface ClientFormData {
   luogo_nascita: string
   indirizzo: string
   numero_civico: string
+  codice_postale: string
   citta_residenza: string
   provincia_residenza: string
   pec_persona: string
@@ -60,6 +61,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
     luogo_nascita: '',
     indirizzo: '',
     numero_civico: '',
+    codice_postale: '',
     citta_residenza: '',
     provincia_residenza: '',
     pec_persona: '',
@@ -200,6 +202,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
         if (formData.luogo_nascita) customerData.luogo_nascita = formData.luogo_nascita
         customerData.indirizzo = formData.indirizzo
         if (formData.numero_civico) customerData.numero_civico = formData.numero_civico
+        if (formData.codice_postale) customerData.codice_postale = formData.codice_postale
         if (formData.citta_residenza) customerData.citta_residenza = formData.citta_residenza
         if (formData.provincia_residenza) customerData.provincia_residenza = formData.provincia_residenza
         if (formData.pec_persona) customerData.pec = formData.pec_persona
@@ -261,6 +264,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
       luogo_nascita: '',
       indirizzo: '',
       numero_civico: '',
+      codice_postale: '',
       citta_residenza: '',
       provincia_residenza: '',
       pec_persona: '',
@@ -463,7 +467,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Città di Residenza
@@ -478,7 +482,20 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Provincia di Residenza
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.codice_postale}
+                    onChange={(e) => setFormData({ ...formData, codice_postale: e.target.value })}
+                    maxLength={5}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="20100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Provincia
                   </label>
                   <input
                     type="text"
