@@ -164,7 +164,7 @@ interface Customer {
   nome?: string;
   cognome?: string;
   ragione_sociale?: string;
-  ente_o_ufficio?: string;
+  ente_ufficio?: string;
   telefono?: string;
 }
 
@@ -187,7 +187,7 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
       console.log('[ManualSaleModal] Loading customers from customers_extended...');
       const { data, error } = await supabase
         .from('customers_extended')
-        .select('id, email, tipo_cliente, nome, cognome, ragione_sociale, ente_o_ufficio, telefono')
+        .select('id, email, tipo_cliente, nome, cognome, ragione_sociale, ente_ufficio, telefono')
         .order('email', { ascending: true });
 
       if (error) {
@@ -214,7 +214,7 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
         (c.nome && c.nome.toLowerCase().includes(search)) ||
         (c.cognome && c.cognome.toLowerCase().includes(search)) ||
         (c.ragione_sociale && c.ragione_sociale.toLowerCase().includes(search)) ||
-        (c.ente_o_ufficio && c.ente_o_ufficio.toLowerCase().includes(search))
+        (c.ente_ufficio && c.ente_ufficio.toLowerCase().includes(search))
       );
       console.log('[ManualSaleModal] Filtered results:', filtered.length);
       setFilteredCustomers(filtered);
@@ -247,7 +247,7 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
     } else if (customer.tipo_cliente === 'azienda') {
       setFullName(customer.ragione_sociale || '');
     } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
-      setFullName(customer.ente_o_ufficio || '');
+      setFullName(customer.ente_ufficio || '');
     }
 
     setShowClientSelector(false);
@@ -320,7 +320,7 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
                     } else if (customer.tipo_cliente === 'azienda') {
                       displayName = customer.ragione_sociale || customer.email;
                     } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
-                      displayName = customer.ente_o_ufficio || customer.email;
+                      displayName = customer.ente_ufficio || customer.email;
                     }
 
                     return (
@@ -1220,7 +1220,7 @@ const LotteriaBoard: React.FC = () => {
               } else if (data.tipo_cliente === 'azienda') {
                 fullName = data.ragione_sociale || '';
               } else if (data.tipo_cliente === 'pubblica_amministrazione') {
-                fullName = data.ente_o_ufficio || '';
+                fullName = data.ente_ufficio || '';
               }
 
               console.log('[NewClientModal] Extracted client data:', { email, fullName, phone });
@@ -1235,15 +1235,21 @@ const LotteriaBoard: React.FC = () => {
                 return;
               }
 
-              // Store the actual client data
+              // Store the actual client data BEFORE closing modal
+              // This prevents onClose from resetting pendingTicketNumbers
               setPendingClientData({ email, fullName, phone });
+
+              // Wait for state to update
+              await new Promise(resolve => setTimeout(resolve, 50));
 
               // Close NewClientModal
               setShowNewClientModal(false);
 
-              // Open PaymentModal immediately
-              console.log('[NewClientModal] Opening PaymentMethodModal');
-              setShowPaymentModal(true);
+              // Open PaymentModal after a small delay to ensure state is preserved
+              setTimeout(() => {
+                console.log('[NewClientModal] Opening PaymentMethodModal');
+                setShowPaymentModal(true);
+              }, 100);
             }
           } catch (err) {
             console.error('[NewClientModal] Unexpected error:', err);
