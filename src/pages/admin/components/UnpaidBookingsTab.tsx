@@ -7,6 +7,12 @@ interface UnpaidBooking {
   customer_name: string
   customer_email: string
   customer_phone: string
+  customer_codice_fiscale?: string
+  customer_indirizzo?: string
+  customer_numero_civico?: string
+  customer_citta?: string
+  customer_cap?: string
+  customer_provincia?: string
   service_name?: string
   vehicle_name?: string
   appointment_date?: string
@@ -16,6 +22,7 @@ interface UnpaidBooking {
   price_total: number
   status: string
   payment_status: string
+  payment_method?: string
   created_at: string
 }
 

@@ -13,6 +13,12 @@ interface MechanicalBooking {
   customer_name: string
   customer_email: string
   customer_phone: string
+  customer_codice_fiscale?: string
+  customer_indirizzo?: string
+  customer_numero_civico?: string
+  customer_citta?: string
+  customer_cap?: string
+  customer_provincia?: string
   service_name: string
   vehicle_info: string // Customer's vehicle info
   appointment_date: string
@@ -20,6 +26,7 @@ interface MechanicalBooking {
   price_total: number
   status: string
   payment_status: string
+  payment_method?: string
   booking_details: any
   created_at: string
 }
