@@ -1226,16 +1226,16 @@ const LotteriaBoard: React.FC = () => {
         isOpen={showNewClientModal}
         onClose={() => {
           console.log('[NewClientModal] onClose called - checking if should reset state');
-          console.log('[NewClientModal] pendingClientData exists?:', !!pendingClientData);
+          console.log('[NewClientModal] pendingClientData:', pendingClientData);
           setShowNewClientModal(false);
-          // Only reset state if user cancelled (no client data was set)
-          // If client data exists, we're transitioning to PaymentModal, so keep the pending tickets
-          if (!pendingClientData) {
+          // Only reset state if user cancelled
+          // Don't reset if pendingClientData exists OR if it's the loading marker
+          if (!pendingClientData || (pendingClientData.email !== '_LOADING_' && !pendingClientData.email)) {
             console.log('[NewClientModal] User cancelled, resetting state');
             setPendingTicketNumbers(null);
             setPendingClientData(null);
           } else {
-            console.log('[NewClientModal] Client data exists, keeping pendingTicketNumbers for PaymentModal');
+            console.log('[NewClientModal] Client creation in progress or completed, keeping state');
           }
         }}
         onClientCreated={async (clientId) => {
@@ -1289,21 +1289,18 @@ const LotteriaBoard: React.FC = () => {
                 return;
               }
 
-              // Store the actual client data BEFORE closing modal
-              // This prevents onClose from resetting pendingTicketNumbers
+              // Store the actual client data
               setPendingClientData({ email, fullName, phone });
 
-              // Wait for state to update
-              await new Promise(resolve => setTimeout(resolve, 50));
-
-              // Close NewClientModal
+              // Close NewClientModal - onClose will NOT reset because pendingClientData will be set
               setShowNewClientModal(false);
 
-              // Open PaymentModal after a small delay to ensure state is preserved
+              // Open PaymentModal immediately after closing
+              // Use setTimeout to ensure modal transition completes
               setTimeout(() => {
                 console.log('[NewClientModal] Opening PaymentMethodModal');
                 setShowPaymentModal(true);
-              }, 100);
+              }, 50);
             }
           } catch (err) {
             console.error('[NewClientModal] Unexpected error:', err);
