@@ -954,10 +954,6 @@ export default function CustomersTab() {
                     <span className="text-sm text-gray-400">Telefono:</span>
                     <span className="text-sm text-white">{viewingDocuments.phone || '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-400">Numero Patente:</span>
-                    <span className="text-sm text-white">{viewingDocuments.driver_license_number || '-'}</span>
-                  </div>
                 </div>
               </div>
 

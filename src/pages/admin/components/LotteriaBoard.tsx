@@ -229,6 +229,27 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
         console.log('[ManualSaleModal] Unique customers from bookings:', customerMap.size);
       }
 
+      // Get customers from customers table
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!customersError && customersData) {
+        console.log('[ManualSaleModal] Customers from customers table:', customersData.length);
+        customersData.forEach((c: any) => {
+          const key = c.email || c.phone || c.id;
+          if (key && !customerMap.has(key)) {
+            customerMap.set(key, {
+              id: c.id,
+              full_name: c.full_name || 'Cliente',
+              email: c.email,
+              phone: c.phone
+            });
+          }
+        });
+      }
+
       // Get customers from customers_extended table
       const { data: customersExtendedData, error: customersExtendedError } = await supabase
         .from('customers_extended')
@@ -370,12 +391,6 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border rounded px-3 py-2 mb-2"
               />
-
-              {customers.length > 0 && (
-                <div className="text-xs text-gray-500 mb-2">
-                  {searchTerm ? `${filteredCustomers.length} di ${customers.length} clienti` : `${customers.length} clienti totali`}
-                </div>
-              )}
 
               <div className="border rounded max-h-60 overflow-y-auto">
                 {customers.length === 0 ? (
