@@ -184,23 +184,74 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   // Load customers on mount
   useEffect(() => {
     const loadCustomers = async () => {
-      console.log('[ManualSaleModal] Loading customers from customers_extended...');
-      const { data, error } = await supabase
+      console.log('[ManualSaleModal] Loading customers from all sources...');
+
+      const allCustomers: Customer[] = [];
+      const customerMap = new Map<string, Customer>();
+
+      // 1. Load from bookings table
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('customer_name, customer_email, customer_phone, booked_at')
+        .order('booked_at', { ascending: false });
+
+      if (bookingsError) {
+        console.error('[ManualSaleModal] Error loading from bookings:', bookingsError);
+      } else if (bookingsData) {
+        console.log('[ManualSaleModal] Found bookings:', bookingsData.length);
+        bookingsData.forEach((booking: any) => {
+          const email = booking.customer_email;
+          const phone = booking.customer_phone;
+          const key = email || phone;
+
+          if (key && !customerMap.has(key)) {
+            customerMap.set(key, {
+              id: key,
+              email: email || '',
+              tipo_cliente: 'persona_fisica',
+              nome: booking.customer_name?.split(' ')[0] || '',
+              cognome: booking.customer_name?.split(' ').slice(1).join(' ') || '',
+              telefono: phone
+            });
+          }
+        });
+      }
+
+      // 2. Load from customers_extended table (will override/merge with booking customers)
+      const { data: extendedData, error: extendedError } = await supabase
         .from('customers_extended')
         .select('*')
-        .order('email', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[ManualSaleModal] Error loading customers:', error);
-        alert(`Errore nel caricamento clienti: ${error.message}`);
-      } else if (data) {
-        console.log('[ManualSaleModal] Loaded customers:', data.length);
-        console.log('[ManualSaleModal] Sample customer:', data[0]);
-        setCustomers(data);
-        setFilteredCustomers(data);
-      } else {
-        console.log('[ManualSaleModal] No customers found');
+      if (extendedError) {
+        console.error('[ManualSaleModal] Error loading from customers_extended:', extendedError);
+      } else if (extendedData) {
+        console.log('[ManualSaleModal] Found extended customers:', extendedData.length);
+        extendedData.forEach((customer: any) => {
+          const key = customer.email || customer.telefono || customer.id;
+          // Extended customers override booking customers
+          customerMap.set(key, {
+            id: customer.id,
+            email: customer.email || '',
+            tipo_cliente: customer.tipo_cliente || 'persona_fisica',
+            nome: customer.nome,
+            cognome: customer.cognome,
+            ragione_sociale: customer.ragione_sociale,
+            ente_ufficio: customer.ente_ufficio || customer.denominazione,
+            telefono: customer.telefono
+          });
+        });
       }
+
+      const mergedCustomers = Array.from(customerMap.values());
+      console.log('[ManualSaleModal] Total merged customers:', mergedCustomers.length);
+
+      if (mergedCustomers.length === 0) {
+        alert('Nessun cliente trovato nel database. Crea un nuovo cliente prima.');
+      }
+
+      setCustomers(mergedCustomers);
+      setFilteredCustomers(mergedCustomers);
     };
     loadCustomers();
   }, []);
