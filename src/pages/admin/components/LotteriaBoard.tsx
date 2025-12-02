@@ -184,12 +184,17 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   // Load customers on mount
   useEffect(() => {
     const loadCustomers = async () => {
+      console.log('[ManualSaleModal] Loading customers from customers_extended...');
       const { data, error } = await supabase
         .from('customers_extended')
         .select('id, email, tipo_cliente, nome, cognome, ragione_sociale, ente_o_ufficio, telefono')
         .order('email', { ascending: true });
 
-      if (!error && data) {
+      if (error) {
+        console.error('[ManualSaleModal] Error loading customers:', error);
+      } else if (data) {
+        console.log('[ManualSaleModal] Loaded customers:', data.length);
+        console.log('[ManualSaleModal] Sample customer:', data[0]);
         setCustomers(data);
         setFilteredCustomers(data);
       }
@@ -203,15 +208,16 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
       setFilteredCustomers(customers);
     } else {
       const search = searchTerm.toLowerCase();
-      setFilteredCustomers(
-        customers.filter(c =>
-          c.email.toLowerCase().includes(search) ||
-          c.nome?.toLowerCase().includes(search) ||
-          c.cognome?.toLowerCase().includes(search) ||
-          c.ragione_sociale?.toLowerCase().includes(search) ||
-          c.ente_o_ufficio?.toLowerCase().includes(search)
-        )
+      console.log('[ManualSaleModal] Searching for:', search);
+      const filtered = customers.filter(c =>
+        (c.email && c.email.toLowerCase().includes(search)) ||
+        (c.nome && c.nome.toLowerCase().includes(search)) ||
+        (c.cognome && c.cognome.toLowerCase().includes(search)) ||
+        (c.ragione_sociale && c.ragione_sociale.toLowerCase().includes(search)) ||
+        (c.ente_o_ufficio && c.ente_o_ufficio.toLowerCase().includes(search))
       );
+      console.log('[ManualSaleModal] Filtered results:', filtered.length);
+      setFilteredCustomers(filtered);
     }
   }, [searchTerm, customers]);
 
@@ -288,13 +294,23 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
                 placeholder="Cerca per nome, email, azienda..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border rounded px-3 py-2 mb-3"
+                className="w-full border rounded px-3 py-2 mb-2"
               />
 
+              {customers.length > 0 && (
+                <div className="text-xs text-gray-500 mb-2">
+                  {searchTerm ? `${filteredCustomers.length} di ${customers.length} clienti` : `${customers.length} clienti totali`}
+                </div>
+              )}
+
               <div className="border rounded max-h-60 overflow-y-auto">
-                {filteredCustomers.length === 0 ? (
+                {customers.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">
-                    Nessun cliente trovato
+                    Caricamento clienti...
+                  </div>
+                ) : filteredCustomers.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    Nessun cliente trovato per "{searchTerm}"
                   </div>
                 ) : (
                   filteredCustomers.map(customer => {
