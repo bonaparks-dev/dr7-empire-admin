@@ -54,7 +54,10 @@ export default function CustomersTab() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [viewingDocuments, setViewingDocuments] = useState<Customer | null>(null)
-  const [documentsUrls, setDocumentsUrls] = useState<{ licenses: string[]; ids: string[] }>({ licenses: [], ids: [] })
+  const [documentsUrls, setDocumentsUrls] = useState<{
+    licenses: Array<{ url: string; fileName: string }>;
+    ids: Array<{ url: string; fileName: string }>
+  }>({ licenses: [], ids: [] })
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingId, setUploadingId] = useState(false)
@@ -411,8 +414,8 @@ export default function CustomersTab() {
         console.error('Error listing ID files:', idError)
       }
 
-      const licenseUrls: string[] = []
-      const idUrls: string[] = []
+      const licenseUrls: Array<{ url: string; fileName: string }> = []
+      const idUrls: Array<{ url: string; fileName: string }> = []
 
       // Filter out folders and empty placeholders, get only actual files
       const actualLicenseFiles = licenseFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
@@ -430,7 +433,7 @@ export default function CustomersTab() {
         if (signError) {
           console.error('Error creating signed URL for license:', signError)
         } else if (signedLicense?.signedUrl) {
-          licenseUrls.push(signedLicense.signedUrl)
+          licenseUrls.push({ url: signedLicense.signedUrl, fileName: licenseFile.name })
         }
       }
 
@@ -443,7 +446,7 @@ export default function CustomersTab() {
         if (signError) {
           console.error('Error creating signed URL for ID:', signError)
         } else if (signedId?.signedUrl) {
-          idUrls.push(signedId.signedUrl)
+          idUrls.push({ url: signedId.signedUrl, fileName: idFile.name })
         }
       }
 
@@ -515,6 +518,46 @@ export default function CustomersTab() {
       alert('Errore nel caricamento del documento: ' + (error.message || JSON.stringify(error)))
     } finally {
       setUploadingId(false)
+    }
+  }
+
+  async function handleDeleteLicense(fileName: string, userId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo documento?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase.storage
+        .from('driver-licenses')
+        .remove([`${userId}/${fileName}`])
+
+      if (error) throw error
+
+      alert('✅ Documento eliminato con successo!')
+      await fetchCustomerDocuments(userId)
+    } catch (error: any) {
+      console.error('Error deleting license:', error)
+      alert('❌ Errore nell\'eliminazione: ' + (error.message || JSON.stringify(error)))
+    }
+  }
+
+  async function handleDeleteId(fileName: string, userId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questo documento?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase.storage
+        .from('driver-ids')
+        .remove([`${userId}/${fileName}`])
+
+      if (error) throw error
+
+      alert('✅ Documento eliminato con successo!')
+      await fetchCustomerDocuments(userId)
+    } catch (error: any) {
+      console.error('Error deleting ID:', error)
+      alert('❌ Errore nell\'eliminazione: ' + (error.message || JSON.stringify(error)))
     }
   }
 
@@ -837,23 +880,31 @@ export default function CustomersTab() {
                       </div>
                       {documentsUrls.licenses.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                          {documentsUrls.licenses.map((url, index) => (
+                          {documentsUrls.licenses.map((doc, index) => (
                             <div key={index} className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-400">
                                   {index === 0 ? 'Fronte' : index === 1 ? 'Retro' : `Documento ${index + 1}`}
                                 </span>
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-blue-400 hover:text-blue-300"
-                                >
-                                  Apri →
-                                </a>
+                                <div className="flex gap-2">
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                  >
+                                    👁️ Apri
+                                  </a>
+                                  <button
+                                    onClick={() => viewingDocuments?.id && handleDeleteLicense(doc.fileName, viewingDocuments.id)}
+                                    className="text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    🗑️ Elimina
+                                  </button>
+                                </div>
                               </div>
                               <img
-                                src={url}
+                                src={doc.url}
                                 alt={`Patente di guida - ${index === 0 ? 'Fronte' : 'Retro'}`}
                                 className="w-full rounded border border-gray-600"
                               />
@@ -907,23 +958,31 @@ export default function CustomersTab() {
                       </div>
                       {documentsUrls.ids.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                          {documentsUrls.ids.map((url, index) => (
+                          {documentsUrls.ids.map((doc, index) => (
                             <div key={index} className="space-y-2">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs text-gray-400">
                                   {index === 0 ? 'Fronte' : index === 1 ? 'Retro' : `Documento ${index + 1}`}
                                 </span>
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-blue-400 hover:text-blue-300"
-                                >
-                                  Apri →
-                                </a>
+                                <div className="flex gap-2">
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-400 hover:text-blue-300"
+                                  >
+                                    👁️ Apri
+                                  </a>
+                                  <button
+                                    onClick={() => viewingDocuments?.id && handleDeleteId(doc.fileName, viewingDocuments.id)}
+                                    className="text-xs text-red-400 hover:text-red-300"
+                                  >
+                                    🗑️ Elimina
+                                  </button>
+                                </div>
                               </div>
                               <img
-                                src={url}
+                                src={doc.url}
                                 alt={`Carta d'identità - ${index === 0 ? 'Fronte' : 'Retro'}`}
                                 className="w-full rounded border border-gray-600"
                               />
