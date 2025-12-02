@@ -23,6 +23,8 @@ export default function UnpaidBookingsTab() {
   const [bookings, setBookings] = useState<UnpaidBooking[]>([])
   const [loading, setLoading] = useState(true)
   const [filterService, setFilterService] = useState<'all' | 'rental' | 'car_wash' | 'mechanical_service'>('all')
+  const [multiSelectMode, setMultiSelectMode] = useState(false)
+  const [selectedBookings, setSelectedBookings] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadUnpaidBookings()
@@ -78,20 +80,75 @@ export default function UnpaidBookingsTab() {
     }
   }
 
+  async function deleteSelectedBookings() {
+    if (selectedBookings.size === 0) return
+
+    if (!confirm(`Sei sicuro di voler eliminare ${selectedBookings.size} prenotazioni?`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .in('id', Array.from(selectedBookings))
+
+      if (error) throw error
+
+      alert(`${selectedBookings.size} prenotazioni eliminate con successo!`)
+      setSelectedBookings(new Set())
+      setMultiSelectMode(false)
+      loadUnpaidBookings()
+    } catch (error) {
+      console.error('Failed to delete bookings:', error)
+      alert('Errore durante l\'eliminazione delle prenotazioni')
+    }
+  }
+
+  async function deleteSingleBooking(bookingId: string) {
+    if (!confirm('Sei sicuro di voler eliminare questa prenotazione?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+
+      if (error) throw error
+
+      alert('Prenotazione eliminata con successo!')
+      loadUnpaidBookings()
+    } catch (error) {
+      console.error('Failed to delete booking:', error)
+      alert('Errore durante l\'eliminazione della prenotazione')
+    }
+  }
+
+  function toggleBookingSelection(bookingId: string) {
+    const newSelected = new Set(selectedBookings)
+    if (newSelected.has(bookingId)) {
+      newSelected.delete(bookingId)
+    } else {
+      newSelected.add(bookingId)
+    }
+    setSelectedBookings(newSelected)
+  }
+
+  function toggleSelectAll() {
+    if (selectedBookings.size === filteredBookings.length) {
+      setSelectedBookings(new Set())
+    } else {
+      setSelectedBookings(new Set(filteredBookings.map(b => b.id)))
+    }
+  }
+
   const filteredBookings = filterService === 'all'
     ? bookings
     : bookings.filter(b => b.service_type === filterService)
 
   const totalUnpaid = filteredBookings.reduce((sum, b) => sum + (b.price_total || 0), 0)
-
-  const getServiceIcon = (serviceType: string) => {
-    switch (serviceType) {
-      case 'rental': return '🚗'
-      case 'car_wash': return '🧼'
-      case 'mechanical_service': return '🔧'
-      default: return '📋'
-    }
-  }
 
   const getServiceLabel = (serviceType: string) => {
     switch (serviceType) {
@@ -117,7 +174,7 @@ export default function UnpaidBookingsTab() {
       <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white">💳 Prenotazioni Da Saldare</h2>
+            <h2 className="text-2xl font-bold text-white">Prenotazioni Da Saldare</h2>
             <p className="text-sm text-gray-400 mt-1">
               Tutte le prenotazioni con pagamento in sospeso
             </p>
@@ -151,49 +208,75 @@ export default function UnpaidBookingsTab() {
         </div>
       </div>
 
-      {/* Filter */}
+      {/* Filter and Actions */}
       <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setFilterService('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterService === 'all'
-                ? 'bg-dr7-gold text-black'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            Tutti ({bookings.length})
-          </button>
-          <button
-            onClick={() => setFilterService('rental')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterService === 'rental'
-                ? 'bg-dr7-gold text-black'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            🚗 Noleggio ({bookings.filter(b => b.service_type === 'rental').length})
-          </button>
-          <button
-            onClick={() => setFilterService('car_wash')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterService === 'car_wash'
-                ? 'bg-dr7-gold text-black'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            🧼 Lavaggio ({bookings.filter(b => b.service_type === 'car_wash').length})
-          </button>
-          <button
-            onClick={() => setFilterService('mechanical_service')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterService === 'mechanical_service'
-                ? 'bg-dr7-gold text-black'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            🔧 Meccanica ({bookings.filter(b => b.service_type === 'mechanical_service').length})
-          </button>
+        <div className="flex flex-col lg:flex-row justify-between gap-4">
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setFilterService('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filterService === 'all'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              Tutti ({bookings.length})
+            </button>
+            <button
+              onClick={() => setFilterService('rental')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filterService === 'rental'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              Noleggio ({bookings.filter(b => b.service_type === 'rental').length})
+            </button>
+            <button
+              onClick={() => setFilterService('car_wash')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filterService === 'car_wash'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              Lavaggio ({bookings.filter(b => b.service_type === 'car_wash').length})
+            </button>
+            <button
+              onClick={() => setFilterService('mechanical_service')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filterService === 'mechanical_service'
+                  ? 'bg-dr7-gold text-black'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              Meccanica ({bookings.filter(b => b.service_type === 'mechanical_service').length})
+            </button>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                setMultiSelectMode(!multiSelectMode)
+                setSelectedBookings(new Set())
+              }}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                multiSelectMode
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              Selezione Multipla
+            </button>
+            {multiSelectMode && selectedBookings.size > 0 && (
+              <button
+                onClick={deleteSelectedBookings}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Elimina ({selectedBookings.size})
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -203,6 +286,16 @@ export default function UnpaidBookingsTab() {
           <table className="w-full">
             <thead className="bg-black">
               <tr>
+                {multiSelectMode && (
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white">
+                    <input
+                      type="checkbox"
+                      checked={selectedBookings.size === filteredBookings.length && filteredBookings.length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </th>
+                )}
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Servizio</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Cliente</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-white">Dettagli</th>
@@ -214,12 +307,21 @@ export default function UnpaidBookingsTab() {
             </thead>
             <tbody>
               {filteredBookings.map((booking) => (
-                <tr key={booking.id} className="border-t border-gray-700 hover:bg-gray-800">
+                <tr key={booking.id} className={`border-t border-gray-700 hover:bg-gray-800 ${
+                  selectedBookings.has(booking.id) ? 'bg-blue-900/30' : ''
+                }`}>
+                  {multiSelectMode && (
+                    <td className="px-4 py-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedBookings.has(booking.id)}
+                        onChange={() => toggleBookingSelection(booking.id)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{getServiceIcon(booking.service_type)}</span>
-                      <span className="text-white font-medium">{getServiceLabel(booking.service_type)}</span>
-                    </div>
+                    <span className="text-white font-medium">{getServiceLabel(booking.service_type)}</span>
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="text-white font-semibold">{booking.customer_name}</div>
@@ -262,20 +364,28 @@ export default function UnpaidBookingsTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    <button
-                      onClick={() => updatePaymentStatus(booking.id, 'paid')}
-                      className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors"
-                    >
-                      Segna Pagato
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updatePaymentStatus(booking.id, 'paid')}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors"
+                      >
+                        Segna Pagato
+                      </button>
+                      <button
+                        onClick={() => deleteSingleBooking(booking.id)}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold transition-colors"
+                      >
+                        Elimina
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filteredBookings.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={multiSelectMode ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                     {filterService === 'all'
-                      ? 'Nessuna prenotazione da saldare! 🎉'
+                      ? 'Nessuna prenotazione da saldare!'
                       : `Nessuna prenotazione ${getServiceLabel(filterService).toLowerCase()} da saldare`
                     }
                   </td>
