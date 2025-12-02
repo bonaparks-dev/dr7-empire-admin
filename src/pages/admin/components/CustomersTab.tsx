@@ -82,6 +82,12 @@ export default function CustomersTab() {
   async function loadCustomers() {
     setLoading(true)
     try {
+      console.log('[CustomersTab] Loading customers...')
+
+      // Check current user
+      const { data: { user } } = await supabase.auth.getUser()
+      console.log('[CustomersTab] Current user:', user?.email)
+
       // Get unique customers from bookings table (primary source of customer data)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
@@ -89,7 +95,7 @@ export default function CustomersTab() {
         .order('booked_at', { ascending: false })
 
       if (bookingsError) {
-        console.error('Could not load customers from bookings:', bookingsError)
+        console.error('[CustomersTab] Could not load customers from bookings:', bookingsError)
       }
 
       // Merge customers by email or phone
@@ -152,13 +158,19 @@ export default function CustomersTab() {
       }
 
       // Also get customers from customers_extended table
+      console.log('[CustomersTab] Fetching customers_extended...')
       const { data: customersExtendedData, error: customersExtendedError } = await supabase
         .from('customers_extended')
         .select('*')
         .order('created_at', { ascending: false })
 
+      if (customersExtendedError) {
+        console.error('[CustomersTab] ERROR loading customers_extended:', customersExtendedError)
+      }
+
       if (!customersExtendedError && customersExtendedData) {
-        console.log('Customers from customers_extended:', customersExtendedData.length)
+        console.log('[CustomersTab] Customers from customers_extended:', customersExtendedData.length)
+        console.log('[CustomersTab] Sample customer:', customersExtendedData[0])
         customersExtendedData.forEach((customer: any) => {
           const key = customer.email || customer.telefono || customer.id
 

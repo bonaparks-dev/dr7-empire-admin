@@ -176,7 +176,6 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   const [searchTerm, setSearchTerm] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [showClientSelector, setShowClientSelector] = useState(true);
 
   const tickets = ticketNumbers || (ticketNumber ? [ticketNumber] : []);
@@ -234,7 +233,6 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   const discount = originalPrice - totalPrice;
 
   const handleSelectCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
     setEmail(customer.email);
     setPhone(customer.telefono || '');
 
