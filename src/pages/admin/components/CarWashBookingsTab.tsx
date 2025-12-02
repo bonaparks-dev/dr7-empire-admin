@@ -139,9 +139,22 @@ export default function CarWashBookingsTab() {
   })
 
   const [newCustomerData, setNewCustomerData] = useState({
-    full_name: '',
+    // Global fields
+    nazione: 'Italia',
+    telefono: '',
     email: '',
-    phone: ''
+    // Persona Fisica fields
+    nome: '',
+    cognome: '',
+    codice_fiscale: '',
+    data_nascita: '',
+    luogo_nascita: '',
+    indirizzo: '',
+    numero_civico: '',
+    codice_postale: '',
+    citta_residenza: '',
+    provincia_residenza: '',
+    pec: ''
   })
 
   const [bookingSearchQuery, setBookingSearchQuery] = useState('')
@@ -233,25 +246,39 @@ export default function CarWashBookingsTab() {
     let customerEmail = ''
     let customerPhone = ''
 
-    // If new customer mode, create the customer first
+    // If new customer mode, create the customer first in customers_extended
     if (newCustomerMode) {
+      const customerData: any = {
+        tipo_cliente: 'persona_fisica',
+        nazione: newCustomerData.nazione,
+        email: newCustomerData.email || null,
+        telefono: newCustomerData.telefono || null,
+        nome: newCustomerData.nome,
+        cognome: newCustomerData.cognome,
+        codice_fiscale: newCustomerData.codice_fiscale,
+        data_nascita: newCustomerData.data_nascita || null,
+        luogo_nascita: newCustomerData.luogo_nascita || null,
+        indirizzo: newCustomerData.indirizzo || null,
+        numero_civico: newCustomerData.numero_civico || null,
+        codice_postale: newCustomerData.codice_postale,
+        citta_residenza: newCustomerData.citta_residenza,
+        provincia_residenza: newCustomerData.provincia_residenza,
+        pec: newCustomerData.pec || null,
+        source: 'admin',
+        created_at: new Date().toISOString()
+      }
+
       const { data: newCustomer, error: customerError } = await supabase
-        .from('customers')
-        .insert([{
-          full_name: newCustomerData.full_name,
-          email: newCustomerData.email || null,
-          phone: newCustomerData.phone || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .from('customers_extended')
+        .insert([customerData])
         .select()
         .single()
 
       if (customerError) throw customerError
 
-      customerName = newCustomer.full_name
+      customerName = `${newCustomer.nome} ${newCustomer.cognome}`
       customerEmail = newCustomer.email || ''
-      customerPhone = newCustomer.phone || ''
+      customerPhone = newCustomer.telefono || ''
     } else {
       // Get customer details from selected customer
       const customer = customers.find(c => c.id === formData.customer_id)
@@ -433,9 +460,20 @@ export default function CarWashBookingsTab() {
       notes: ''
     })
     setNewCustomerData({
-      full_name: '',
+      nazione: 'Italia',
+      telefono: '',
       email: '',
-      phone: ''
+      nome: '',
+      cognome: '',
+      codice_fiscale: '',
+      data_nascita: '',
+      luogo_nascita: '',
+      indirizzo: '',
+      numero_civico: '',
+      codice_postale: '',
+      citta_residenza: '',
+      provincia_residenza: '',
+      pec: ''
     })
     loadData()
   }
@@ -662,34 +700,167 @@ export default function CarWashBookingsTab() {
                   </select>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Nome Completo</label>
-                    <input
-                      type="text"
-                      required
-                      value={newCustomerData.full_name}
-                      onChange={(e) => setNewCustomerData({ ...newCustomerData, full_name: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                    />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Nome *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomerData.nome}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, nome: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Cognome *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomerData.cognome}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, cognome: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Codice Fiscale *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomerData.codice_fiscale}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                        maxLength={16}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Data di Nascita</label>
+                      <input
+                        type="date"
+                        value={newCustomerData.data_nascita}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, data_nascita: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Luogo di Nascita</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.luogo_nascita}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, luogo_nascita: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Nazione *</label>
+                      <select
+                        required
+                        value={newCustomerData.nazione}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, nazione: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      >
+                        <option value="Italia">Italia</option>
+                        <option value="Francia">Francia</option>
+                        <option value="Germania">Germania</option>
+                        <option value="Spagna">Spagna</option>
+                        <option value="Regno Unito">Regno Unito</option>
+                        <option value="Altro">Altro</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={newCustomerData.email}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Telefono *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={newCustomerData.telefono}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, telefono: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Indirizzo</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.indirizzo}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, indirizzo: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Numero Civico</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.numero_civico}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, numero_civico: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Città di Residenza *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomerData.citta_residenza}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, citta_residenza: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">CAP *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomerData.codice_postale}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_postale: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                        maxLength={5}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Provincia *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomerData.provincia_residenza}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, provincia_residenza: e.target.value.toUpperCase() })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                        maxLength={2}
+                        placeholder="ES: CA"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">PEC (opzionale)</label>
                     <input
                       type="email"
-                      required
-                      value={newCustomerData.email}
-                      onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Telefono</label>
-                    <input
-                      type="tel"
-                      required
-                      value={newCustomerData.phone}
-                      onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                      value={newCustomerData.pec}
+                      onChange={(e) => setNewCustomerData({ ...newCustomerData, pec: e.target.value })}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
                     />
                   </div>

@@ -159,6 +159,12 @@ export default function ReservationsTab() {
     nome: '',
     cognome: '',
     codice_fiscale: '',
+    data_nascita: '',
+    luogo_nascita: '',
+    numero_civico: '',
+    codice_postale: '',
+    citta_residenza: '',
+    provincia_residenza: '',
     pec: '',
     // Azienda fields
     denominazione: '',
@@ -568,6 +574,12 @@ export default function ReservationsTab() {
             customerData.nome = newCustomerData.nome
             customerData.cognome = newCustomerData.cognome
             customerData.codice_fiscale = newCustomerData.codice_fiscale
+            customerData.data_nascita = newCustomerData.data_nascita || null
+            customerData.luogo_nascita = newCustomerData.luogo_nascita || null
+            customerData.numero_civico = newCustomerData.numero_civico || null
+            customerData.codice_postale = newCustomerData.codice_postale
+            customerData.citta_residenza = newCustomerData.citta_residenza
+            customerData.provincia_residenza = newCustomerData.provincia_residenza
             customerData.pec = newCustomerData.pec || null
             customerData.patente = newCustomerData.driver_license_number || null
           } else if (newCustomerData.tipo_cliente === 'azienda') {
@@ -827,6 +839,12 @@ export default function ReservationsTab() {
       nome: '',
       cognome: '',
       codice_fiscale: '',
+      data_nascita: '',
+      luogo_nascita: '',
+      numero_civico: '',
+      codice_postale: '',
+      citta_residenza: '',
+      provincia_residenza: '',
       pec: '',
       denominazione: '',
       partita_iva: '',
@@ -935,7 +953,13 @@ export default function ReservationsTab() {
                     <>
                       <Input label="Nome *" required value={newCustomerData.nome} onChange={(e) => setNewCustomerData({ ...newCustomerData, nome: e.target.value })} />
                       <Input label="Cognome *" required value={newCustomerData.cognome} onChange={(e) => setNewCustomerData({ ...newCustomerData, cognome: e.target.value })} />
-                      <Input label="Codice Fiscale *" required value={newCustomerData.codice_fiscale} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale: e.target.value })} />
+                      <Input label="Codice Fiscale *" required value={newCustomerData.codice_fiscale} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_fiscale: e.target.value.toUpperCase() })} />
+                      <Input label="Data di Nascita" type="date" value={newCustomerData.data_nascita} onChange={(e) => setNewCustomerData({ ...newCustomerData, data_nascita: e.target.value })} />
+                      <Input label="Luogo di Nascita" value={newCustomerData.luogo_nascita} onChange={(e) => setNewCustomerData({ ...newCustomerData, luogo_nascita: e.target.value })} />
+                      <Input label="Numero Civico" value={newCustomerData.numero_civico} onChange={(e) => setNewCustomerData({ ...newCustomerData, numero_civico: e.target.value })} />
+                      <Input label="Città di Residenza *" required value={newCustomerData.citta_residenza} onChange={(e) => setNewCustomerData({ ...newCustomerData, citta_residenza: e.target.value })} />
+                      <Input label="CAP *" required value={newCustomerData.codice_postale} onChange={(e) => setNewCustomerData({ ...newCustomerData, codice_postale: e.target.value })} />
+                      <Input label="Provincia *" required value={newCustomerData.provincia_residenza} onChange={(e) => setNewCustomerData({ ...newCustomerData, provincia_residenza: e.target.value.toUpperCase() })} />
                       <Input label="PEC" type="email" value={newCustomerData.pec} onChange={(e) => setNewCustomerData({ ...newCustomerData, pec: e.target.value })} />
                       <Input label="Patente" value={newCustomerData.driver_license_number} onChange={(e) => setNewCustomerData({ ...newCustomerData, driver_license_number: e.target.value })} />
                     </>
