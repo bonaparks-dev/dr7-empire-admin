@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../../../supabaseClient'
-
-type ClientType = 'persona_fisica' | 'azienda' | 'pubblica_amministrazione'
 
 interface NewClientModalProps {
   isOpen: boolean
@@ -9,175 +7,188 @@ interface NewClientModalProps {
   onClientCreated?: (clientId: string) => void
 }
 
-interface FormData {
+type ClientType = 'persona_fisica' | 'azienda' | 'pubblica_amministrazione'
+
+interface ClientFormData {
   tipo_cliente: ClientType
+  // Global fields
   nazione: string
   telefono: string
   email: string
+
   // Persona Fisica
   nome: string
   cognome: string
   codice_fiscale: string
+  data_nascita: string
+  luogo_nascita: string
   indirizzo: string
-  pec_pf: string
+  numero_civico: string
+  codice_postale: string
+  citta_residenza: string
+  provincia_residenza: string
+  pec_persona: string
+
   // Azienda
   denominazione: string
   partita_iva: string
-  indirizzo_azienda: string
-  codice_fiscale_azienda: string
   codice_destinatario: string
-  pec_azienda: string
+  indirizzo_azienda: string
+  cf_azienda: string
   indirizzo_ddt: string
+  pec_azienda: string
+  contatti_cliente: string
+
   // Pubblica Amministrazione
   codice_univoco: string
-  codice_fiscale_pa: string
+  cf_pa: string
   ente_ufficio: string
   citta: string
   partita_iva_pa: string
   pec_pa: string
 }
 
-const INITIAL_FORM_DATA: FormData = {
-  tipo_cliente: 'persona_fisica',
-  nazione: 'Italia',
-  telefono: '',
-  email: '',
-  nome: '',
-  cognome: '',
-  codice_fiscale: '',
-  indirizzo: '',
-  pec_pf: '',
-  denominazione: '',
-  partita_iva: '',
-  indirizzo_azienda: '',
-  codice_fiscale_azienda: '',
-  codice_destinatario: '',
-  pec_azienda: '',
-  indirizzo_ddt: '',
-  codice_univoco: '',
-  codice_fiscale_pa: '',
-  ente_ufficio: '',
-  citta: '',
-  partita_iva_pa: '',
-  pec_pa: ''
-}
-
 export default function NewClientModal({ isOpen, onClose, onClientCreated }: NewClientModalProps) {
-  const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState<ClientFormData>({
+    tipo_cliente: 'persona_fisica',
+    nazione: 'Italia',
+    telefono: '',
+    email: '',
+    nome: '',
+    cognome: '',
+    codice_fiscale: '',
+    data_nascita: '',
+    luogo_nascita: '',
+    indirizzo: '',
+    numero_civico: '',
+    codice_postale: '',
+    citta_residenza: '',
+    provincia_residenza: '',
+    pec_persona: '',
+    denominazione: '',
+    partita_iva: '',
+    codice_destinatario: '',
+    indirizzo_azienda: '',
+    cf_azienda: '',
+    indirizzo_ddt: '',
+    pec_azienda: '',
+    contatti_cliente: '',
+    codice_univoco: '',
+    cf_pa: '',
+    ente_ufficio: '',
+    citta: '',
+    partita_iva_pa: '',
+    pec_pa: ''
+  })
 
-  useEffect(() => {
-    if (isOpen) {
-      setFormData(INITIAL_FORM_DATA)
-      setErrors({})
-    }
-  }, [isOpen])
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSaving, setIsSaving] = useState(false)
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
   }
 
   const validateItalianPhone = (phone: string): boolean => {
-    // Italian phone: More flexible - accepts spaces, dashes, and various formats
-    // Examples: +39 320 1234567, 320-123-4567, 3201234567, +393201234567
-    const cleaned = phone.replace(/[\s\-\.]/g, '') // Remove spaces, dashes, dots
-    const re = /^(\+39|0039)?[0-9]{9,11}$/
-    return re.test(cleaned)
+    // Italian phone: +39 or 0039 or direct, 9-13 digits
+    const phoneRegex = /^(\+39|0039)?[\s]?[0-9]{9,13}$/
+    return phoneRegex.test(phone.replace(/\s/g, ''))
   }
 
   const validateCodiceFiscale = (cf: string): boolean => {
-    // Basic Italian Codice Fiscale: 16 alphanumeric characters
-    const re = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i
-    return re.test(cf)
+    // Italian CF: 16 alphanumeric characters
+    const cfRegex = /^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i
+    return cf.length === 16 && cfRegex.test(cf.toUpperCase())
   }
 
   const validatePartitaIVA = (piva: string): boolean => {
-    // Italian Partita IVA: 11 digits
-    const re = /^[0-9]{11}$/
-    return re.test(piva)
+    // Italian P.IVA: 11 digits
+    const pivaRegex = /^[0-9]{11}$/
+    return pivaRegex.test(piva)
   }
 
-  const validateCodiceUnivoco = (code: string): boolean => {
-    // Codice Univoco: 6 or 7 alphanumeric characters
-    const re = /^[A-Z0-9]{6,7}$/i
-    return re.test(code)
+  const validateCodiceUnivoco = (codice: string): boolean => {
+    // Codice Univoco: 6-7 alphanumeric characters
+    return codice.length >= 6 && codice.length <= 7 && /^[A-Z0-9]+$/i.test(codice)
   }
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
     // Global validations
-    if (!formData.nazione) newErrors.nazione = 'Nazione è obbligatoria'
-    if (!formData.telefono) {
-      newErrors.telefono = 'Telefono è obbligatorio'
-    } else if (!validateItalianPhone(formData.telefono)) {
-      newErrors.telefono = 'Formato telefono non valido'
-    }
     if (!formData.email) {
-      newErrors.email = 'Email è obbligatoria'
+      newErrors.email = 'Email obbligatoria'
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Formato email non valido'
     }
 
+    if (!formData.telefono) {
+      newErrors.telefono = 'Telefono obbligatorio'
+    } else if (!validateItalianPhone(formData.telefono)) {
+      newErrors.telefono = 'Formato telefono non valido'
+    }
+
+    if (!formData.nazione) {
+      newErrors.nazione = 'Nazione obbligatoria'
+    }
+
     // Type-specific validations
     if (formData.tipo_cliente === 'persona_fisica') {
-      if (!formData.nome) newErrors.nome = 'Nome è obbligatorio'
-      if (!formData.cognome) newErrors.cognome = 'Cognome è obbligatorio'
+      if (!formData.nome) newErrors.nome = 'Nome obbligatorio'
+      if (!formData.cognome) newErrors.cognome = 'Cognome obbligatorio'
       if (!formData.codice_fiscale) {
-        newErrors.codice_fiscale = 'Codice Fiscale è obbligatorio'
+        newErrors.codice_fiscale = 'Codice Fiscale obbligatorio'
       } else if (!validateCodiceFiscale(formData.codice_fiscale)) {
-        newErrors.codice_fiscale = 'Formato Codice Fiscale non valido'
+        newErrors.codice_fiscale = 'Codice Fiscale non valido (16 caratteri)'
       }
-      if (!formData.indirizzo) newErrors.indirizzo = 'Indirizzo è obbligatorio'
-    } else if (formData.tipo_cliente === 'azienda') {
-      if (!formData.denominazione) newErrors.denominazione = 'Denominazione è obbligatoria'
+      if (!formData.indirizzo) newErrors.indirizzo = 'Indirizzo obbligatorio'
+    }
+
+    if (formData.tipo_cliente === 'azienda') {
+      if (!formData.denominazione) newErrors.denominazione = 'Denominazione obbligatoria'
       if (!formData.partita_iva) {
-        newErrors.partita_iva = 'Partita IVA è obbligatoria'
+        newErrors.partita_iva = 'Partita IVA obbligatoria'
       } else if (!validatePartitaIVA(formData.partita_iva)) {
-        newErrors.partita_iva = 'Formato Partita IVA non valido (11 cifre)'
+        newErrors.partita_iva = 'Partita IVA non valida (11 cifre)'
       }
-      if (!formData.indirizzo_azienda) newErrors.indirizzo_azienda = 'Indirizzo è obbligatorio'
-      if (formData.codice_fiscale_azienda && !validateCodiceFiscale(formData.codice_fiscale_azienda)) {
-        newErrors.codice_fiscale_azienda = 'Formato Codice Fiscale non valido'
+      if (!formData.indirizzo_azienda) newErrors.indirizzo_azienda = 'Indirizzo obbligatorio'
+
+      // Optional CF validation if provided
+      if (formData.cf_azienda && !validateCodiceFiscale(formData.cf_azienda)) {
+        newErrors.cf_azienda = 'Codice Fiscale non valido (16 caratteri)'
       }
-    } else if (formData.tipo_cliente === 'pubblica_amministrazione') {
+    }
+
+    if (formData.tipo_cliente === 'pubblica_amministrazione') {
       if (!formData.codice_univoco) {
-        newErrors.codice_univoco = 'Codice Univoco è obbligatorio'
+        newErrors.codice_univoco = 'Codice Univoco obbligatorio'
       } else if (!validateCodiceUnivoco(formData.codice_univoco)) {
-        newErrors.codice_univoco = 'Formato Codice Univoco non valido (6-7 caratteri)'
+        newErrors.codice_univoco = 'Codice Univoco non valido (6-7 caratteri)'
       }
-      if (!formData.codice_fiscale_pa) {
-        newErrors.codice_fiscale_pa = 'Codice Fiscale è obbligatorio'
-      } else if (!validateCodiceFiscale(formData.codice_fiscale_pa)) {
-        newErrors.codice_fiscale_pa = 'Formato Codice Fiscale non valido'
+      if (!formData.cf_pa) {
+        newErrors.cf_pa = 'Codice Fiscale obbligatorio'
+      } else if (!validateCodiceFiscale(formData.cf_pa)) {
+        newErrors.cf_pa = 'Codice Fiscale non valido (16 caratteri)'
       }
-      if (!formData.ente_ufficio) newErrors.ente_ufficio = 'Ente o Ufficio è obbligatorio'
-      if (!formData.citta) newErrors.citta = 'Città è obbligatoria'
+      if (!formData.ente_ufficio) newErrors.ente_ufficio = 'Ente o Ufficio obbligatorio'
+      if (!formData.citta) newErrors.citta = 'Città obbligatoria'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSave = async () => {
+    if (!validateForm()) return
 
-    if (!validateForm()) {
-      return
-    }
-
-    setSubmitting(true)
-
+    setIsSaving(true)
     try {
-      // Prepare data for customers_extended table
       const customerData: any = {
         tipo_cliente: formData.tipo_cliente,
-        nazione: formData.nazione,
-        telefono: formData.telefono,
         email: formData.email,
+        telefono: formData.telefono,
+        nazione: formData.nazione,
         source: 'admin',
         created_at: new Date().toISOString()
       }
@@ -187,21 +198,32 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
         customerData.nome = formData.nome
         customerData.cognome = formData.cognome
         customerData.codice_fiscale = formData.codice_fiscale.toUpperCase()
+        if (formData.data_nascita) customerData.data_nascita = formData.data_nascita
+        if (formData.luogo_nascita) customerData.luogo_nascita = formData.luogo_nascita
         customerData.indirizzo = formData.indirizzo
-        if (formData.pec_pf) customerData.pec = formData.pec_pf
+        if (formData.numero_civico) customerData.numero_civico = formData.numero_civico
+        if (formData.codice_postale) customerData.codice_postale = formData.codice_postale
+        if (formData.citta_residenza) customerData.citta_residenza = formData.citta_residenza
+        if (formData.provincia_residenza) customerData.provincia_residenza = formData.provincia_residenza
+        if (formData.pec_persona) customerData.pec = formData.pec_persona
       } else if (formData.tipo_cliente === 'azienda') {
-        customerData.denominazione = formData.denominazione
+        customerData.ragione_sociale = formData.denominazione
         customerData.partita_iva = formData.partita_iva
         customerData.indirizzo = formData.indirizzo_azienda
-        if (formData.codice_fiscale_azienda) customerData.codice_fiscale = formData.codice_fiscale_azienda.toUpperCase()
         if (formData.codice_destinatario) customerData.codice_destinatario = formData.codice_destinatario
+        if (formData.cf_azienda) customerData.codice_fiscale = formData.cf_azienda.toUpperCase()
         if (formData.pec_azienda) customerData.pec = formData.pec_azienda
-        if (formData.indirizzo_ddt) customerData.indirizzo_ddt = formData.indirizzo_ddt
+        if (formData.indirizzo_ddt || formData.contatti_cliente) {
+          customerData.metadata = {
+            indirizzo_ddt: formData.indirizzo_ddt,
+            contatti_cliente: formData.contatti_cliente
+          }
+        }
       } else if (formData.tipo_cliente === 'pubblica_amministrazione') {
+        customerData.denominazione = formData.ente_ufficio
         customerData.codice_univoco = formData.codice_univoco.toUpperCase()
-        customerData.codice_fiscale = formData.codice_fiscale_pa.toUpperCase()
-        customerData.ente_ufficio = formData.ente_ufficio
-        customerData.citta = formData.citta
+        customerData.codice_fiscale = formData.cf_pa.toUpperCase()
+        customerData.indirizzo = formData.citta
         if (formData.partita_iva_pa) customerData.partita_iva = formData.partita_iva_pa
         if (formData.pec_pa) customerData.pec = formData.pec_pa
       }
@@ -214,52 +236,71 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
 
       if (error) throw error
 
-      alert('✅ Cliente creato con successo!')
+      alert('Cliente creato con successo!')
 
       if (onClientCreated && newClient) {
         onClientCreated(newClient.id)
       }
 
-      // DON'T call onClose() here - let the parent handle closing the modal
-      // This prevents resetting state (like pendingTicketNumbers) prematurely
-    } catch (error: any) {
-      console.error('Failed to create client:', error)
-      alert(`❌ Errore: ${error.message}`)
+      handleClose()
+    } catch (error) {
+      console.error('Errore durante la creazione del cliente:', error)
+      alert('Errore durante la creazione del cliente')
     } finally {
-      setSubmitting(false)
+      setIsSaving(false)
     }
   }
 
-  const isFormValid = (): boolean => {
-    // Global fields
-    if (!formData.nazione || !formData.telefono || !formData.email) return false
-    if (!validateEmail(formData.email) || !validateItalianPhone(formData.telefono)) return false
+  const handleClose = () => {
+    setFormData({
+      tipo_cliente: 'persona_fisica',
+      nazione: 'Italia',
+      telefono: '',
+      email: '',
+      nome: '',
+      cognome: '',
+      codice_fiscale: '',
+      data_nascita: '',
+      luogo_nascita: '',
+      indirizzo: '',
+      numero_civico: '',
+      codice_postale: '',
+      citta_residenza: '',
+      provincia_residenza: '',
+      pec_persona: '',
+      denominazione: '',
+      partita_iva: '',
+      codice_destinatario: '',
+      indirizzo_azienda: '',
+      cf_azienda: '',
+      indirizzo_ddt: '',
+      pec_azienda: '',
+      contatti_cliente: '',
+      codice_univoco: '',
+      cf_pa: '',
+      ente_ufficio: '',
+      citta: '',
+      partita_iva_pa: '',
+      pec_pa: ''
+    })
+    setErrors({})
+    onClose()
+  }
 
-    // Type-specific fields
+  const isSaveDisabled = () => {
+    // Check global fields
+    if (!formData.email || !formData.telefono || !formData.nazione) return true
+    if (!validateEmail(formData.email) || !validateItalianPhone(formData.telefono)) return true
+
+    // Check type-specific fields
     if (formData.tipo_cliente === 'persona_fisica') {
-      return !!(
-        formData.nome &&
-        formData.cognome &&
-        formData.codice_fiscale &&
-        validateCodiceFiscale(formData.codice_fiscale) &&
-        formData.indirizzo
-      )
-    } else if (formData.tipo_cliente === 'azienda') {
-      return !!(
-        formData.denominazione &&
-        formData.partita_iva &&
-        validatePartitaIVA(formData.partita_iva) &&
-        formData.indirizzo_azienda
-      )
-    } else if (formData.tipo_cliente === 'pubblica_amministrazione') {
-      return !!(
-        formData.codice_univoco &&
-        validateCodiceUnivoco(formData.codice_univoco) &&
-        formData.codice_fiscale_pa &&
-        validateCodiceFiscale(formData.codice_fiscale_pa) &&
-        formData.ente_ufficio &&
-        formData.citta
-      )
+      return !formData.nome || !formData.cognome || !formData.codice_fiscale || !formData.indirizzo
+    }
+    if (formData.tipo_cliente === 'azienda') {
+      return !formData.denominazione || !formData.partita_iva || !formData.indirizzo_azienda
+    }
+    if (formData.tipo_cliente === 'pubblica_amministrazione') {
+      return !formData.codice_univoco || !formData.cf_pa || !formData.ente_ufficio || !formData.citta
     }
 
     return false
@@ -269,35 +310,38 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl max-w-3xl w-full my-8 shadow-2xl">
+      <div className="bg-white rounded-xl max-w-2xl w-full my-8 shadow-2xl">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Modulo Cliente - Dati Completi</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-          >
-            ×
-          </button>
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Nuovo Cliente</h2>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors text-3xl leading-none"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        {/* Body */}
+        <div className="p-6 space-y-6">
           {/* Client Type Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Tipo Cliente <span className="text-red-500">*</span>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Tipo Cliente *
             </label>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-4">
               <label className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   name="tipo_cliente"
                   value="persona_fisica"
                   checked={formData.tipo_cliente === 'persona_fisica'}
-                  onChange={(e) => setFormData({ ...INITIAL_FORM_DATA, tipo_cliente: e.target.value as ClientType, nazione: 'Italia', telefono: formData.telefono, email: formData.email })}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value as ClientType })}
+                  className="mr-2 w-4 h-4 text-blue-600"
                 />
-                <span className="ml-2 text-gray-900">Persona Fisica</span>
+                <span className="text-sm text-gray-700">Persona Fisica</span>
               </label>
               <label className="flex items-center cursor-pointer">
                 <input
@@ -305,10 +349,10 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                   name="tipo_cliente"
                   value="azienda"
                   checked={formData.tipo_cliente === 'azienda'}
-                  onChange={(e) => setFormData({ ...INITIAL_FORM_DATA, tipo_cliente: e.target.value as ClientType, nazione: 'Italia', telefono: formData.telefono, email: formData.email })}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value as ClientType })}
+                  className="mr-2 w-4 h-4 text-blue-600"
                 />
-                <span className="ml-2 text-gray-900">Azienda</span>
+                <span className="text-sm text-gray-700">Azienda</span>
               </label>
               <label className="flex items-center cursor-pointer">
                 <input
@@ -316,334 +360,440 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                   name="tipo_cliente"
                   value="pubblica_amministrazione"
                   checked={formData.tipo_cliente === 'pubblica_amministrazione'}
-                  onChange={(e) => setFormData({ ...INITIAL_FORM_DATA, tipo_cliente: e.target.value as ClientType, nazione: 'Italia', telefono: formData.telefono, email: formData.email })}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                  onChange={(e) => setFormData({ ...formData, tipo_cliente: e.target.value as ClientType })}
+                  className="mr-2 w-4 h-4 text-blue-600"
                 />
-                <span className="ml-2 text-gray-900">Pubblica Amministrazione</span>
+                <span className="text-sm text-gray-700">Pubblica Amministrazione</span>
               </label>
             </div>
           </div>
 
-          {/* Global Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-200">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nazione <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.nazione}
-                onChange={(e) => setFormData({ ...formData, nazione: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Italia">Italia</option>
-                <option value="Francia">Francia</option>
-                <option value="Germania">Germania</option>
-                <option value="Spagna">Spagna</option>
-                <option value="Regno Unito">Regno Unito</option>
-                <option value="Altro">Altro</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Telefono <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                placeholder="+39 123 456 7890"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                  errors.telefono ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                }`}
-              />
-              {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="cliente@example.com"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                  errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                }`}
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-            </div>
-          </div>
-
-          {/* PERSONA FISICA Fields */}
+          {/* PERSONA FISICA FIELDS */}
           {formData.tipo_cliente === 'persona_fisica' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.nome ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cognome *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cognome}
+                    onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {errors.cognome && <p className="text-red-500 text-xs mt-1">{errors.cognome}</p>}
+                </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cognome <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.cognome}
-                  onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.cognome ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.cognome && <p className="text-red-500 text-xs mt-1">{errors.cognome}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Codice Fiscale <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Codice Fiscale *
                 </label>
                 <input
                   type="text"
                   value={formData.codice_fiscale}
                   onChange={(e) => setFormData({ ...formData, codice_fiscale: e.target.value.toUpperCase() })}
                   maxLength={16}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
                   placeholder="RSSMRA80A01H501U"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.codice_fiscale ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
                 />
                 {errors.codice_fiscale && <p className="text-red-500 text-xs mt-1">{errors.codice_fiscale}</p>}
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data di Nascita
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.data_nascita}
+                    onChange={(e) => setFormData({ ...formData, data_nascita: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Luogo di Nascita
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.luogo_nascita}
+                    onChange={(e) => setFormData({ ...formData, luogo_nascita: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Roma"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Indirizzo *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.indirizzo}
+                    onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Via Roma"
+                  />
+                  {errors.indirizzo && <p className="text-red-500 text-xs mt-1">{errors.indirizzo}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Numero Civico
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.numero_civico}
+                    onChange={(e) => setFormData({ ...formData, numero_civico: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="123"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Città di Residenza
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.citta_residenza}
+                    onChange={(e) => setFormData({ ...formData, citta_residenza: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Milano"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CAP
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.codice_postale}
+                    onChange={(e) => setFormData({ ...formData, codice_postale: e.target.value })}
+                    maxLength={5}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="20100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Provincia
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.provincia_residenza}
+                    onChange={(e) => setFormData({ ...formData, provincia_residenza: e.target.value.toUpperCase() })}
+                    maxLength={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                    placeholder="MI"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PEC (opzionale)
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PEC
                 </label>
                 <input
                   type="email"
-                  value={formData.pec_pf}
-                  onChange={(e) => setFormData({ ...formData, pec_pf: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.pec_persona}
+                  onChange={(e) => setFormData({ ...formData, pec_persona: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Indirizzo <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.indirizzo}
-                  onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
-                  placeholder="Via Roma 123, 00100 Roma"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.indirizzo ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.indirizzo && <p className="text-red-500 text-xs mt-1">{errors.indirizzo}</p>}
               </div>
             </div>
           )}
 
-          {/* AZIENDA Fields */}
+          {/* AZIENDA FIELDS */}
           {formData.tipo_cliente === 'azienda' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Denominazione <span className="text-red-500">*</span>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Denominazione (Ragione Sociale) *
                 </label>
                 <input
                   type="text"
                   value={formData.denominazione}
                   onChange={(e) => setFormData({ ...formData, denominazione: e.target.value })}
-                  placeholder="Nome azienda S.r.l."
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.denominazione ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {errors.denominazione && <p className="text-red-500 text-xs mt-1">{errors.denominazione}</p>}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Partita IVA <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.partita_iva}
-                  onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
-                  maxLength={11}
-                  placeholder="12345678901"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.partita_iva ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.partita_iva && <p className="text-red-500 text-xs mt-1">{errors.partita_iva}</p>}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Partita IVA *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.partita_iva}
+                    onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                    maxLength={11}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="12345678901"
+                  />
+                  {errors.partita_iva && <p className="text-red-500 text-xs mt-1">{errors.partita_iva}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Fiscale
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cf_azienda}
+                    onChange={(e) => setFormData({ ...formData, cf_azienda: e.target.value.toUpperCase() })}
+                    maxLength={16}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                  />
+                  {errors.cf_azienda && <p className="text-red-500 text-xs mt-1">{errors.cf_azienda}</p>}
+                </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Codice Fiscale (opzionale)
-                </label>
-                <input
-                  type="text"
-                  value={formData.codice_fiscale_azienda}
-                  onChange={(e) => setFormData({ ...formData, codice_fiscale_azienda: e.target.value.toUpperCase() })}
-                  maxLength={16}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.codice_fiscale_azienda ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.codice_fiscale_azienda && <p className="text-red-500 text-xs mt-1">{errors.codice_fiscale_azienda}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Codice Destinatario (opzionale)
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Codice Destinatario / SDI
                 </label>
                 <input
                   type="text"
                   value={formData.codice_destinatario}
                   onChange={(e) => setFormData({ ...formData, codice_destinatario: e.target.value.toUpperCase() })}
                   maxLength={7}
-                  placeholder="XXXXXXX"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PEC (opzionale)
-                </label>
-                <input
-                  type="email"
-                  value={formData.pec_azienda}
-                  onChange={(e) => setFormData({ ...formData, pec_azienda: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Indirizzo <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Indirizzo *
                 </label>
                 <input
                   type="text"
                   value={formData.indirizzo_azienda}
                   onChange={(e) => setFormData({ ...formData, indirizzo_azienda: e.target.value })}
-                  placeholder="Via Esempio 123, 00100 Roma"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.indirizzo_azienda ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {errors.indirizzo_azienda && <p className="text-red-500 text-xs mt-1">{errors.indirizzo_azienda}</p>}
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Indirizzo per DDT (opzionale)
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Indirizzo per DDT
                 </label>
                 <input
                   type="text"
                   value={formData.indirizzo_ddt}
                   onChange={(e) => setFormData({ ...formData, indirizzo_ddt: e.target.value })}
-                  placeholder="Via Diversa 456, 00200 Roma"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PEC
+                </label>
+                <input
+                  type="email"
+                  value={formData.pec_azienda}
+                  onChange={(e) => setFormData({ ...formData, pec_azienda: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contatti Cliente
+                </label>
+                <textarea
+                  value={formData.contatti_cliente}
+                  onChange={(e) => setFormData({ ...formData, contatti_cliente: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
           )}
 
-          {/* PUBBLICA AMMINISTRAZIONE Fields */}
+          {/* PUBBLICA AMMINISTRAZIONE FIELDS */}
           {formData.tipo_cliente === 'pubblica_amministrazione' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Codice Univoco <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.codice_univoco}
-                  onChange={(e) => setFormData({ ...formData, codice_univoco: e.target.value.toUpperCase() })}
-                  maxLength={7}
-                  placeholder="ABC123"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.codice_univoco ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.codice_univoco && <p className="text-red-500 text-xs mt-1">{errors.codice_univoco}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Codice Fiscale <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.codice_fiscale_pa}
-                  onChange={(e) => setFormData({ ...formData, codice_fiscale_pa: e.target.value.toUpperCase() })}
-                  maxLength={16}
-                  placeholder="12345678901"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.codice_fiscale_pa ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
-                />
-                {errors.codice_fiscale_pa && <p className="text-red-500 text-xs mt-1">{errors.codice_fiscale_pa}</p>}
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ente o Ufficio <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ente o Ufficio *
                 </label>
                 <input
                   type="text"
                   value={formData.ente_ufficio}
                   onChange={(e) => setFormData({ ...formData, ente_ufficio: e.target.value })}
-                  placeholder="Comune di Roma"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.ente_ufficio ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Es: Comune di Roma"
                 />
                 {errors.ente_ufficio && <p className="text-red-500 text-xs mt-1">{errors.ente_ufficio}</p>}
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Univoco *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.codice_univoco}
+                    onChange={(e) => setFormData({ ...formData, codice_univoco: e.target.value.toUpperCase() })}
+                    maxLength={7}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                    placeholder="ABC1234"
+                  />
+                  {errors.codice_univoco && <p className="text-red-500 text-xs mt-1">{errors.codice_univoco}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Fiscale *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cf_pa}
+                    onChange={(e) => setFormData({ ...formData, cf_pa: e.target.value.toUpperCase() })}
+                    maxLength={16}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                  />
+                  {errors.cf_pa && <p className="text-red-500 text-xs mt-1">{errors.cf_pa}</p>}
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Città <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Città *
                 </label>
                 <input
                   type="text"
                   value={formData.citta}
                   onChange={(e) => setFormData({ ...formData, citta: e.target.value })}
-                  placeholder="Roma"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    errors.citta ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                  }`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 {errors.citta && <p className="text-red-500 text-xs mt-1">{errors.citta}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Partita IVA
+                </label>
+                <input
+                  type="text"
+                  value={formData.partita_iva_pa}
+                  onChange={(e) => setFormData({ ...formData, partita_iva_pa: e.target.value })}
+                  maxLength={11}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PEC
+                </label>
+                <input
+                  type="email"
+                  value={formData.pec_pa}
+                  onChange={(e) => setFormData({ ...formData, pec_pa: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+          {/* GLOBAL FIELDS - Always visible */}
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-900">Informazioni di Contatto</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nazione *
+              </label>
+              <select
+                value={formData.nazione}
+                onChange={(e) => setFormData({ ...formData, nazione: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="Italia">Italia</option>
+                <option value="Francia">Francia</option>
+                <option value="Germania">Germania</option>
+                <option value="Spagna">Spagna</option>
+                <option value="Altro">Altro</option>
+              </select>
+              {errors.nazione && <p className="text-red-500 text-xs mt-1">{errors.nazione}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Telefono *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.telefono}
+                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="+39 320 1234567"
+                />
+                {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="cliente@example.com"
+                />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <div className="flex justify-end gap-3">
             <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+              onClick={handleClose}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
             >
               Annulla
             </button>
             <button
-              type="submit"
-              disabled={!isFormValid() || submitting}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                isFormValid() && !submitting
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              onClick={handleSave}
+              disabled={isSaveDisabled() || isSaving}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                isSaveDisabled() || isSaving
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              {submitting ? 'Salvataggio...' : 'Salva'}
+              {isSaving ? 'Salvataggio...' : 'Salva Cliente'}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
