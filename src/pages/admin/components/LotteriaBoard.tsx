@@ -159,11 +159,14 @@ interface ManualSaleModalProps {
 
 interface Customer {
   id: string;
-  email: string;
-  tipo_cliente: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  tipo_cliente?: string;
   nome?: string;
   cognome?: string;
   ragione_sociale?: string;
+  denominazione?: string;
   ente_ufficio?: string;
   telefono?: string;
 }
@@ -181,73 +184,103 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   const tickets = ticketNumbers || (ticketNumber ? [ticketNumber] : []);
   const isBulkSale = tickets.length > 1;
 
-  // Load customers on mount
+  // Load customers on mount - same logic as CustomersTab
   useEffect(() => {
     const loadCustomers = async () => {
-      console.log('[ManualSaleModal] Loading customers from all sources...');
+      console.log('[ManualSaleModal] Loading customers...');
 
       const customerMap = new Map<string, Customer>();
 
-      // 1. Load from bookings table
+      // Get unique customers from bookings table
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('customer_name, customer_email, customer_phone, booked_at')
+        .select('customer_name, customer_email, customer_phone, user_id, booked_at, booking_details')
         .order('booked_at', { ascending: false });
 
       if (bookingsError) {
-        console.error('[ManualSaleModal] Error loading from bookings:', bookingsError);
-      } else if (bookingsData) {
-        console.log('[ManualSaleModal] Found bookings:', bookingsData.length);
-        bookingsData.forEach((booking: any) => {
-          const email = booking.customer_email;
-          const phone = booking.customer_phone;
-          const key = email || phone;
+        console.error('[ManualSaleModal] Error loading bookings:', bookingsError);
+      }
 
-          if (key && !customerMap.has(key)) {
+      if (bookingsData) {
+        console.log('[ManualSaleModal] Bookings found:', bookingsData.length);
+        bookingsData.forEach((booking: any) => {
+          const details = booking.booking_details?.customer || {};
+          const customerName = booking.customer_name || details.fullName || 'Cliente';
+          const customerEmail = booking.customer_email || details.email || null;
+          const customerPhone = booking.customer_phone || details.phone || null;
+          const key = customerEmail || customerPhone || booking.user_id;
+
+          if (key) {
+            const existing = customerMap.get(key);
+            if (existing) {
+              if (!existing.phone && customerPhone) existing.phone = customerPhone;
+              if (!existing.email && customerEmail) existing.email = customerEmail;
+              if (existing.full_name === 'Cliente' && customerName) existing.full_name = customerName;
+            } else {
+              customerMap.set(key, {
+                id: booking.user_id || key,
+                full_name: customerName,
+                email: customerEmail,
+                phone: customerPhone
+              });
+            }
+          }
+        });
+        console.log('[ManualSaleModal] Unique customers from bookings:', customerMap.size);
+      }
+
+      // Get customers from customers_extended table
+      const { data: customersExtendedData, error: customersExtendedError } = await supabase
+        .from('customers_extended')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (customersExtendedError) {
+        console.error('[ManualSaleModal] Error loading customers_extended:', customersExtendedError);
+      }
+
+      if (!customersExtendedError && customersExtendedData) {
+        console.log('[ManualSaleModal] Extended customers found:', customersExtendedData.length);
+        customersExtendedData.forEach((customer: any) => {
+          const key = customer.email || customer.telefono || customer.id;
+
+          let fullName = 'Cliente';
+          if (customer.tipo_cliente === 'persona_fisica') {
+            fullName = `${customer.nome || ''} ${customer.cognome || ''}`.trim();
+          } else if (customer.tipo_cliente === 'azienda') {
+            fullName = customer.ragione_sociale || customer.denominazione || 'Azienda';
+          } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
+            fullName = customer.denominazione || customer.ente_ufficio || 'PA';
+          }
+
+          const extendedData: Customer = {
+            id: customer.id,
+            full_name: fullName,
+            email: customer.email,
+            phone: customer.telefono,
+            tipo_cliente: customer.tipo_cliente,
+            nome: customer.nome,
+            cognome: customer.cognome,
+            ragione_sociale: customer.ragione_sociale,
+            denominazione: customer.denominazione,
+            ente_ufficio: customer.ente_ufficio,
+            telefono: customer.telefono
+          };
+
+          if (!customerMap.has(key)) {
+            customerMap.set(key, extendedData);
+          } else {
+            const existing = customerMap.get(key)!;
             customerMap.set(key, {
-              id: key,
-              email: email || '',
-              tipo_cliente: 'persona_fisica',
-              nome: booking.customer_name?.split(' ')[0] || '',
-              cognome: booking.customer_name?.split(' ').slice(1).join(' ') || '',
-              telefono: phone
+              ...existing,
+              ...extendedData
             });
           }
         });
       }
 
-      // 2. Load from customers_extended table (will override/merge with booking customers)
-      const { data: extendedData, error: extendedError } = await supabase
-        .from('customers_extended')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (extendedError) {
-        console.error('[ManualSaleModal] Error loading from customers_extended:', extendedError);
-      } else if (extendedData) {
-        console.log('[ManualSaleModal] Found extended customers:', extendedData.length);
-        extendedData.forEach((customer: any) => {
-          const key = customer.email || customer.telefono || customer.id;
-          // Extended customers override booking customers
-          customerMap.set(key, {
-            id: customer.id,
-            email: customer.email || '',
-            tipo_cliente: customer.tipo_cliente || 'persona_fisica',
-            nome: customer.nome,
-            cognome: customer.cognome,
-            ragione_sociale: customer.ragione_sociale,
-            ente_ufficio: customer.ente_ufficio || customer.denominazione,
-            telefono: customer.telefono
-          });
-        });
-      }
-
       const mergedCustomers = Array.from(customerMap.values());
-      console.log('[ManualSaleModal] Total merged customers:', mergedCustomers.length);
-
-      if (mergedCustomers.length === 0) {
-        alert('Nessun cliente trovato nel database. Crea un nuovo cliente prima.');
-      }
+      console.log('[ManualSaleModal] Total customers:', mergedCustomers.length);
 
       setCustomers(mergedCustomers);
       setFilteredCustomers(mergedCustomers);
@@ -255,21 +288,17 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
     loadCustomers();
   }, []);
 
-  // Filter customers based on search
+  // Filter customers based on search - search by name, email, phone
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredCustomers(customers);
     } else {
       const search = searchTerm.toLowerCase();
-      console.log('[ManualSaleModal] Searching for:', search);
       const filtered = customers.filter(c =>
+        (c.full_name && c.full_name.toLowerCase().includes(search)) ||
         (c.email && c.email.toLowerCase().includes(search)) ||
-        (c.nome && c.nome.toLowerCase().includes(search)) ||
-        (c.cognome && c.cognome.toLowerCase().includes(search)) ||
-        (c.ragione_sociale && c.ragione_sociale.toLowerCase().includes(search)) ||
-        (c.ente_ufficio && c.ente_ufficio.toLowerCase().includes(search))
+        (c.phone && c.phone.toLowerCase().includes(search))
       );
-      console.log('[ManualSaleModal] Filtered results:', filtered.length);
       setFilteredCustomers(filtered);
     }
   }, [searchTerm, customers]);
@@ -292,17 +321,9 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   const discount = originalPrice - totalPrice;
 
   const handleSelectCustomer = (customer: Customer) => {
-    setEmail(customer.email);
-    setPhone(customer.telefono || '');
-
-    if (customer.tipo_cliente === 'persona_fisica') {
-      setFullName(`${customer.nome || ''} ${customer.cognome || ''}`.trim());
-    } else if (customer.tipo_cliente === 'azienda') {
-      setFullName(customer.ragione_sociale || '');
-    } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
-      setFullName(customer.ente_ufficio || '');
-    }
-
+    setEmail(customer.email || '');
+    setPhone(customer.phone || '');
+    setFullName(customer.full_name);
     setShowClientSelector(false);
   };
 
@@ -366,30 +387,21 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
                     Nessun cliente trovato per "{searchTerm}"
                   </div>
                 ) : (
-                  filteredCustomers.map(customer => {
-                    let displayName = customer.email;
-                    if (customer.tipo_cliente === 'persona_fisica') {
-                      displayName = `${customer.nome || ''} ${customer.cognome || ''}`.trim() || customer.email;
-                    } else if (customer.tipo_cliente === 'azienda') {
-                      displayName = customer.ragione_sociale || customer.email;
-                    } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
-                      displayName = customer.ente_ufficio || customer.email;
-                    }
-
-                    return (
-                      <div
-                        key={customer.id}
-                        onClick={() => handleSelectCustomer(customer)}
-                        className="p-3 border-b hover:bg-blue-50 cursor-pointer transition-colors"
-                      >
-                        <div className="font-medium">{displayName}</div>
+                  filteredCustomers.map(customer => (
+                    <div
+                      key={customer.id}
+                      onClick={() => handleSelectCustomer(customer)}
+                      className="p-3 border-b hover:bg-blue-50 cursor-pointer transition-colors"
+                    >
+                      <div className="font-medium">{customer.full_name}</div>
+                      {customer.email && (
                         <div className="text-sm text-gray-600">{customer.email}</div>
-                        {customer.telefono && (
-                          <div className="text-xs text-gray-500">{customer.telefono}</div>
-                        )}
-                      </div>
-                    );
-                  })
+                      )}
+                      {customer.phone && (
+                        <div className="text-xs text-gray-500">{customer.phone}</div>
+                      )}
+                    </div>
+                  ))
                 )}
               </div>
             </div>
