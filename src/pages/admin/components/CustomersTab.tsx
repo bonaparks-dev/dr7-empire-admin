@@ -54,7 +54,7 @@ export default function CustomersTab() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [viewingDocuments, setViewingDocuments] = useState<Customer | null>(null)
-  const [documentsUrls, setDocumentsUrls] = useState<{ license: string | null; id: string | null }>({ license: null, id: null })
+  const [documentsUrls, setDocumentsUrls] = useState<{ licenses: string[]; ids: string[] }>({ licenses: [], ids: [] })
   const [loadingDocuments, setLoadingDocuments] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingId, setUploadingId] = useState(false)
@@ -390,7 +390,7 @@ export default function CustomersTab() {
 
   async function fetchCustomerDocuments(userId: string) {
     setLoadingDocuments(true)
-    setDocumentsUrls({ license: null, id: null })
+    setDocumentsUrls({ licenses: [], ids: [] })
 
     try {
       // List files in driver-licenses bucket for this user
@@ -411,8 +411,8 @@ export default function CustomersTab() {
         console.error('Error listing ID files:', idError)
       }
 
-      let licenseUrl = null
-      let idUrl = null
+      const licenseUrls: string[] = []
+      const idUrls: string[] = []
 
       // Filter out folders and empty placeholders, get only actual files
       const actualLicenseFiles = licenseFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
@@ -421,33 +421,33 @@ export default function CustomersTab() {
       console.log('License files found:', actualLicenseFiles.length, actualLicenseFiles)
       console.log('ID files found:', actualIdFiles.length, actualIdFiles)
 
-      // Get signed URL for the latest driver license
-      if (actualLicenseFiles.length > 0) {
-        const latestLicense = actualLicenseFiles[0]
+      // Get signed URLs for ALL driver licenses
+      for (const licenseFile of actualLicenseFiles) {
         const { data: signedLicense, error: signError } = await supabase.storage
           .from('driver-licenses')
-          .createSignedUrl(`${userId}/${latestLicense.name}`, 3600) // 1 hour expiry
+          .createSignedUrl(`${userId}/${licenseFile.name}`, 3600) // 1 hour expiry
 
         if (signError) {
           console.error('Error creating signed URL for license:', signError)
+        } else if (signedLicense?.signedUrl) {
+          licenseUrls.push(signedLicense.signedUrl)
         }
-        if (signedLicense) licenseUrl = signedLicense.signedUrl
       }
 
-      // Get signed URL for the latest ID
-      if (actualIdFiles.length > 0) {
-        const latestId = actualIdFiles[0]
+      // Get signed URLs for ALL IDs
+      for (const idFile of actualIdFiles) {
         const { data: signedId, error: signError } = await supabase.storage
           .from('driver-ids')
-          .createSignedUrl(`${userId}/${latestId.name}`, 3600) // 1 hour expiry
+          .createSignedUrl(`${userId}/${idFile.name}`, 3600) // 1 hour expiry
 
         if (signError) {
           console.error('Error creating signed URL for ID:', signError)
+        } else if (signedId?.signedUrl) {
+          idUrls.push(signedId.signedUrl)
         }
-        if (signedId) idUrl = signedId.signedUrl
       }
 
-      setDocumentsUrls({ license: licenseUrl, id: idUrl })
+      setDocumentsUrls({ licenses: licenseUrls, ids: idUrls })
     } catch (error) {
       console.error('Error fetching documents:', error)
     } finally {
@@ -830,25 +830,36 @@ export default function CustomersTab() {
                   <div className="space-y-4">
                     {/* Driver's License */}
                     <div className="border border-gray-700 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-300">📄 Patente di Guida</span>
-                        {documentsUrls.license && (
-                          <a
-                            href={documentsUrls.license}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-400 hover:text-blue-300"
-                          >
-                            Apri in nuova scheda →
-                          </a>
-                        )}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-300">
+                          📄 Patente di Guida ({documentsUrls.licenses.length}/2)
+                        </span>
                       </div>
-                      {documentsUrls.license ? (
-                        <img
-                          src={documentsUrls.license}
-                          alt="Patente di guida"
-                          className="w-full rounded border border-gray-600 mb-3"
-                        />
+                      {documentsUrls.licenses.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                          {documentsUrls.licenses.map((url, index) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-400">
+                                  {index === 0 ? 'Fronte' : index === 1 ? 'Retro' : `Documento ${index + 1}`}
+                                </span>
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-400 hover:text-blue-300"
+                                >
+                                  Apri →
+                                </a>
+                              </div>
+                              <img
+                                src={url}
+                                alt={`Patente di guida - ${index === 0 ? 'Fronte' : 'Retro'}`}
+                                className="w-full rounded border border-gray-600"
+                              />
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <p className="text-sm text-gray-500 italic mb-3">Nessun documento caricato</p>
                       )}
@@ -863,6 +874,7 @@ export default function CustomersTab() {
                                 const file = e.target.files?.[0]
                                 if (file && viewingDocuments.id) {
                                   handleUploadLicense(file, viewingDocuments.id)
+                                  e.target.value = '' // Reset input to allow same file again
                                 }
                               }}
                               className="hidden"
@@ -874,34 +886,50 @@ export default function CustomersTab() {
                                 ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                                 : 'bg-dr7-gold text-black hover:bg-dr7-gold/90'
                             }`}>
-                              {uploadingLicense ? 'Caricamento...' : '📤 Carica Nuova Patente'}
+                              {uploadingLicense ? 'Caricamento...' : documentsUrls.licenses.length === 0 ? '📤 Carica Fronte Patente' : documentsUrls.licenses.length === 1 ? '📤 Carica Retro Patente' : '📤 Carica Altro Documento'}
                             </span>
                           </label>
+                          {documentsUrls.licenses.length < 2 && (
+                            <p className="text-xs text-yellow-400 mt-2 text-center">
+                              ⚠️ Ricorda di caricare entrambi i lati della patente (fronte e retro)
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
 
                     {/* ID Card / Passport */}
                     <div className="border border-gray-700 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-300">🆔 Carta d'Identità / Passaporto</span>
-                        {documentsUrls.id && (
-                          <a
-                            href={documentsUrls.id}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-400 hover:text-blue-300"
-                          >
-                            Apri in nuova scheda →
-                          </a>
-                        )}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-300">
+                          🆔 Carta d'Identità / Passaporto ({documentsUrls.ids.length}/2)
+                        </span>
                       </div>
-                      {documentsUrls.id ? (
-                        <img
-                          src={documentsUrls.id}
-                          alt="Carta d'identità"
-                          className="w-full rounded border border-gray-600 mb-3"
-                        />
+                      {documentsUrls.ids.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                          {documentsUrls.ids.map((url, index) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-400">
+                                  {index === 0 ? 'Fronte' : index === 1 ? 'Retro' : `Documento ${index + 1}`}
+                                </span>
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-400 hover:text-blue-300"
+                                >
+                                  Apri →
+                                </a>
+                              </div>
+                              <img
+                                src={url}
+                                alt={`Carta d'identità - ${index === 0 ? 'Fronte' : 'Retro'}`}
+                                className="w-full rounded border border-gray-600"
+                              />
+                            </div>
+                          ))}
+                        </div>
                       ) : (
                         <p className="text-sm text-gray-500 italic mb-3">Nessun documento caricato</p>
                       )}
@@ -916,6 +944,7 @@ export default function CustomersTab() {
                                 const file = e.target.files?.[0]
                                 if (file && viewingDocuments.id) {
                                   handleUploadId(file, viewingDocuments.id)
+                                  e.target.value = '' // Reset input to allow same file again
                                 }
                               }}
                               className="hidden"
@@ -927,9 +956,14 @@ export default function CustomersTab() {
                                 ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                                 : 'bg-dr7-gold text-black hover:bg-dr7-gold/90'
                             }`}>
-                              {uploadingId ? 'Caricamento...' : '📤 Carica Nuovo Documento'}
+                              {uploadingId ? 'Caricamento...' : documentsUrls.ids.length === 0 ? '📤 Carica Fronte Documento' : documentsUrls.ids.length === 1 ? '📤 Carica Retro Documento' : '📤 Carica Altro Documento'}
                             </span>
                           </label>
+                          {documentsUrls.ids.length < 2 && (
+                            <p className="text-xs text-yellow-400 mt-2 text-center">
+                              ⚠️ Ricorda di caricare entrambi i lati del documento (fronte e retro)
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
