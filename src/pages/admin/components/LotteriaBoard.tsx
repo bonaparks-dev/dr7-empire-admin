@@ -437,6 +437,13 @@ const LotteriaBoard: React.FC = () => {
 
             // Generate and send PDF for this ticket
             try {
+              // Fetch full customer data from database
+              const { data: customerData } = await supabase
+                .from('customers_extended')
+                .select('*')
+                .eq('email', email)
+                .single();
+
               await fetch('https://dr7empire.com/.netlify/functions/send-manual-ticket-pdf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -444,7 +451,8 @@ const LotteriaBoard: React.FC = () => {
                   ticketNumber,
                   email,
                   fullName,
-                  phone
+                  phone,
+                  customerData: customerData || {} // Include all customer fields
                 })
               });
             } catch (pdfError) {
@@ -571,6 +579,16 @@ const LotteriaBoard: React.FC = () => {
         }
 
         try {
+          console.log('[Lottery] Fetching full customer data from database...');
+          // Fetch full customer data from database
+          const { data: customerData } = await supabase
+            .from('customers_extended')
+            .select('*')
+            .eq('email', email)
+            .single();
+
+          console.log('[Lottery] Customer data fetched:', customerData);
+
           console.log('[Lottery] Calling PDF generation function...');
           const pdfResponse = await fetch('https://dr7empire.com/.netlify/functions/send-manual-ticket-pdf', {
             method: 'POST',
@@ -579,7 +597,8 @@ const LotteriaBoard: React.FC = () => {
               ticketNumber,
               email,
               fullName,
-              phone
+              phone,
+              customerData: customerData || {} // Include all customer fields
             })
           });
 
