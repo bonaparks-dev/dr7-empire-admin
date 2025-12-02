@@ -172,44 +172,56 @@ export default function CustomersTab() {
             fullName = customer.denominazione || customer.ente_ufficio || 'PA'
           }
 
+          // Store ALL customer data (create new or update existing)
+          const extendedData = {
+            id: customer.id,
+            full_name: fullName,
+            email: customer.email,
+            phone: customer.telefono,
+            driver_license_number: customer.patente || null,
+            notes: null,
+            created_at: customer.created_at,
+            updated_at: customer.updated_at,
+            // Include all extended fields
+            tipo_cliente: customer.tipo_cliente,
+            source: customer.source,
+            // Persona Fisica
+            nome: customer.nome,
+            cognome: customer.cognome,
+            codice_fiscale: customer.codice_fiscale,
+            patente: customer.patente,
+            indirizzo: customer.indirizzo,
+            pec: customer.pec,
+            // Azienda
+            ragione_sociale: customer.ragione_sociale,
+            denominazione: customer.denominazione,
+            partita_iva: customer.partita_iva,
+            codice_destinatario: customer.codice_destinatario,
+            indirizzo_azienda: customer.indirizzo_azienda,
+            indirizzo_ddt: customer.indirizzo_ddt,
+            contatti_cliente: customer.contatti_cliente,
+            // Pubblica Amministrazione
+            codice_ipa: customer.codice_ipa,
+            codice_univoco: customer.codice_univoco,
+            codice_fiscale_pa: customer.codice_fiscale_pa,
+            ente_ufficio: customer.ente_ufficio,
+            citta: customer.citta,
+            // Common
+            nazione: customer.nazione,
+            telefono: customer.telefono
+          }
+
           if (!customerMap.has(key)) {
-            // Store ALL customer data for fattura generation
+            // Add new customer
+            customerMap.set(key, extendedData)
+          } else {
+            // Update existing customer with extended data (merge)
+            const existing = customerMap.get(key)!
             customerMap.set(key, {
-              id: customer.id,
-              full_name: fullName,
-              email: customer.email,
-              phone: customer.telefono,
-              driver_license_number: customer.patente || null,
-              notes: null,
-              created_at: customer.created_at,
-              updated_at: customer.updated_at,
-              // Include all extended fields
-              tipo_cliente: customer.tipo_cliente,
-              source: customer.source,
-              // Persona Fisica
-              nome: customer.nome,
-              cognome: customer.cognome,
-              codice_fiscale: customer.codice_fiscale,
-              patente: customer.patente,
-              indirizzo: customer.indirizzo,
-              pec: customer.pec,
-              // Azienda
-              ragione_sociale: customer.ragione_sociale,
-              denominazione: customer.denominazione,
-              partita_iva: customer.partita_iva,
-              codice_destinatario: customer.codice_destinatario,
-              indirizzo_azienda: customer.indirizzo_azienda,
-              indirizzo_ddt: customer.indirizzo_ddt,
-              contatti_cliente: customer.contatti_cliente,
-              // Pubblica Amministrazione
-              codice_ipa: customer.codice_ipa,
-              codice_univoco: customer.codice_univoco,
-              codice_fiscale_pa: customer.codice_fiscale_pa,
-              ente_ufficio: customer.ente_ufficio,
-              citta: customer.citta,
-              // Common
-              nazione: customer.nazione,
-              telefono: customer.telefono
+              ...existing,
+              ...extendedData,
+              // Keep earlier created_at if it exists
+              created_at: existing.created_at || extendedData.created_at
             })
           }
         })

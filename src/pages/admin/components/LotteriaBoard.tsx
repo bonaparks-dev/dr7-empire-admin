@@ -157,14 +157,64 @@ interface ManualSaleModalProps {
   onOpenNewClientModal: () => void;
 }
 
+interface Customer {
+  id: string;
+  email: string;
+  tipo_cliente: string;
+  nome?: string;
+  cognome?: string;
+  ragione_sociale?: string;
+  ente_o_ufficio?: string;
+  telefono?: string;
+}
+
 const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: string; fullName: string; phone: string } | null }> = ({ ticketNumber, ticketNumbers, onClose, onConfirm, onOpenNewClientModal, prefillData }) => {
   const [email, setEmail] = useState(prefillData?.email || '');
   const [fullName, setFullName] = useState(prefillData?.fullName || '');
   const [phone, setPhone] = useState(prefillData?.phone || '');
   const [paymentMethod, setPaymentMethod] = useState('Contanti');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [showClientSelector, setShowClientSelector] = useState(true);
 
   const tickets = ticketNumbers || (ticketNumber ? [ticketNumber] : []);
   const isBulkSale = tickets.length > 1;
+
+  // Load customers on mount
+  useEffect(() => {
+    const loadCustomers = async () => {
+      const { data, error } = await supabase
+        .from('customers_extended')
+        .select('id, email, tipo_cliente, nome, cognome, ragione_sociale, ente_o_ufficio, telefono')
+        .order('email', { ascending: true });
+
+      if (!error && data) {
+        setCustomers(data);
+        setFilteredCustomers(data);
+      }
+    };
+    loadCustomers();
+  }, []);
+
+  // Filter customers based on search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCustomers(customers);
+    } else {
+      const search = searchTerm.toLowerCase();
+      setFilteredCustomers(
+        customers.filter(c =>
+          c.email.toLowerCase().includes(search) ||
+          c.nome?.toLowerCase().includes(search) ||
+          c.cognome?.toLowerCase().includes(search) ||
+          c.ragione_sociale?.toLowerCase().includes(search) ||
+          c.ente_o_ufficio?.toLowerCase().includes(search)
+        )
+      );
+    }
+  }, [searchTerm, customers]);
 
   // Calculate discounted price based on quantity
   const calculateTotalPrice = (qty: number): number => {
@@ -183,6 +233,22 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
   const originalPrice = tickets.length * 25;
   const discount = originalPrice - totalPrice;
 
+  const handleSelectCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setEmail(customer.email);
+    setPhone(customer.telefono || '');
+
+    if (customer.tipo_cliente === 'persona_fisica') {
+      setFullName(`${customer.nome || ''} ${customer.cognome || ''}`.trim());
+    } else if (customer.tipo_cliente === 'azienda') {
+      setFullName(customer.ragione_sociale || '');
+    } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
+      setFullName(customer.ente_o_ufficio || '');
+    }
+
+    setShowClientSelector(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && fullName && phone && paymentMethod) {
@@ -192,22 +258,14 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96">
-        <h3 className="text-xl font-bold mb-2">
+      <div className="bg-white rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+        <h3 className="text-xl font-bold mb-4">
           {isBulkSale
             ? `Vendita Multipla - ${tickets.length} Biglietti`
             : `Vendita Manuale - Biglietto #${String(tickets[0]).padStart(4, '0')}`
           }
         </h3>
-        <div className="mb-4">
-          <button
-            type="button"
-            onClick={onOpenNewClientModal}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            + Crea Cliente Completo (Azienda/PA)
-          </button>
-        </div>
+
         {isBulkSale && (
           <div className="mb-4 p-3 bg-gray-100 rounded">
             <p className="text-sm font-medium mb-2">Biglietti selezionati:</p>
@@ -220,89 +278,156 @@ const ManualSaleModal: React.FC<ManualSaleModalProps & { prefillData?: { email: 
             </div>
           </div>
         )}
-        <form onSubmit={handleSubmit}>
+
+        {/* Step 1: Select Client */}
+        {showClientSelector && (
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Nome Completo</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Telefono</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              required
-              placeholder="+39 123 456 7890"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Metodo di Pagamento</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              required
+            <h4 className="text-lg font-semibold mb-3">Step 1: Seleziona Cliente</h4>
+
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Cerca per nome, email, azienda..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border rounded px-3 py-2 mb-3"
+              />
+
+              <div className="border rounded max-h-60 overflow-y-auto">
+                {filteredCustomers.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    Nessun cliente trovato
+                  </div>
+                ) : (
+                  filteredCustomers.map(customer => {
+                    let displayName = customer.email;
+                    if (customer.tipo_cliente === 'persona_fisica') {
+                      displayName = `${customer.nome || ''} ${customer.cognome || ''}`.trim() || customer.email;
+                    } else if (customer.tipo_cliente === 'azienda') {
+                      displayName = customer.ragione_sociale || customer.email;
+                    } else if (customer.tipo_cliente === 'pubblica_amministrazione') {
+                      displayName = customer.ente_o_ufficio || customer.email;
+                    }
+
+                    return (
+                      <div
+                        key={customer.id}
+                        onClick={() => handleSelectCustomer(customer)}
+                        className="p-3 border-b hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <div className="font-medium">{displayName}</div>
+                        <div className="text-sm text-gray-600">{customer.email}</div>
+                        {customer.telefono && (
+                          <div className="text-xs text-gray-500">{customer.telefono}</div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-4">
+              <div className="flex-1 border-t border-gray-300"></div>
+              <span className="text-sm text-gray-500">oppure</span>
+              <div className="flex-1 border-t border-gray-300"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                onOpenNewClientModal();
+                onClose();
+              }}
+              className="w-full mt-4 px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
             >
-              <option value="Contanti">Contanti</option>
-              <option value="Carta">Carta</option>
-              <option value="Bonifico">Bonifico</option>
-              <option value="Paypal">Paypal</option>
-            </select>
-          </div>
-          {discount > 0 && (
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded">
-              <p className="text-sm font-semibold text-yellow-800 mb-1">Sconto applicato!</p>
-              <p className="text-xs text-yellow-700">
-                Prezzo originale: €{originalPrice.toFixed(2)}
-              </p>
-              <p className="text-xs text-yellow-700">
-                Sconto: -€{discount.toFixed(2)}
-              </p>
-              <p className="text-sm font-bold text-yellow-900 mt-1">
-                Totale: €{totalPrice.toFixed(2)}
-              </p>
-            </div>
-          )}
-          {discount === 0 && (
-            <div className="mb-4 p-3 bg-gray-100 rounded">
-              <p className="text-sm font-bold text-gray-900">
-                Totale: €{totalPrice.toFixed(2)}
-              </p>
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
+              + Crea Nuovo Cliente
+            </button>
+
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              className="w-full mt-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
             >
               Annulla
             </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Conferma
-            </button>
           </div>
-        </form>
+        )}
+
+        {/* Step 2: Select Payment Method */}
+        {!showClientSelector && (
+          <div>
+            <h4 className="text-lg font-semibold mb-3">Step 2: Metodo di Pagamento</h4>
+
+            <div className="mb-4 p-4 bg-gray-50 rounded border">
+              <div className="text-sm text-gray-600 mb-1">Cliente selezionato:</div>
+              <div className="font-medium">{fullName}</div>
+              <div className="text-sm text-gray-600">{email}</div>
+              <div className="text-sm text-gray-600">{phone}</div>
+              <button
+                type="button"
+                onClick={() => setShowClientSelector(true)}
+                className="text-xs text-blue-600 hover:text-blue-800 underline mt-2"
+              >
+                Cambia cliente
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Metodo di Pagamento</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+                required
+              >
+                <option value="Contanti">Contanti</option>
+                <option value="Carta">Carta</option>
+                <option value="Bonifico">Bonifico</option>
+                <option value="Paypal">Paypal</option>
+              </select>
+            </div>
+
+            {discount > 0 && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded">
+                <p className="text-sm font-semibold text-yellow-800 mb-1">Sconto applicato!</p>
+                <p className="text-xs text-yellow-700">
+                  Prezzo originale: €{originalPrice.toFixed(2)}
+                </p>
+                <p className="text-xs text-yellow-700">
+                  Sconto: -€{discount.toFixed(2)}
+                </p>
+                <p className="text-sm font-bold text-yellow-900 mt-1">
+                  Totale: €{totalPrice.toFixed(2)}
+                </p>
+              </div>
+            )}
+            {discount === 0 && (
+              <div className="mb-4 p-3 bg-gray-100 rounded">
+                <p className="text-sm font-bold text-gray-900">
+                  Totale: €{totalPrice.toFixed(2)}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
+              >
+                Conferma Vendita
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -508,7 +633,15 @@ const LotteriaBoard: React.FC = () => {
 
   const handleManualSale = async (ticketNumber: number, email: string, fullName: string, phone: string, paymentMethod: string = 'Contanti') => {
     try {
+      console.log('[handleManualSale] ========== STARTING SALE ==========');
+      console.log('[handleManualSale] Ticket:', ticketNumber);
+      console.log('[handleManualSale] Email:', email);
+      console.log('[handleManualSale] Name:', fullName);
+      console.log('[handleManualSale] Phone:', phone);
+      console.log('[handleManualSale] Payment:', paymentMethod);
+
       // Double-check ticket is still available before attempted sale
+      console.log('[handleManualSale] Checking if ticket is already sold...');
       const { data: existingTicket } = await supabase
         .from('commercial_operation_tickets')
         .select('ticket_number')
@@ -516,11 +649,14 @@ const LotteriaBoard: React.FC = () => {
         .single();
 
       if (existingTicket) {
+        console.log('[handleManualSale] Ticket already sold, aborting');
         alert(`Biglietto #${String(ticketNumber).padStart(4, '0')} è già stato venduto!`);
         await fetchSoldTickets(); // Refresh to show current state
         setSelectedTicket(null);
         return;
       }
+
+      console.log('[handleManualSale] Ticket is available, proceeding with sale');
 
       const uuid = generateTicketUuid(ticketNumber);
 
@@ -537,25 +673,29 @@ const LotteriaBoard: React.FC = () => {
         quantity: 1
       };
 
-      console.log('[Lottery] Attempting to insert ticket with data:', ticketData);
+      console.log('[handleManualSale] Attempting to insert ticket with data:', ticketData);
 
       // Try with payment_method first
+      console.log('[handleManualSale] Inserting into database with payment_method...');
       let insertResult = await supabase
         .from('commercial_operation_tickets')
         .insert([{ ...ticketData, payment_method: paymentMethod }]);
 
+      console.log('[handleManualSale] Insert result:', insertResult);
+
       // If payment_method column doesn't exist, try without it
       if (insertResult.error && insertResult.error.code === '42703') {
-        console.warn('[Lottery] payment_method column not found, retrying without it');
+        console.warn('[handleManualSale] payment_method column not found, retrying without it');
         insertResult = await supabase
           .from('commercial_operation_tickets')
           .insert([ticketData]);
+        console.log('[handleManualSale] Retry insert result:', insertResult);
       }
 
       const { error } = insertResult;
 
       if (error) {
-        console.error('[Lottery] Database insert error:', error);
+        console.error('[handleManualSale] Database insert error:', error);
         // Check if it's a duplicate key error (ticket was just sold)
         if (error.code === '23505') {
           alert(`Biglietto #${String(ticketNumber).padStart(4, '0')} è appena stato venduto da qualcun altro!`);
@@ -666,11 +806,9 @@ const LotteriaBoard: React.FC = () => {
         }
       });
     } else {
-      // Single ticket sale - Open NewClientModal first
-      console.log('[TicketClick] Opening NewClientModal for ticket:', ticketNumber);
-      setPendingTicketNumbers([ticketNumber]);
-      setIsBulkSale(false);
-      setShowNewClientModal(true);
+      // Single ticket sale - Open ManualSaleModal directly
+      console.log('[TicketClick] Opening ManualSaleModal for ticket:', ticketNumber);
+      setSelectedTicket(ticketNumber);
     }
   };
 
@@ -850,9 +988,7 @@ const LotteriaBoard: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setPendingTicketNumbers(selectedTickets);
-                    setIsBulkSale(true);
-                    setShowNewClientModal(true);
+                    setSelectedTicket(-1); // -1 indicates bulk sale mode
                   }}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
                 >
@@ -929,6 +1065,10 @@ const LotteriaBoard: React.FC = () => {
             setPrefillData(null);
           }}
           onOpenNewClientModal={() => {
+            // Store current ticket number before opening NewClientModal
+            console.log('[ManualSaleModal] Opening NewClientModal for single ticket:', selectedTicket);
+            setPendingTicketNumbers([selectedTicket]);
+            setIsBulkSale(false);
             setShowNewClientModal(true);
           }}
           prefillData={prefillData}
@@ -962,7 +1102,8 @@ const LotteriaBoard: React.FC = () => {
           setPendingClientData(null);
         }}
         onConfirm={async (paymentMethod) => {
-          console.log('[PaymentModal] Confirm clicked with payment method:', paymentMethod);
+          console.log('[PaymentModal] ========== CONFIRM BUTTON CLICKED ==========');
+          console.log('[PaymentModal] Payment method:', paymentMethod);
           console.log('[PaymentModal] Pending tickets:', pendingTicketNumbers);
           console.log('[PaymentModal] Client data:', pendingClientData);
           console.log('[PaymentModal] Is bulk sale:', isBulkSale);
@@ -970,10 +1111,10 @@ const LotteriaBoard: React.FC = () => {
           setShowPaymentModal(false);
 
           // Complete the sale with the selected payment method
-          if (pendingTicketNumbers && pendingClientData) {
+          if (pendingTicketNumbers && pendingTicketNumbers.length > 0 && pendingClientData) {
             try {
-              if (isBulkSale) {
-                console.log('[PaymentModal] Calling handleBulkManualSale...');
+              if (isBulkSale && pendingTicketNumbers.length > 1) {
+                console.log('[PaymentModal] Starting BULK sale for', pendingTicketNumbers.length, 'tickets...');
                 await handleBulkManualSale(
                   pendingTicketNumbers,
                   pendingClientData.email,
@@ -981,8 +1122,9 @@ const LotteriaBoard: React.FC = () => {
                   pendingClientData.phone,
                   paymentMethod
                 );
+                console.log('[PaymentModal] Bulk sale completed');
               } else {
-                console.log('[PaymentModal] Calling handleManualSale...');
+                console.log('[PaymentModal] Starting SINGLE sale for ticket', pendingTicketNumbers[0], '...');
                 await handleManualSale(
                   pendingTicketNumbers[0],
                   pendingClientData.email,
@@ -990,18 +1132,22 @@ const LotteriaBoard: React.FC = () => {
                   pendingClientData.phone,
                   paymentMethod
                 );
+                console.log('[PaymentModal] Single sale completed');
               }
-              console.log('[PaymentModal] Sale completed successfully');
+              console.log('[PaymentModal] Sale process finished successfully');
             } catch (error) {
               console.error('[PaymentModal] Error during sale:', error);
               alert(`Errore durante la vendita: ${error}`);
             }
           } else {
-            console.error('[PaymentModal] Missing data - tickets:', pendingTicketNumbers, 'client:', pendingClientData);
+            console.error('[PaymentModal] VALIDATION FAILED - Missing data:');
+            console.error('  - Tickets:', pendingTicketNumbers);
+            console.error('  - Client:', pendingClientData);
             alert('Errore: dati mancanti per completare la vendita');
           }
 
           // Reset state
+          console.log('[PaymentModal] Resetting state...');
           setPendingTicketNumbers(null);
           setPendingClientData(null);
         }}
@@ -1011,53 +1157,83 @@ const LotteriaBoard: React.FC = () => {
       <NewClientModal
         isOpen={showNewClientModal}
         onClose={() => {
-          console.log('[NewClientModal] onClose called - user cancelled');
+          console.log('[NewClientModal] onClose called - checking if should reset state');
+          console.log('[NewClientModal] pendingClientData exists?:', !!pendingClientData);
           setShowNewClientModal(false);
-          setPendingTicketNumbers(null);
-          setPendingClientData(null);
+          // Only reset state if user cancelled (no client data was set)
+          // If client data exists, we're transitioning to PaymentModal, so keep the pending tickets
+          if (!pendingClientData) {
+            console.log('[NewClientModal] User cancelled, resetting state');
+            setPendingTicketNumbers(null);
+            setPendingClientData(null);
+          } else {
+            console.log('[NewClientModal] Client data exists, keeping pendingTicketNumbers for PaymentModal');
+          }
         }}
         onClientCreated={async (clientId) => {
-          console.log('[NewClientModal] Client created with ID:', clientId);
+          console.log('[NewClientModal] ===== CLIENT CREATED =====');
+          console.log('[NewClientModal] Client ID:', clientId);
+          console.log('[NewClientModal] pendingTicketNumbers:', pendingTicketNumbers);
+          console.log('[NewClientModal] isBulkSale:', isBulkSale);
 
-          // Fetch the client data
-          const { data, error } = await supabase
-            .from('customers_extended')
-            .select('*')
-            .eq('id', clientId)
-            .single();
+          // Set a flag to prevent onClose from resetting state
+          // We'll use a temporary marker value in pendingClientData
+          setPendingClientData({ email: '_LOADING_', fullName: '_LOADING_', phone: '_LOADING_' });
 
-          if (error) {
-            console.error('[NewClientModal] Error fetching client data:', error);
-            alert(`Errore nel recuperare i dati del cliente: ${error.message}`);
-            return;
-          }
+          try {
+            // Fetch the client data
+            const { data, error } = await supabase
+              .from('customers_extended')
+              .select('*')
+              .eq('id', clientId)
+              .single();
 
-          if (data) {
-            // Extract data based on client type
-            let fullName = '';
-            const email = data.email || '';
-            const phone = data.telefono || '';
-
-            if (data.tipo_cliente === 'persona_fisica') {
-              fullName = `${data.nome || ''} ${data.cognome || ''}`.trim();
-            } else if (data.tipo_cliente === 'azienda') {
-              fullName = data.ragione_sociale || '';
-            } else if (data.tipo_cliente === 'pubblica_amministrazione') {
-              fullName = data.ente_o_ufficio || '';
+            if (error) {
+              console.error('[NewClientModal] Error fetching client data:', error);
+              alert(`Errore nel recuperare i dati del cliente: ${error.message}`);
+              setPendingClientData(null);
+              return;
             }
 
-            console.log('[NewClientModal] Extracted client data:', { email, fullName, phone });
-            console.log('[NewClientModal] Pending ticket numbers BEFORE closing modal:', pendingTicketNumbers);
+            if (data) {
+              // Extract data based on client type
+              let fullName = '';
+              const email = data.email || '';
+              const phone = data.telefono || '';
 
-            // DON'T reset pendingTicketNumbers here - we need them for PaymentModal!
-            // Store client data FIRST
-            setPendingClientData({ email, fullName, phone });
+              if (data.tipo_cliente === 'persona_fisica') {
+                fullName = `${data.nome || ''} ${data.cognome || ''}`.trim();
+              } else if (data.tipo_cliente === 'azienda') {
+                fullName = data.ragione_sociale || '';
+              } else if (data.tipo_cliente === 'pubblica_amministrazione') {
+                fullName = data.ente_o_ufficio || '';
+              }
 
-            // Close modal WITHOUT triggering onClose (which would reset pendingTicketNumbers)
-            setShowNewClientModal(false);
+              console.log('[NewClientModal] Extracted client data:', { email, fullName, phone });
+              console.log('[NewClientModal] Pending ticket numbers:', pendingTicketNumbers);
 
-            console.log('[NewClientModal] Opening PaymentMethodModal');
-            setShowPaymentModal(true);
+              // Store client data and verify pendingTicketNumbers is still set
+              if (!pendingTicketNumbers || pendingTicketNumbers.length === 0) {
+                console.error('[NewClientModal] ERROR: pendingTicketNumbers is empty!');
+                alert('Errore: nessun biglietto selezionato. Riprova.');
+                setShowNewClientModal(false);
+                setPendingClientData(null);
+                return;
+              }
+
+              // Store the actual client data
+              setPendingClientData({ email, fullName, phone });
+
+              // Close NewClientModal
+              setShowNewClientModal(false);
+
+              // Open PaymentModal immediately
+              console.log('[NewClientModal] Opening PaymentMethodModal');
+              setShowPaymentModal(true);
+            }
+          } catch (err) {
+            console.error('[NewClientModal] Unexpected error:', err);
+            setPendingClientData(null);
           }
         }}
       />
