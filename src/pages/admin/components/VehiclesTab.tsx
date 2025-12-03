@@ -73,6 +73,20 @@ export default function VehiclesTab() {
       return
     }
 
+    // Validate dates when status is unavailable
+    if (formData.status === 'unavailable') {
+      if (!formData.unavailable_from || !formData.unavailable_until) {
+        alert('⚠️ ATTENZIONE: Per sincronizzare con Google Calendar, devi specificare ENTRAMBE le date:\n\n📅 Non Disponibile Dal (data inizio)\n📅 Non Disponibile Fino Al (data fine)\n\nSe è solo per un giorno, inserisci la stessa data in entrambi i campi.')
+        return
+      }
+
+      // Validate that from date is not after until date
+      if (formData.unavailable_from > formData.unavailable_until) {
+        alert('⚠️ ERRORE: La data "Dal" non può essere successiva alla data "Fino Al"!')
+        return
+      }
+    }
+
     try {
       const dataToSave = {
         display_name: formData.display_name,
@@ -382,28 +396,31 @@ export default function VehiclesTab() {
           {formData.status === 'unavailable' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
               <div>
-                <label className="block text-sm text-yellow-200 mb-1">Non Disponibile Dal</label>
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Dal *</label>
                 <input
                   type="date"
                   lang="it"
                   value={formData.unavailable_from}
                   onChange={(e) => setFormData({ ...formData, unavailable_from: e.target.value })}
+                  required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm text-yellow-200 mb-1">Non Disponibile Fino Al</label>
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Fino Al *</label>
                 <input
                   type="date"
                   lang="it"
                   value={formData.unavailable_until}
                   onChange={(e) => setFormData({ ...formData, unavailable_until: e.target.value })}
+                  required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
                 />
               </div>
               <div className="col-span-2">
                 <p className="text-xs text-yellow-200">
-                  ℹ️ Specificare le date in cui il veicolo non sarà disponibile per il noleggio.
+                  ⚠️ <strong>IMPORTANTE:</strong> Entrambe le date sono obbligatorie per sincronizzare con Google Calendar.<br/>
+                  💡 Per un solo giorno (es. 10 dicembre), inserisci la stessa data in entrambi i campi: 10/12 → 10/12
                 </p>
               </div>
             </div>
