@@ -473,9 +473,7 @@ export default function VehiclesTab() {
               </div>
               <div className="col-span-2">
                 <p className="text-xs text-yellow-200">
-                  ⚠️ <strong>IMPORTANTE:</strong> Entrambe le date sono obbligatorie per sincronizzare con Google Calendar.<br/>
-                  💡 Formato: GG/MM/AAAA (es. 10/12/2024 per il 10 dicembre 2024)<br/>
-                  💡 Per un solo giorno, inserisci la stessa data in entrambi i campi: 10/12/2024 → 10/12/2024
+                  ⚠️ <strong>IMPORTANTE:</strong> Entrambe le date sono obbligatorie per sincronizzare con Google Calendar.
                 </p>
               </div>
             </div>
