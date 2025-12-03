@@ -34,7 +34,8 @@ export default function VehiclesTab() {
     daily_rate: '0',
     category: 'exotic',
     unavailable_from: '',
-    unavailable_until: ''
+    unavailable_until: '',
+    unavailable_reason: ''
   })
 
   useEffect(() => {
@@ -97,7 +98,8 @@ export default function VehiclesTab() {
         category: formData.category,
         metadata: {
           unavailable_from: formData.unavailable_from || null,
-          unavailable_until: formData.unavailable_until || null
+          unavailable_until: formData.unavailable_until || null,
+          unavailable_reason: formData.unavailable_reason || null
         }
       }
 
@@ -131,7 +133,7 @@ export default function VehiclesTab() {
               vehiclePlate: formData.plate || undefined,
               unavailableFrom: formData.unavailable_from,
               unavailableUntil: formData.unavailable_until,
-              reason: 'Non disponibile'
+              reason: formData.unavailable_reason || 'Non disponibile'
             })
           });
 
@@ -182,6 +184,7 @@ export default function VehiclesTab() {
     const metadata = vehicle.metadata as any
     const unavailableFrom = metadata?.unavailable_from
     const unavailableUntil = metadata?.unavailable_until
+    const unavailableReason = metadata?.unavailable_reason
 
     if (!unavailableFrom || !unavailableUntil) {
       alert('⚠️ Impossibile sincronizzare: Date di non disponibilità mancanti.\n\nModifica il veicolo e inserisci entrambe le date.')
@@ -197,7 +200,7 @@ export default function VehiclesTab() {
           vehiclePlate: vehicle.plate || undefined,
           unavailableFrom: unavailableFrom,
           unavailableUntil: unavailableUntil,
-          reason: 'Non disponibile'
+          reason: unavailableReason || 'Non disponibile'
         })
       })
 
@@ -222,7 +225,8 @@ export default function VehiclesTab() {
       daily_rate: '0',
       category: 'exotic',
       unavailable_from: '',
-      unavailable_until: ''
+      unavailable_until: '',
+      unavailable_reason: ''
     })
   }
 
@@ -234,7 +238,8 @@ export default function VehiclesTab() {
       daily_rate: vehicle.daily_rate.toString(),
       category: vehicle.category || 'exotic',
       unavailable_from: (vehicle.metadata as any)?.unavailable_from || '',
-      unavailable_until: (vehicle.metadata as any)?.unavailable_until || ''
+      unavailable_until: (vehicle.metadata as any)?.unavailable_until || '',
+      unavailable_reason: (vehicle.metadata as any)?.unavailable_reason || ''
     })
     setEditingId(vehicle.id)
     setShowForm(true)
@@ -449,6 +454,22 @@ export default function VehiclesTab() {
                   required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
                 />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🔧 Motivo *</label>
+                <select
+                  value={formData.unavailable_reason}
+                  onChange={(e) => setFormData({ ...formData, unavailable_reason: e.target.value })}
+                  required={formData.status === 'unavailable'}
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                >
+                  <option value="">Seleziona un motivo...</option>
+                  <option value="Tagliando">Tagliando</option>
+                  <option value="Gommista">Gommista</option>
+                  <option value="Officina meccanica">Officina meccanica</option>
+                  <option value="Viaggio">Viaggio</option>
+                  <option value="Elettrauto">Elettrauto</option>
+                </select>
               </div>
               <div className="col-span-2">
                 <p className="text-xs text-yellow-200">
