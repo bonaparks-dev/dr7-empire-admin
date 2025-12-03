@@ -46,17 +46,52 @@ export default function DocumentsVerificationTab() {
   async function loadDocuments() {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // First, get all documents
+      const { data: documentsData, error: documentsError } = await supabase
         .from('user_documents')
-        .select(`
-          *,
-          user:profiles!user_documents_user_id_fkey(id, full_name, email)
-        `)
+        .select('*')
         .order('upload_date', { ascending: false })
 
-      if (error) throw error
+      if (documentsError) throw documentsError
 
-      setDocuments(data || [])
+      // Then fetch user data for each unique user_id
+      const uniqueUserIds = [...new Set((documentsData || []).map(doc => doc.user_id))]
+      const usersMap = new Map()
+
+      for (const userId of uniqueUserIds) {
+        try {
+          const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId)
+
+          if (user) {
+            const metadata = user.user_metadata || {}
+            const createdAt = new Date(user.created_at)
+            const now = new Date()
+            const daysSinceRegistration = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
+
+            usersMap.set(userId, {
+              id: user.id,
+              full_name: metadata.full_name || metadata.name || 'Nome non disponibile',
+              email: user.email || 'Email non disponibile',
+              is_new: daysSinceRegistration <= 7, // New if registered within last 7 days
+              created_at: user.created_at
+            })
+          }
+        } catch (e) {
+          console.error('Error fetching user:', userId, e)
+        }
+      }
+
+      // Combine documents with user data
+      const documentsWithUsers = (documentsData || []).map(doc => ({
+        ...doc,
+        user: usersMap.get(doc.user_id) || {
+          id: doc.user_id,
+          full_name: 'Nome non disponibile',
+          email: 'Email non disponibile'
+        }
+      }))
+
+      setDocuments(documentsWithUsers)
     } catch (error) {
       console.error('Failed to load documents:', error)
     } finally {
@@ -257,9 +292,23 @@ export default function DocumentsVerificationTab() {
               {/* User Header */}
               <div className="bg-gray-800 p-4 border-b border-gray-700">
                 <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-bold text-white">{user?.full_name || 'Nome non disponibile'}</h3>
-                    <p className="text-sm text-gray-400">{user?.email || 'Email non disponibile'}</p>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-white">{user?.full_name || 'Nome non disponibile'}</h3>
+                        {(user as any)?.is_new && (
+                          <span className="px-2 py-1 text-xs font-bold bg-green-600 text-white rounded">
+                            NUOVO CLIENTE
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-400">{user?.email || 'Email non disponibile'}</p>
+                      {(user as any)?.created_at && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Registrato: {new Date((user as any).created_at).toLocaleDateString('it-IT')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Documenti: {userDocs.length}</p>
