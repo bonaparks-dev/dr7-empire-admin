@@ -55,6 +55,7 @@ export default function ReservationsTab() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -98,11 +99,22 @@ export default function ReservationsTab() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring duplicate call')
+      return
+    }
+
+    setIsSubmitting(true)
+
     try {
       const method = editingId ? 'PATCH' : 'POST'
       const body = editingId
         ? { id: editingId, ...formData, total_amount: parseFloat(formData.total_amount) }
         : { ...formData, total_amount: parseFloat(formData.total_amount) }
+
+      console.log('Submitting reservation:', { method, editingId, body })
 
       const res = await fetch(`${API_BASE}/reservations`, {
         method,
@@ -172,6 +184,8 @@ export default function ReservationsTab() {
     } catch (error) {
       console.error('Failed to save reservation:', error)
       alert('Failed to save reservation')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -329,8 +343,10 @@ export default function ReservationsTab() {
             />
           </div>
           <div className="flex gap-3 mt-4">
-            <Button type="submit">Save</Button>
-            <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); resetForm() }}>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); resetForm(); setIsSubmitting(false) }}>
               Cancel
             </Button>
           </div>
