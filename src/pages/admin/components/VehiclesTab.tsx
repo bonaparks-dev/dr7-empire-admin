@@ -3,6 +3,7 @@ import { supabase } from '../../../supabaseClient'
 import Input from './Input'
 import Select from './Select'
 import Button from './Button'
+import EuropeanDateInput from '../../../components/EuropeanDateInput'
 
 interface Vehicle {
   id: string
@@ -397,22 +398,18 @@ export default function VehiclesTab() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
               <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Dal *</label>
-                <input
-                  type="date"
-                  lang="it"
+                <EuropeanDateInput
                   value={formData.unavailable_from}
-                  onChange={(e) => setFormData({ ...formData, unavailable_from: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, unavailable_from: value })}
                   required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
                 />
               </div>
               <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Fino Al *</label>
-                <input
-                  type="date"
-                  lang="it"
+                <EuropeanDateInput
                   value={formData.unavailable_until}
-                  onChange={(e) => setFormData({ ...formData, unavailable_until: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, unavailable_until: value })}
                   required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
                 />
@@ -420,7 +417,8 @@ export default function VehiclesTab() {
               <div className="col-span-2">
                 <p className="text-xs text-yellow-200">
                   ⚠️ <strong>IMPORTANTE:</strong> Entrambe le date sono obbligatorie per sincronizzare con Google Calendar.<br/>
-                  💡 Per un solo giorno (es. 10 dicembre), inserisci la stessa data in entrambi i campi: 10/12 → 10/12
+                  💡 Formato: GG/MM/AAAA (es. 10/12/2024 per il 10 dicembre 2024)<br/>
+                  💡 Per un solo giorno, inserisci la stessa data in entrambi i campi: 10/12/2024 → 10/12/2024
                 </p>
               </div>
             </div>
