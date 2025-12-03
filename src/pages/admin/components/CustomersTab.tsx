@@ -422,7 +422,15 @@ export default function CustomersTab() {
     setDocumentsUrls({ licenses: [], ids: [], codiceFiscale: [] })
 
     try {
-      // List files in driver-licenses bucket for this user
+      // FIRST: Check database for existing document records
+      const { data: dbDocuments } = await supabase
+        .from('user_documents')
+        .select('*')
+        .eq('user_id', userId)
+
+      console.log('Database documents found:', dbDocuments?.length || 0, dbDocuments)
+
+      // SECOND: List files in storage buckets
       const { data: licenseFiles, error: licenseError } = await supabase.storage
         .from('driver-licenses')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
@@ -431,7 +439,6 @@ export default function CustomersTab() {
         console.error('Error listing license files:', licenseError)
       }
 
-      // List files in driver-ids bucket for this user
       const { data: idFiles, error: idError } = await supabase.storage
         .from('driver-ids')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
@@ -440,7 +447,6 @@ export default function CustomersTab() {
         console.error('Error listing ID files:', idError)
       }
 
-      // List files in codice-fiscale bucket for this user
       const { data: codiceFiscaleFiles, error: codiceFiscaleError } = await supabase.storage
         .from('codice-fiscale')
         .list(userId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } })
@@ -453,53 +459,95 @@ export default function CustomersTab() {
       const idUrls: Array<{ url: string; fileName: string }> = []
       const codiceFiscaleUrls: Array<{ url: string; fileName: string }> = []
 
-      // Filter out folders and empty placeholders, get only actual files
+      // THIRD: Process database documents if they exist
+      if (dbDocuments && dbDocuments.length > 0) {
+        for (const doc of dbDocuments) {
+          // Determine bucket based on document type
+          let bucket = 'driver-ids'
+          if (doc.document_type.includes('patente')) bucket = 'driver-licenses'
+          else if (doc.document_type.includes('codiceFiscale')) bucket = 'codice-fiscale'
+          else if (doc.document_type.includes('cartaIdentita')) bucket = 'driver-ids'
+
+          // Get signed URL from the file_path stored in database
+          const { data: signedUrl } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(doc.file_path, 3600)
+
+          if (signedUrl?.signedUrl) {
+            const fileName = doc.file_path.split('/').pop() || doc.document_type
+            if (bucket === 'driver-licenses') {
+              licenseUrls.push({ url: signedUrl.signedUrl, fileName })
+            } else if (bucket === 'codice-fiscale') {
+              codiceFiscaleUrls.push({ url: signedUrl.signedUrl, fileName })
+            } else {
+              idUrls.push({ url: signedUrl.signedUrl, fileName })
+            }
+          }
+        }
+      }
+
+      // FOURTH: Filter and process storage bucket files
       const actualLicenseFiles = licenseFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
       const actualIdFiles = idFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
       const actualCodiceFiscaleFiles = codiceFiscaleFiles?.filter(file => file.id && !file.name.includes('.emptyFolderPlaceholder')) || []
 
-      console.log('License files found:', actualLicenseFiles.length, actualLicenseFiles)
-      console.log('ID files found:', actualIdFiles.length, actualIdFiles)
-      console.log('Codice Fiscale files found:', actualCodiceFiscaleFiles.length, actualCodiceFiscaleFiles)
+      console.log('Storage - License files found:', actualLicenseFiles.length, actualLicenseFiles)
+      console.log('Storage - ID files found:', actualIdFiles.length, actualIdFiles)
+      console.log('Storage - Codice Fiscale files found:', actualCodiceFiscaleFiles.length, actualCodiceFiscaleFiles)
 
-      // Get signed URLs for ALL driver licenses
+      // FIFTH: Get signed URLs for storage files (avoid duplicates with database files)
+      const existingFileNames = new Set([
+        ...licenseUrls.map(u => u.fileName),
+        ...idUrls.map(u => u.fileName),
+        ...codiceFiscaleUrls.map(u => u.fileName)
+      ])
+
+      // Get signed URLs for driver licenses not already in database
       for (const licenseFile of actualLicenseFiles) {
-        const { data: signedLicense, error: signError } = await supabase.storage
-          .from('driver-licenses')
-          .createSignedUrl(`${userId}/${licenseFile.name}`, 3600) // 1 hour expiry
+        if (!existingFileNames.has(licenseFile.name)) {
+          const { data: signedLicense, error: signError } = await supabase.storage
+            .from('driver-licenses')
+            .createSignedUrl(`${userId}/${licenseFile.name}`, 3600)
 
-        if (signError) {
-          console.error('Error creating signed URL for license:', signError)
-        } else if (signedLicense?.signedUrl) {
-          licenseUrls.push({ url: signedLicense.signedUrl, fileName: licenseFile.name })
+          if (signError) {
+            console.error('Error creating signed URL for license:', signError)
+          } else if (signedLicense?.signedUrl) {
+            licenseUrls.push({ url: signedLicense.signedUrl, fileName: licenseFile.name })
+          }
         }
       }
 
-      // Get signed URLs for ALL IDs
+      // Get signed URLs for IDs not already in database
       for (const idFile of actualIdFiles) {
-        const { data: signedId, error: signError } = await supabase.storage
-          .from('driver-ids')
-          .createSignedUrl(`${userId}/${idFile.name}`, 3600) // 1 hour expiry
+        if (!existingFileNames.has(idFile.name)) {
+          const { data: signedId, error: signError } = await supabase.storage
+            .from('driver-ids')
+            .createSignedUrl(`${userId}/${idFile.name}`, 3600)
 
-        if (signError) {
-          console.error('Error creating signed URL for ID:', signError)
-        } else if (signedId?.signedUrl) {
-          idUrls.push({ url: signedId.signedUrl, fileName: idFile.name })
+          if (signError) {
+            console.error('Error creating signed URL for ID:', signError)
+          } else if (signedId?.signedUrl) {
+            idUrls.push({ url: signedId.signedUrl, fileName: idFile.name })
+          }
         }
       }
 
-      // Get signed URLs for ALL Codice Fiscale documents
+      // Get signed URLs for Codice Fiscale not already in database
       for (const cfFile of actualCodiceFiscaleFiles) {
-        const { data: signedCF, error: signError } = await supabase.storage
-          .from('codice-fiscale')
-          .createSignedUrl(`${userId}/${cfFile.name}`, 3600) // 1 hour expiry
+        if (!existingFileNames.has(cfFile.name)) {
+          const { data: signedCF, error: signError } = await supabase.storage
+            .from('codice-fiscale')
+            .createSignedUrl(`${userId}/${cfFile.name}`, 3600)
 
-        if (signError) {
-          console.error('Error creating signed URL for Codice Fiscale:', signError)
-        } else if (signedCF?.signedUrl) {
-          codiceFiscaleUrls.push({ url: signedCF.signedUrl, fileName: cfFile.name })
+          if (signError) {
+            console.error('Error creating signed URL for Codice Fiscale:', signError)
+          } else if (signedCF?.signedUrl) {
+            codiceFiscaleUrls.push({ url: signedCF.signedUrl, fileName: cfFile.name })
+          }
         }
       }
+
+      console.log('Total documents loaded - Licenses:', licenseUrls.length, 'IDs:', idUrls.length, 'CF:', codiceFiscaleUrls.length)
 
       setDocumentsUrls({ licenses: licenseUrls, ids: idUrls, codiceFiscale: codiceFiscaleUrls })
     } catch (error) {
