@@ -178,6 +178,42 @@ export default function VehiclesTab() {
     }
   }
 
+  async function syncToGoogleCalendar(vehicle: Vehicle) {
+    const metadata = vehicle.metadata as any
+    const unavailableFrom = metadata?.unavailable_from
+    const unavailableUntil = metadata?.unavailable_until
+
+    if (!unavailableFrom || !unavailableUntil) {
+      alert('⚠️ Impossibile sincronizzare: Date di non disponibilità mancanti.\n\nModifica il veicolo e inserisci entrambe le date.')
+      return
+    }
+
+    try {
+      const response = await fetch('/.netlify/functions/create-vehicle-unavailability-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleName: vehicle.display_name,
+          vehiclePlate: vehicle.plate || undefined,
+          unavailableFrom: unavailableFrom,
+          unavailableUntil: unavailableUntil,
+          reason: 'Non disponibile'
+        })
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Failed to create calendar event:', errorText)
+        alert('❌ Errore nella sincronizzazione con Google Calendar.\n\nVerifica le credenziali.')
+      } else {
+        alert('✅ Sincronizzato con Google Calendar!')
+      }
+    } catch (error) {
+      console.error('Error syncing with calendar:', error)
+      alert('❌ Errore nella sincronizzazione del calendario.')
+    }
+  }
+
   function resetForm() {
     setFormData({
       display_name: '',
@@ -488,6 +524,16 @@ export default function VehiclesTab() {
                         >
                           Modifica
                         </Button>
+                        {vehicle.status === 'unavailable' && (
+                          <Button
+                            onClick={() => syncToGoogleCalendar(vehicle)}
+                            variant="secondary"
+                            className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                            title="Sincronizza con Google Calendar"
+                          >
+                            📅 Sync
+                          </Button>
+                        )}
                         <Button
                           onClick={() => handleDelete(vehicle.id)}
                           variant="secondary"
@@ -559,6 +605,16 @@ export default function VehiclesTab() {
                         >
                           Modifica
                         </Button>
+                        {vehicle.status === 'unavailable' && (
+                          <Button
+                            onClick={() => syncToGoogleCalendar(vehicle)}
+                            variant="secondary"
+                            className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                            title="Sincronizza con Google Calendar"
+                          >
+                            📅 Sync
+                          </Button>
+                        )}
                         <Button
                           onClick={() => handleDelete(vehicle.id)}
                           variant="secondary"
@@ -630,6 +686,16 @@ export default function VehiclesTab() {
                         >
                           Modifica
                         </Button>
+                        {vehicle.status === 'unavailable' && (
+                          <Button
+                            onClick={() => syncToGoogleCalendar(vehicle)}
+                            variant="secondary"
+                            className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                            title="Sincronizza con Google Calendar"
+                          >
+                            📅 Sync
+                          </Button>
+                        )}
                         <Button
                           onClick={() => handleDelete(vehicle.id)}
                           variant="secondary"
