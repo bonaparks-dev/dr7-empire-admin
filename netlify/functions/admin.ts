@@ -77,13 +77,44 @@ export const handler: Handler = async (event: HandlerEvent): Promise<HandlerResp
   try {
     // GET /customers
     if (path === '/customers' && method === 'GET') {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Fetch from both customers and customers_extended tables
+      const [customersResult, customersExtendedResult] = await Promise.all([
+        supabase
+          .from('customers')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('customers_extended')
+          .select('*')
+          .order('created_at', { ascending: false })
+      ])
 
-      if (error) throw error
-      return response(200, { data }, origin)
+      if (customersResult.error && customersExtendedResult.error) {
+        throw customersResult.error || customersExtendedResult.error
+      }
+
+      // Merge data from both tables, converting customers_extended format
+      const oldCustomers = customersResult.data || []
+      const newCustomers = (customersExtendedResult.data || []).map((c: any) => ({
+        id: c.id,
+        full_name: c.tipo_cliente === 'azienda'
+          ? c.denominazione
+          : `${c.nome || ''} ${c.cognome || ''}`.trim(),
+        email: c.email,
+        phone: c.telefono,
+        driver_license_number: null,
+        notes: null,
+        created_at: c.created_at,
+        updated_at: c.created_at
+      }))
+
+      // Combine both, removing duplicates by id
+      const allCustomers = [...oldCustomers, ...newCustomers]
+      const uniqueCustomers = Array.from(
+        new Map(allCustomers.map(c => [c.id, c])).values()
+      )
+
+      return response(200, { data: uniqueCustomers }, origin)
     }
 
     // POST /customers
