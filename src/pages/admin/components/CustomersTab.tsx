@@ -719,10 +719,6 @@ export default function CustomersTab() {
                       <span className="text-sm text-gray-400">Codice Fiscale:</span>
                       <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.codice_fiscale || '-'}</p>
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-400">Patente:</span>
-                      <p className="text-sm text-white font-medium">{viewingCustomerDetails.patente || '-'}</p>
-                    </div>
                     <div className="md:col-span-2">
                       <span className="text-sm text-gray-400">Indirizzo:</span>
                       <p className="text-sm text-white font-medium">{viewingCustomerDetails.indirizzo || '-'}</p>
