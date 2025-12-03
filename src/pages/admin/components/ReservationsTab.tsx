@@ -514,42 +514,83 @@ export default function ReservationsTab() {
         const pickupDateTime = new Date(`${formData.pickup_date}T${formData.pickup_time}:00`)
         const returnDateTime = new Date(`${formData.return_date}T${formData.return_time}:00`)
 
-        // Check for overlapping bookings
+        // Calculate buffer time (1h30 = 90 minutes)
+        const BUFFER_MINUTES = 90
+        const pickupWithBuffer = new Date(pickupDateTime.getTime() - BUFFER_MINUTES * 60 * 1000)
+
+        // Check for overlapping bookings AND bookings that violate the 1h30 buffer
         const { data: existingBookings, error: checkError } = await supabase
           .from('bookings')
           .select('id, customer_name, vehicle_name, pickup_date, dropoff_date, status')
           .eq('vehicle_name', vehicle?.display_name)
           .neq('status', 'cancelled')
-          .or(`and(pickup_date.lte.${returnDateTime.toISOString()},dropoff_date.gte.${pickupDateTime.toISOString()})`)
+          .or(`and(pickup_date.lte.${returnDateTime.toISOString()},dropoff_date.gte.${pickupWithBuffer.toISOString()})`)
 
         if (checkError) {
           console.error('Error checking existing bookings:', checkError)
         }
 
-        // If there's a conflict, show warning
         if (existingBookings && existingBookings.length > 0) {
-          const conflictingBooking = existingBookings[0]
-          const bookingId = conflictingBooking.id.substring(0, 8).toUpperCase()
-
-          const pickupDate = new Date(conflictingBooking.pickup_date)
-          const dropoffDate = new Date(conflictingBooking.dropoff_date)
-
-          const vehicleTarga = vehicle?.targa || conflictingBooking.vehicle_name
-          const confirmed = confirm(
-            `⚠️ ATTENZIONE: VEICOLO GIÀ PRENOTATO!\n\n` +
-            `Veicolo: ${conflictingBooking.vehicle_name}\n` +
-            `Targa: ${vehicleTarga}\n\n` +
-            `PRENOTAZIONE ESISTENTE:\n` +
-            `Cliente: ${conflictingBooking.customer_name}\n` +
-            `Periodo: ${pickupDate.toLocaleDateString('it-IT')} ${pickupDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${dropoffDate.toLocaleDateString('it-IT')} ${dropoffDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
-            `ID: DR7-${bookingId}\n\n` +
-            `⚠️ SEI SICURO DI VOLER CREARE UNA DOPPIA PRENOTAZIONE?\n\n` +
-            `✅ Clicca OK per PROCEDERE COMUNQUE\n` +
-            `❌ Clicca ANNULLA per scegliere altre date/veicolo`
+          // Sort by dropoff_date to find the most relevant conflict
+          const sortedBookings = existingBookings.sort((a, b) =>
+            new Date(b.dropoff_date).getTime() - new Date(a.dropoff_date).getTime()
           )
 
-          if (!confirmed) {
-            return // User cancelled
+          for (const conflictingBooking of sortedBookings) {
+            const bookingId = conflictingBooking.id.substring(0, 8).toUpperCase()
+            const conflictPickup = new Date(conflictingBooking.pickup_date)
+            const conflictReturn = new Date(conflictingBooking.dropoff_date)
+
+            // Check if this is a complete overlap (double booking)
+            const isOverlap = conflictReturn >= pickupDateTime && conflictPickup <= returnDateTime
+
+            // Check if this violates the 1h30 buffer (car returns less than 90 min before new pickup)
+            const timeDiff = pickupDateTime.getTime() - conflictReturn.getTime()
+            const minutesDiff = timeDiff / (1000 * 60)
+            const isBufferViolation = timeDiff > 0 && minutesDiff < BUFFER_MINUTES
+
+            if (isOverlap) {
+              // Complete overlap - show double booking warning
+              const vehicleTarga = vehicle?.plate || conflictingBooking.vehicle_name
+              const confirmed = confirm(
+                `⚠️ ATTENZIONE: VEICOLO GIÀ PRENOTATO!\n\n` +
+                `Veicolo: ${conflictingBooking.vehicle_name}\n` +
+                `Targa: ${vehicleTarga}\n\n` +
+                `PRENOTAZIONE ESISTENTE:\n` +
+                `Cliente: ${conflictingBooking.customer_name}\n` +
+                `Periodo: ${conflictPickup.toLocaleDateString('it-IT')} ${conflictPickup.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} - ${conflictReturn.toLocaleDateString('it-IT')} ${conflictReturn.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}\n` +
+                `ID: DR7-${bookingId}\n\n` +
+                `⚠️ SEI SICURO DI VOLER CREARE UNA DOPPIA PRENOTAZIONE?\n\n` +
+                `✅ Clicca OK per PROCEDERE COMUNQUE\n` +
+                `❌ Clicca ANNULLA per scegliere altre date/veicolo`
+              )
+
+              if (!confirmed) {
+                return // User cancelled
+              }
+            } else if (isBufferViolation) {
+              // Buffer violation - show specific 1h30 warning
+              const returnTimeStr = conflictReturn.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+              const returnDateStr = conflictReturn.toLocaleDateString('it-IT')
+              const bufferMinutesLeft = Math.round(BUFFER_MINUTES - minutesDiff)
+
+              const confirmed = confirm(
+                `⚠️ ATTENZIONE: BUFFER 1H30 NON RISPETTATO!\n\n` +
+                `Are you sure you want to book this vehicle?\n` +
+                `The car is scheduled to return at ${returnTimeStr} (${returnDateStr}).\n\n` +
+                `Il veicolo tornerà alle ${returnTimeStr} del ${returnDateStr}.\n` +
+                `Tempo mancante al buffer di 1h30: ${bufferMinutesLeft} minuti\n\n` +
+                `Cliente precedente: ${conflictingBooking.customer_name}\n` +
+                `ID: DR7-${bookingId}\n\n` +
+                `⚠️ Si consiglia di attendere fino alle ${new Date(conflictReturn.getTime() + BUFFER_MINUTES * 60 * 1000).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} per il prossimo ritiro.\n\n` +
+                `✅ Clicca OK per PROCEDERE COMUNQUE\n` +
+                `❌ Clicca ANNULLA per scegliere un orario diverso`
+              )
+
+              if (!confirmed) {
+                return // User cancelled
+              }
+            }
           }
         }
       }
