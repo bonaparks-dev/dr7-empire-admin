@@ -13,8 +13,9 @@ import MechanicalBookingTab from './components/MechanicalBookingTab'
 import MechanicalCalendarTab from './components/MechanicalCalendarTab'
 import LotteriaBoard from './components/LotteriaBoard'
 import UnpaidBookingsTab from './components/UnpaidBookingsTab'
+import DocumentsVerificationTab from './components/DocumentsVerificationTab'
 
-type TabType = 'reservations' | 'customers' | 'vehicles' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical' | 'mechanical-calendar' | 'lotteria' | 'fattura' | 'contratto' | 'unpaid'
+type TabType = 'reservations' | 'customers' | 'vehicles' | 'calendar' | 'carwash' | 'carwash-calendar' | 'mechanical' | 'mechanical-calendar' | 'lotteria' | 'fattura' | 'contratto' | 'unpaid' | 'documents-verification'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('reservations')
@@ -207,6 +208,7 @@ export default function AdminDashboard() {
               {/* Other menu items */}
               {[
                 { id: 'unpaid', label: 'Da Saldare' },
+                { id: 'documents-verification', label: 'Verifica Documenti' },
                 { id: 'customers', label: 'Clienti' },
                 { id: 'vehicles', label: 'Veicoli' },
                 { id: 'lotteria', label: 'Biglietti Lotteria' },
@@ -346,6 +348,16 @@ export default function AdminDashboard() {
                 Da Saldare
               </button>
               <button
+                onClick={() => setActiveTab('documents-verification')}
+                className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === 'documents-verification'
+                    ? 'border-white text-white'
+                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-500'
+                }`}
+              >
+                Verifica Documenti
+              </button>
+              <button
                 onClick={() => setActiveTab('customers')}
                 className={`py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === 'customers'
@@ -406,6 +418,7 @@ export default function AdminDashboard() {
             {activeTab === 'carwash' && 'Prenotazioni Lavaggio'}
             {activeTab === 'mechanical' && 'Prenotazioni Meccanica'}
             {activeTab === 'unpaid' && 'Da Saldare'}
+            {activeTab === 'documents-verification' && 'Verifica Documenti'}
             {activeTab === 'customers' && 'Clienti'}
             {activeTab === 'vehicles' && 'Veicoli'}
             {activeTab === 'calendar' && 'Calendario Noleggio'}
@@ -420,6 +433,7 @@ export default function AdminDashboard() {
         <div className="mt-8">
           {activeTab === 'reservations' && <ReservationsTab />}
           {activeTab === 'unpaid' && <UnpaidBookingsTab />}
+          {activeTab === 'documents-verification' && <DocumentsVerificationTab />}
           {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'vehicles' && <VehiclesTab />}
           {activeTab === 'calendar' && <CalendarTab />}
