@@ -217,6 +217,16 @@ export default function ReservationsTab() {
   }
 
   function handleEdit(reservation: Reservation) {
+    console.log('Editing reservation:', reservation)
+    console.log('Available customers:', customers.map(c => ({ id: c.id, name: c.full_name })))
+    console.log('Customer ID to select:', reservation.customer_id)
+
+    // Check if customer exists in list
+    const customerExists = customers.find(c => c.id === reservation.customer_id)
+    if (!customerExists) {
+      console.warn('Customer not found in list! Customer ID:', reservation.customer_id)
+    }
+
     setFormData({
       customer_id: reservation.customer_id,
       vehicle_id: reservation.vehicle_id,
@@ -283,7 +293,14 @@ export default function ReservationsTab() {
               onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
               options={[
                 ...(editingId ? [] : [{ value: '', label: 'Select customer...' }]),
-                ...customers.map(c => ({ value: c.id, label: c.full_name }))
+                ...customers.map(c => ({ value: c.id, label: c.full_name })),
+                // If editing and customer not in list, show reservation's customer
+                ...(editingId && formData.customer_id && !customers.find(c => c.id === formData.customer_id)
+                  ? [{
+                      value: formData.customer_id,
+                      label: `Customer ID: ${formData.customer_id} (not found in list)`
+                    }]
+                  : [])
               ]}
             />
             <Select
