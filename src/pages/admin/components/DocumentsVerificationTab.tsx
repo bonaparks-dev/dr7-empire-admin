@@ -62,6 +62,11 @@ export default function DocumentsVerificationTab() {
         try {
           const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId)
 
+          if (userError) {
+            console.error(`Error fetching user ${userId}:`, userError)
+            continue
+          }
+
           if (user) {
             const metadata = user.user_metadata || {}
             const createdAt = new Date(user.created_at)
