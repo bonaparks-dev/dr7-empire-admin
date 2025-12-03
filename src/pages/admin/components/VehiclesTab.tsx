@@ -101,6 +101,41 @@ export default function VehiclesTab() {
         if (error) throw error
       }
 
+      // Sync with Google Calendar if vehicle is marked unavailable with dates
+      if (
+        formData.status === 'unavailable' &&
+        formData.unavailable_from &&
+        formData.unavailable_until
+      ) {
+        try {
+          const response = await fetch('/.netlify/functions/create-vehicle-unavailability-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              vehicleName: formData.display_name,
+              vehiclePlate: formData.plate || undefined,
+              unavailableFrom: formData.unavailable_from,
+              unavailableUntil: formData.unavailable_until,
+              reason: 'Non disponibile'
+            })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to create calendar event:', errorText);
+            alert('⚠️ Veicolo salvato ma calendario non sincronizzato. Verifica le credenziali Google Calendar.');
+          } else {
+            console.log('Calendar event created successfully');
+            alert('✅ Veicolo salvato e calendario aggiornato!');
+          }
+        } catch (calendarError) {
+          console.error('Error syncing with calendar:', calendarError);
+          alert('⚠️ Veicolo salvato ma errore nella sincronizzazione del calendario.');
+        }
+      } else {
+        alert('✅ Veicolo salvato!');
+      }
+
       setShowForm(false)
       setEditingId(null)
       resetForm()
