@@ -282,7 +282,7 @@ export default function ReservationsTab() {
               value={formData.customer_id}
               onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
               options={[
-                { value: '', label: 'Select customer...' },
+                ...(editingId ? [] : [{ value: '', label: 'Select customer...' }]),
                 ...customers.map(c => ({ value: c.id, label: c.full_name }))
               ]}
             />
@@ -292,7 +292,7 @@ export default function ReservationsTab() {
               value={formData.vehicle_id}
               onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
               options={[
-                { value: '', label: 'Select vehicle...' },
+                ...(editingId ? [] : [{ value: '', label: 'Select vehicle...' }]),
                 ...vehicles.map(v => ({ value: v.id, label: v.display_name }))
               ]}
             />
