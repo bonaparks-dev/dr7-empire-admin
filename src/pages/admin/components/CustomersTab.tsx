@@ -356,14 +356,26 @@ export default function CustomersTab() {
       if (editingId) {
         console.log('Updating customer:', editingId, formData)
 
-        const { error } = await supabase
+        // Update customers table
+        const { error: customersError } = await supabase
           .from('customers')
           .update(formData)
           .eq('id', editingId)
 
-        if (error) {
-          console.error('Update error:', error)
-          throw error
+        if (customersError) {
+          console.error('Update error (customers):', customersError)
+          throw customersError
+        }
+
+        // Also update customers_extended table if record exists
+        const { error: extendedError } = await supabase
+          .from('customers_extended')
+          .update({ patente: formData.driver_license_number })
+          .eq('id', editingId)
+
+        if (extendedError) {
+          console.warn('Could not update customers_extended (might not exist):', extendedError)
+          // Don't throw error - customers_extended might not have this record
         }
       } else {
         console.log('Creating customer:', formData)
@@ -900,6 +912,10 @@ export default function CustomersTab() {
                   <div>
                     <span className="text-sm text-gray-400">Telefono:</span>
                     <p className="text-sm text-white font-medium">{viewingCustomerDetails.telefono || viewingCustomerDetails.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-400">Numero Patente:</span>
+                    <p className="text-sm text-white font-medium font-mono">{viewingCustomerDetails.patente || viewingCustomerDetails.driver_license_number || '-'}</p>
                   </div>
                   <div>
                     <span className="text-sm text-gray-400">Nazione:</span>
