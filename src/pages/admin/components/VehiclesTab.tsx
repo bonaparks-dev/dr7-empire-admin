@@ -35,6 +35,8 @@ export default function VehiclesTab() {
     category: 'exotic',
     unavailable_from: '',
     unavailable_until: '',
+    unavailable_from_time: '09:00',
+    unavailable_until_time: '18:00',
     unavailable_reason: ''
   })
 
@@ -99,6 +101,8 @@ export default function VehiclesTab() {
         metadata: {
           unavailable_from: formData.unavailable_from || null,
           unavailable_until: formData.unavailable_until || null,
+          unavailable_from_time: formData.unavailable_from_time || null,
+          unavailable_until_time: formData.unavailable_until_time || null,
           unavailable_reason: formData.unavailable_reason || null
         }
       }
@@ -133,6 +137,8 @@ export default function VehiclesTab() {
               vehiclePlate: formData.plate || undefined,
               unavailableFrom: formData.unavailable_from,
               unavailableUntil: formData.unavailable_until,
+              unavailableFromTime: formData.unavailable_from_time || '09:00',
+              unavailableUntilTime: formData.unavailable_until_time || '18:00',
               reason: formData.unavailable_reason || 'Non disponibile'
             })
           });
@@ -184,6 +190,8 @@ export default function VehiclesTab() {
     const metadata = vehicle.metadata as any
     const unavailableFrom = metadata?.unavailable_from
     const unavailableUntil = metadata?.unavailable_until
+    const unavailableFromTime = metadata?.unavailable_from_time || '09:00'
+    const unavailableUntilTime = metadata?.unavailable_until_time || '18:00'
     const unavailableReason = metadata?.unavailable_reason
 
     if (!unavailableFrom || !unavailableUntil) {
@@ -200,6 +208,8 @@ export default function VehiclesTab() {
           vehiclePlate: vehicle.plate || undefined,
           unavailableFrom: unavailableFrom,
           unavailableUntil: unavailableUntil,
+          unavailableFromTime: unavailableFromTime,
+          unavailableUntilTime: unavailableUntilTime,
           reason: unavailableReason || 'Non disponibile'
         })
       })
@@ -226,6 +236,8 @@ export default function VehiclesTab() {
       category: 'exotic',
       unavailable_from: '',
       unavailable_until: '',
+      unavailable_from_time: '09:00',
+      unavailable_until_time: '18:00',
       unavailable_reason: ''
     })
   }
@@ -239,6 +251,8 @@ export default function VehiclesTab() {
       category: vehicle.category || 'exotic',
       unavailable_from: (vehicle.metadata as any)?.unavailable_from || '',
       unavailable_until: (vehicle.metadata as any)?.unavailable_until || '',
+      unavailable_from_time: (vehicle.metadata as any)?.unavailable_from_time || '09:00',
+      unavailable_until_time: (vehicle.metadata as any)?.unavailable_until_time || '18:00',
       unavailable_reason: (vehicle.metadata as any)?.unavailable_reason || ''
     })
     setEditingId(vehicle.id)
@@ -447,10 +461,30 @@ export default function VehiclesTab() {
                 />
               </div>
               <div>
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Inizio *</label>
+                <input
+                  type="time"
+                  value={formData.unavailable_from_time}
+                  onChange={(e) => setFormData({ ...formData, unavailable_from_time: e.target.value })}
+                  required={formData.status === 'unavailable'}
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Fino Al *</label>
                 <EuropeanDateInput
                   value={formData.unavailable_until}
                   onChange={(value) => setFormData({ ...formData, unavailable_until: value })}
+                  required={formData.status === 'unavailable'}
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Fine *</label>
+                <input
+                  type="time"
+                  value={formData.unavailable_until_time}
+                  onChange={(e) => setFormData({ ...formData, unavailable_until_time: e.target.value })}
                   required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
                 />
@@ -470,11 +504,6 @@ export default function VehiclesTab() {
                   <option value="Viaggio">Viaggio</option>
                   <option value="Elettrauto">Elettrauto</option>
                 </select>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs text-yellow-200">
-                  ⚠️ <strong>IMPORTANTE:</strong> Entrambe le date sono obbligatorie per sincronizzare con Google Calendar.
-                </p>
               </div>
             </div>
           )}
@@ -543,16 +572,14 @@ export default function VehiclesTab() {
                         >
                           Modifica
                         </Button>
-                        {vehicle.status === 'unavailable' && (
-                          <Button
-                            onClick={() => syncToGoogleCalendar(vehicle)}
-                            variant="secondary"
-                            className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
-                            title="Sincronizza con Google Calendar"
-                          >
-                            📅 Sync
-                          </Button>
-                        )}
+                        <Button
+                          onClick={() => syncToGoogleCalendar(vehicle)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                          title="Sincronizza con Google Calendar"
+                        >
+                          📅 Sync
+                        </Button>
                         <Button
                           onClick={() => handleDelete(vehicle.id)}
                           variant="secondary"
@@ -624,16 +651,14 @@ export default function VehiclesTab() {
                         >
                           Modifica
                         </Button>
-                        {vehicle.status === 'unavailable' && (
-                          <Button
-                            onClick={() => syncToGoogleCalendar(vehicle)}
-                            variant="secondary"
-                            className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
-                            title="Sincronizza con Google Calendar"
-                          >
-                            📅 Sync
-                          </Button>
-                        )}
+                        <Button
+                          onClick={() => syncToGoogleCalendar(vehicle)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                          title="Sincronizza con Google Calendar"
+                        >
+                          📅 Sync
+                        </Button>
                         <Button
                           onClick={() => handleDelete(vehicle.id)}
                           variant="secondary"
@@ -705,16 +730,14 @@ export default function VehiclesTab() {
                         >
                           Modifica
                         </Button>
-                        {vehicle.status === 'unavailable' && (
-                          <Button
-                            onClick={() => syncToGoogleCalendar(vehicle)}
-                            variant="secondary"
-                            className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
-                            title="Sincronizza con Google Calendar"
-                          >
-                            📅 Sync
-                          </Button>
-                        )}
+                        <Button
+                          onClick={() => syncToGoogleCalendar(vehicle)}
+                          variant="secondary"
+                          className="text-xs py-1 px-3 bg-blue-900 hover:bg-blue-800"
+                          title="Sincronizza con Google Calendar"
+                        >
+                          📅 Sync
+                        </Button>
                         <Button
                           onClick={() => handleDelete(vehicle.id)}
                           variant="secondary"
