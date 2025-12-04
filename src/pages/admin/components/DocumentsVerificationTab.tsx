@@ -61,47 +61,23 @@ export default function DocumentsVerificationTab() {
         throw documentsError
       }
 
-      // Then fetch user data for each unique user_id
-      const uniqueUserIds = [...new Set((documentsData || []).map(doc => doc.user_id))]
-      const usersMap = new Map()
+      // Use user data stored in the database instead of fetching from auth
+      const documentsWithUsers = (documentsData || []).map(doc => {
+        const uploadDate = new Date(doc.upload_date)
+        const now = new Date()
+        const daysSinceUpload = Math.floor((now.getTime() - uploadDate.getTime()) / (1000 * 60 * 60 * 24))
 
-      for (const userId of uniqueUserIds) {
-        try {
-          const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId)
-
-          if (userError) {
-            console.error(`Error fetching user ${userId}:`, userError)
-            continue
+        return {
+          ...doc,
+          user: {
+            id: doc.user_id,
+            full_name: (doc as any).user_full_name || 'Nome non disponibile',
+            email: (doc as any).user_email || 'Email non disponibile',
+            is_new: daysSinceUpload <= 7, // New if uploaded within last 7 days
+            created_at: doc.upload_date
           }
-
-          if (user) {
-            const metadata = user.user_metadata || {}
-            const createdAt = new Date(user.created_at)
-            const now = new Date()
-            const daysSinceRegistration = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
-
-            usersMap.set(userId, {
-              id: user.id,
-              full_name: metadata.full_name || metadata.name || 'Nome non disponibile',
-              email: user.email || 'Email non disponibile',
-              is_new: daysSinceRegistration <= 7, // New if registered within last 7 days
-              created_at: user.created_at
-            })
-          }
-        } catch (e) {
-          console.error('Error fetching user:', userId, e)
         }
-      }
-
-      // Combine documents with user data
-      const documentsWithUsers = (documentsData || []).map(doc => ({
-        ...doc,
-        user: usersMap.get(doc.user_id) || {
-          id: doc.user_id,
-          full_name: 'Nome non disponibile',
-          email: 'Email non disponibile'
-        }
-      }))
+      })
 
       setDocuments(documentsWithUsers)
     } catch (error) {
