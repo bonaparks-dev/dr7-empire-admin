@@ -138,8 +138,11 @@ export default function DocumentsVerificationTab() {
 
   async function viewDocument(doc: UserDocument) {
     try {
+      // Use the bucket from the document record, not hardcoded
+      const bucketName = (doc as any).bucket || 'user-documents'
+
       const { data } = await supabase.storage
-        .from('user-documents')
+        .from(bucketName)
         .createSignedUrl(doc.file_path, 3600)
 
       if (data?.signedUrl) {
