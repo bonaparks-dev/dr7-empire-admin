@@ -46,13 +46,20 @@ export default function DocumentsVerificationTab() {
   async function loadDocuments() {
     setLoading(true)
     try {
+      console.log('[DocumentsVerificationTab] Loading documents from user_documents table...')
+
       // First, get all documents
       const { data: documentsData, error: documentsError } = await supabase
         .from('user_documents')
         .select('*')
         .order('upload_date', { ascending: false })
 
-      if (documentsError) throw documentsError
+      console.log('[DocumentsVerificationTab] Documents loaded:', documentsData?.length || 0, documentsData)
+
+      if (documentsError) {
+        console.error('[DocumentsVerificationTab] Error loading documents:', documentsError)
+        throw documentsError
+      }
 
       // Then fetch user data for each unique user_id
       const uniqueUserIds = [...new Set((documentsData || []).map(doc => doc.user_id))]
