@@ -963,59 +963,6 @@ export default function CustomersTab() {
               </button>
             </div>
             <div className="p-6 space-y-6">
-              {/* Verification Status */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-300 mb-3">Stato Verifica Identità</h4>
-                {viewingDocuments.verification ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">Stato:</span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        viewingDocuments.verification.idStatus === 'verified'
-                          ? 'bg-green-500/20 text-green-400'
-                          : viewingDocuments.verification.idStatus === 'pending'
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'bg-red-500/20 text-red-400'
-                      }`}>
-                        {viewingDocuments.verification.idStatus === 'verified' && '✓ Verificato'}
-                        {viewingDocuments.verification.idStatus === 'pending' && '⏳ In Attesa'}
-                        {viewingDocuments.verification.idStatus === 'unverified' && '✗ Non Verificato'}
-                      </span>
-                    </div>
-                    {viewingDocuments.verification.verifiedAt && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Data Verifica:</span>
-                        <span className="text-sm text-white">
-                          {new Date(viewingDocuments.verification.verifiedAt).toLocaleString('it-IT')}
-                        </span>
-                      </div>
-                    )}
-                    {viewingDocuments.verification.stripeVerificationSessionId && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">Stripe Session ID:</span>
-                        <span className="text-xs text-gray-500 font-mono">
-                          {viewingDocuments.verification.stripeVerificationSessionId}
-                        </span>
-                      </div>
-                    )}
-                    {viewingDocuments.verification.idStatus === 'verified' && (
-                      <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded">
-                        <p className="text-sm text-green-400">
-                          ✓ Identità verificata tramite Stripe Identity. I documenti sono conservati in modo sicuro da Stripe.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500">Nessuna verifica effettuata</p>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Il cliente non ha ancora completato la verifica dell'identità
-                    </p>
-                  </div>
-                )}
-              </div>
-
               {/* Customer Info */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <h4 className="text-sm font-semibold text-gray-300 mb-3">Informazioni Cliente</h4>
