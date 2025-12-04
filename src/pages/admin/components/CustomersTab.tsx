@@ -472,29 +472,48 @@ export default function CustomersTab() {
 
       // THIRD: Process database documents if they exist
       if (dbDocuments && dbDocuments.length > 0) {
+        console.log('[CustomersTab] Processing database documents:', dbDocuments)
+
         for (const doc of dbDocuments) {
-          // Determine bucket based on document type
-          let bucket = 'driver-ids'
-          if (doc.document_type.includes('patente')) bucket = 'driver-licenses'
-          else if (doc.document_type.includes('codiceFiscale')) bucket = 'codice-fiscale'
-          else if (doc.document_type.includes('cartaIdentita')) bucket = 'driver-ids'
+          // Use the bucket stored in the database record
+          const bucket = (doc as any).bucket || 'driver-ids'
+
+          console.log('[CustomersTab] Processing document:', {
+            document_type: doc.document_type,
+            bucket: bucket,
+            file_path: doc.file_path,
+            status: doc.status
+          })
 
           // Get signed URL from the file_path stored in database
-          const { data: signedUrl } = await supabase.storage
+          const { data: signedUrl, error: urlError } = await supabase.storage
             .from(bucket)
             .createSignedUrl(doc.file_path, 3600)
 
+          if (urlError) {
+            console.error('[CustomersTab] Error creating signed URL:', urlError)
+            continue
+          }
+
           if (signedUrl?.signedUrl) {
             const fileName = doc.file_path.split('/').pop() || doc.document_type
+
+            // Map to correct category based on bucket
             if (bucket === 'driver-licenses') {
               licenseUrls.push({ url: signedUrl.signedUrl, fileName })
             } else if (bucket === 'codice-fiscale') {
               codiceFiscaleUrls.push({ url: signedUrl.signedUrl, fileName })
-            } else {
+            } else if (bucket === 'carta-identita' || bucket === 'driver-ids') {
               idUrls.push({ url: signedUrl.signedUrl, fileName })
             }
           }
         }
+
+        console.log('[CustomersTab] Processed URLs:', {
+          licenses: licenseUrls.length,
+          ids: idUrls.length,
+          codiceFiscale: codiceFiscaleUrls.length
+        })
       }
 
       // FOURTH: Filter and process storage bucket files
