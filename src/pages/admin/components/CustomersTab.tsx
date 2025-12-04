@@ -354,27 +354,38 @@ export default function CustomersTab() {
     e.preventDefault()
     try {
       if (editingId) {
+        console.log('Updating customer:', editingId, formData)
+
         const { error } = await supabase
           .from('customers')
           .update(formData)
           .eq('id', editingId)
 
-        if (error) throw error
+        if (error) {
+          console.error('Update error:', error)
+          throw error
+        }
       } else {
+        console.log('Creating customer:', formData)
+
         const { error } = await supabase
           .from('customers')
           .insert([formData])
 
-        if (error) throw error
+        if (error) {
+          console.error('Insert error:', error)
+          throw error
+        }
       }
 
+      alert('Cliente salvato con successo!')
       setShowForm(false)
       setEditingId(null)
       resetForm()
       loadCustomers()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save customer:', error)
-      alert('Failed to save customer')
+      alert('Errore nel salvare il cliente: ' + (error.message || JSON.stringify(error)))
     }
   }
 
