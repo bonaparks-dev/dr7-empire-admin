@@ -35,8 +35,8 @@ export default function VehiclesTab() {
     category: 'exotic',
     unavailable_from: '',
     unavailable_until: '',
-    unavailable_from_time: '09:00',
-    unavailable_until_time: '18:00',
+    unavailable_from_time: '',
+    unavailable_until_time: '',
     unavailable_reason: ''
   })
 
@@ -236,8 +236,8 @@ export default function VehiclesTab() {
       category: 'exotic',
       unavailable_from: '',
       unavailable_until: '',
-      unavailable_from_time: '09:00',
-      unavailable_until_time: '18:00',
+      unavailable_from_time: '',
+      unavailable_until_time: '',
       unavailable_reason: ''
     })
   }
@@ -251,8 +251,8 @@ export default function VehiclesTab() {
       category: vehicle.category || 'exotic',
       unavailable_from: (vehicle.metadata as any)?.unavailable_from || '',
       unavailable_until: (vehicle.metadata as any)?.unavailable_until || '',
-      unavailable_from_time: (vehicle.metadata as any)?.unavailable_from_time || '09:00',
-      unavailable_until_time: (vehicle.metadata as any)?.unavailable_until_time || '18:00',
+      unavailable_from_time: (vehicle.metadata as any)?.unavailable_from_time || '',
+      unavailable_until_time: (vehicle.metadata as any)?.unavailable_until_time || '',
       unavailable_reason: (vehicle.metadata as any)?.unavailable_reason || ''
     })
     setEditingId(vehicle.id)
@@ -461,14 +461,15 @@ export default function VehiclesTab() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Inizio *</label>
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Inizio (opzionale)</label>
                 <input
                   type="time"
                   value={formData.unavailable_from_time}
                   onChange={(e) => setFormData({ ...formData, unavailable_from_time: e.target.value })}
-                  required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                  placeholder="Es: 09:00"
                 />
+                <p className="text-xs text-yellow-100 mt-1">Se vuoto, tutto il giorno non disponibile</p>
               </div>
               <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Fino Al *</label>
@@ -480,14 +481,15 @@ export default function VehiclesTab() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Fine *</label>
+                <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Fine (opzionale)</label>
                 <input
                   type="time"
                   value={formData.unavailable_until_time}
                   onChange={(e) => setFormData({ ...formData, unavailable_until_time: e.target.value })}
-                  required={formData.status === 'unavailable'}
                   className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white"
+                  placeholder="Es: 14:00"
                 />
+                <p className="text-xs text-yellow-100 mt-1">Se vuoto, tutto il giorno non disponibile</p>
               </div>
               <div className="col-span-2">
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">🔧 Motivo *</label>
@@ -504,6 +506,11 @@ export default function VehiclesTab() {
                   <option value="Viaggio">Viaggio</option>
                   <option value="Elettrauto">Elettrauto</option>
                 </select>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-yellow-200">
+                  <strong>IMPORTANTE:</strong> Entrambe le date sono obbligatorie per sincronizzare con Google Calendar. Le ore sono opzionali - se specificate, il veicolo sarà non disponibile solo in quell'orario.
+                </p>
               </div>
             </div>
           )}
