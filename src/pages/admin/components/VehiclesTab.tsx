@@ -463,15 +463,16 @@ export default function VehiclesTab() {
               <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Inizio (opzionale - formato 24h)</label>
                 <input
-                  type="time"
+                  type="text"
                   value={formData.unavailable_from_time}
                   onChange={(e) => setFormData({ ...formData, unavailable_from_time: e.target.value })}
-                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
-                  placeholder="Es: 09:00"
-                  step="900"
-                  pattern="[0-9]{2}:[0-9]{2}"
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white font-mono"
+                  placeholder="10:00"
+                  pattern="^([0-1][0-9]|2[0-3]):[0-5][0-9]$"
+                  maxLength={5}
+                  title="Formato 24 ore: HH:MM (es: 09:00, 14:00, 23:30)"
                 />
-                <p className="text-xs text-yellow-100 mt-1">Formato 24 ore (es: 09:00, 14:00). Se vuoto, tutto il giorno.</p>
+                <p className="text-xs text-yellow-100 mt-1">Formato 24 ore: HH:MM (es: 09:00, 14:00, 23:30)</p>
               </div>
               <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">📅 Non Disponibile Fino Al *</label>
@@ -485,15 +486,16 @@ export default function VehiclesTab() {
               <div>
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">🕐 Ora Fine (opzionale - formato 24h)</label>
                 <input
-                  type="time"
+                  type="text"
                   value={formData.unavailable_until_time}
                   onChange={(e) => setFormData({ ...formData, unavailable_until_time: e.target.value })}
-                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
-                  placeholder="Es: 14:00"
-                  step="900"
-                  pattern="[0-9]{2}:[0-9]{2}"
+                  className="w-full bg-gray-800 border-gray-700 rounded-md px-3 py-2 text-white font-mono"
+                  placeholder="16:00"
+                  pattern="^([0-1][0-9]|2[0-3]):[0-5][0-9]$"
+                  maxLength={5}
+                  title="Formato 24 ore: HH:MM (es: 14:00, 18:00, 23:30)"
                 />
-                <p className="text-xs text-yellow-100 mt-1">Formato 24 ore (es: 14:00, 18:00). Se vuoto, tutto il giorno.</p>
+                <p className="text-xs text-yellow-100 mt-1">Formato 24 ore: HH:MM (es: 14:00, 18:00, 23:30)</p>
               </div>
               <div className="col-span-2">
                 <label className="block text-sm text-yellow-200 mb-1 font-semibold">🔧 Motivo *</label>
