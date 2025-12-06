@@ -1399,15 +1399,13 @@ export default function CustomersTab() {
                   <td className="px-4 py-3 text-sm text-white">{customer.phone || '-'}</td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex gap-2 flex-wrap">
-                      {customer.tipo_cliente && (
-                        <Button
-                          onClick={() => setViewingCustomerDetails(customer)}
-                          variant="secondary"
-                          className="text-xs py-1 px-3 bg-dr7-gold/20 hover:bg-dr7-gold/30 text-dr7-gold"
-                        >
-                          Dettagli Completi
-                        </Button>
-                      )}
+                      <Button
+                        onClick={() => setViewingCustomerDetails(customer)}
+                        variant="secondary"
+                        className="text-xs py-1 px-3 bg-dr7-gold/20 hover:bg-dr7-gold/30 text-dr7-gold"
+                      >
+                        Dettagli Completi
+                      </Button>
                       <Button
                         onClick={() => handleViewDocuments(customer)}
                         variant="secondary"
