@@ -123,6 +123,32 @@ export default function UnpaidBookingsTab() {
     }
 
     try {
+      // First, get all selected bookings to check for Google Calendar event IDs
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select('id, google_event_id')
+        .in('id', Array.from(selectedBookings))
+
+      // Delete from Google Calendar for each booking that has an event ID
+      if (bookings) {
+        for (const booking of bookings) {
+          if (booking.google_event_id) {
+            try {
+              await fetch('/.netlify/functions/delete-calendar-event', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventId: booking.google_event_id }),
+              })
+              console.log('Google Calendar event deleted:', booking.google_event_id)
+            } catch (calError) {
+              console.warn('Failed to delete from Google Calendar:', calError)
+              // Continue with other deletions
+            }
+          }
+        }
+      }
+
+      // Delete from database
       const { error } = await supabase
         .from('bookings')
         .delete()
@@ -146,6 +172,29 @@ export default function UnpaidBookingsTab() {
     }
 
     try {
+      // First, get the booking to check if it has a Google Calendar event ID
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('google_event_id')
+        .eq('id', bookingId)
+        .single()
+
+      // Try to delete from Google Calendar if event ID exists
+      if (booking?.google_event_id) {
+        try {
+          await fetch('/.netlify/functions/delete-calendar-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventId: booking.google_event_id }),
+          })
+          console.log('Google Calendar event deleted:', booking.google_event_id)
+        } catch (calError) {
+          console.warn('Failed to delete from Google Calendar:', calError)
+          // Continue with database deletion even if Google Calendar deletion fails
+        }
+      }
+
+      // Delete from database
       const { error } = await supabase
         .from('bookings')
         .delete()
