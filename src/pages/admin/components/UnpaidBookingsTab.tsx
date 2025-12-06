@@ -185,13 +185,43 @@ export default function UnpaidBookingsTab() {
 
   const totalUnpaid = filteredBookings.reduce((sum, b) => sum + (b.price_total || 0), 0)
 
-  const getServiceLabel = (serviceType: string) => {
+  const getServiceTypeLabel = (serviceType: string) => {
     switch (serviceType) {
       case 'rental': return 'Noleggio'
       case 'car_wash': return 'Lavaggio'
       case 'mechanical_service': return 'Meccanica'
-      default: return serviceType || 'Altro' // Show actual value if unknown
+      default: return serviceType || 'Altro'
     }
+  }
+
+  const getServiceLabel = (booking: UnpaidBooking) => {
+    const serviceType = booking.service_type
+
+    // Check known service types first
+    switch (serviceType) {
+      case 'rental': return 'Noleggio'
+      case 'car_wash': return 'Lavaggio'
+      case 'mechanical_service': return 'Meccanica'
+    }
+
+    // Fallback logic: determine service type from booking details
+    if (booking.vehicle_name) {
+      return 'Noleggio' // Has vehicle = rental
+    }
+
+    if (booking.service_name) {
+      const serviceName = booking.service_name.toLowerCase()
+      if (serviceName.includes('lavaggio') || serviceName.includes('wash')) {
+        return 'Lavaggio'
+      }
+      if (serviceName.includes('meccanica') || serviceName.includes('mechanical')) {
+        return 'Meccanica'
+      }
+      return 'Servizio' // Generic service
+    }
+
+    // Last resort: show actual value or 'Altro'
+    return serviceType || 'Altro'
   }
 
   if (loading) {
@@ -364,7 +394,7 @@ export default function UnpaidBookingsTab() {
                     </td>
                   )}
                   <td className="px-4 py-3 text-sm">
-                    <span className="text-white font-medium">{getServiceLabel(booking.service_type)}</span>
+                    <span className="text-white font-medium">{getServiceLabel(booking)}</span>
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="text-white font-semibold">{booking.customer_name}</div>
@@ -429,7 +459,7 @@ export default function UnpaidBookingsTab() {
                   <td colSpan={multiSelectMode ? 8 : 7} className="px-4 py-8 text-center text-gray-500">
                     {filterService === 'all'
                       ? 'Nessuna prenotazione da saldare!'
-                      : `Nessuna prenotazione ${getServiceLabel(filterService).toLowerCase()} da saldare`
+                      : `Nessuna prenotazione ${getServiceTypeLabel(filterService).toLowerCase()} da saldare`
                     }
                   </td>
                 </tr>

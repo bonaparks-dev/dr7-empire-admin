@@ -20,6 +20,7 @@ interface ClientFormData {
   nome: string
   cognome: string
   codice_fiscale: string
+  sesso: string
   data_nascita: string
   luogo_nascita: string
   indirizzo: string
@@ -57,6 +58,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
     nome: '',
     cognome: '',
     codice_fiscale: '',
+    sesso: '',
     data_nascita: '',
     luogo_nascita: '',
     indirizzo: '',
@@ -201,6 +203,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
         customerData.nome = formData.nome
         customerData.cognome = formData.cognome
         customerData.codice_fiscale = formData.codice_fiscale.toUpperCase()
+        if (formData.sesso) customerData.sesso = formData.sesso
         if (formData.data_nascita) customerData.data_nascita = formData.data_nascita
         if (formData.luogo_nascita) customerData.luogo_nascita = formData.luogo_nascita
         customerData.indirizzo = formData.indirizzo
@@ -263,6 +266,7 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
       nome: '',
       cognome: '',
       codice_fiscale: '',
+      sesso: '',
       data_nascita: '',
       luogo_nascita: '',
       indirizzo: '',
@@ -419,6 +423,20 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sesso *
+                  </label>
+                  <select
+                    value={formData.sesso}
+                    onChange={(e) => setFormData({ ...formData, sesso: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Seleziona...</option>
+                    <option value="M">Maschio</option>
+                    <option value="F">Femmina</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Data di Nascita
                   </label>
                   <input
@@ -428,18 +446,19 @@ export default function NewClientModal({ isOpen, onClose, onClientCreated }: New
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Luogo di Nascita
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.luogo_nascita}
-                    onChange={(e) => setFormData({ ...formData, luogo_nascita: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Roma"
-                  />
-                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Luogo di Nascita
+                </label>
+                <input
+                  type="text"
+                  value={formData.luogo_nascita}
+                  onChange={(e) => setFormData({ ...formData, luogo_nascita: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Roma"
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
