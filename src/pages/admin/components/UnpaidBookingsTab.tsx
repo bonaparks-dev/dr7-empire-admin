@@ -87,6 +87,34 @@ export default function UnpaidBookingsTab() {
     }
   }
 
+  async function markSelectedAsPaid() {
+    if (selectedBookings.size === 0) return
+
+    if (!confirm(`Segnare ${selectedBookings.size} prenotazioni come pagate?`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          payment_status: 'paid',
+          status: 'confirmed'
+        })
+        .in('id', Array.from(selectedBookings))
+
+      if (error) throw error
+
+      alert(`${selectedBookings.size} prenotazioni segnate come pagate!`)
+      setSelectedBookings(new Set())
+      setMultiSelectMode(false)
+      loadUnpaidBookings()
+    } catch (error) {
+      console.error('Failed to mark bookings as paid:', error)
+      alert('Errore durante l\'aggiornamento dello stato pagamento')
+    }
+  }
+
   async function deleteSelectedBookings() {
     if (selectedBookings.size === 0) return
 
@@ -276,12 +304,20 @@ export default function UnpaidBookingsTab() {
               Selezione Multipla
             </button>
             {multiSelectMode && selectedBookings.size > 0 && (
-              <button
-                onClick={deleteSelectedBookings}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Elimina ({selectedBookings.size})
-              </button>
+              <>
+                <button
+                  onClick={markSelectedAsPaid}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Segna Pagato ({selectedBookings.size})
+                </button>
+                <button
+                  onClick={deleteSelectedBookings}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Elimina ({selectedBookings.size})
+                </button>
+              </>
             )}
           </div>
         </div>
