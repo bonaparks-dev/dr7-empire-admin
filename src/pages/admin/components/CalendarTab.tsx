@@ -12,6 +12,9 @@ interface Vehicle {
   metadata?: {
     unavailable_from?: string
     unavailable_until?: string
+    unavailable_from_time?: string
+    unavailable_until_time?: string
+    unavailable_reason?: string
   }
 }
 
@@ -41,6 +44,7 @@ export default function CalendarTab() {
     date: string
     bookings: Booking[]
   } | null>(null)
+  const [selectedUnavailability, setSelectedUnavailability] = useState<Vehicle | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
@@ -487,16 +491,22 @@ export default function CalendarTab() {
                       return (
                         <td
                           key={day}
-                          onClick={() => cellBookings.length > 0 && setSelectedCell({
-                            vehicle: vehicle.display_name,
-                            date: `${day}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`,
-                            bookings: cellBookings
-                          })}
+                          onClick={() => {
+                            if (cellBookings.length > 0) {
+                              setSelectedCell({
+                                vehicle: vehicle.display_name,
+                                date: `${day}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`,
+                                bookings: cellBookings
+                              })
+                            } else if (status === 'unavailable') {
+                              setSelectedUnavailability(vehicle)
+                            }
+                          }}
                           className={`border border-gray-700 p-0.5 min-w-[24px] h-6 transition-all ${
                             status === 'rented'
                               ? 'bg-red-500 hover:bg-red-600 cursor-pointer'
                               : status === 'unavailable'
-                              ? 'bg-orange-500 hover:bg-orange-600'
+                              ? 'bg-orange-500 hover:bg-orange-600 cursor-pointer'
                               : 'bg-green-500 hover:bg-green-600'
                           } ${day === todayDay ? 'ring-1 ring-dr7-gold ring-inset' : ''}`}
                           title={
@@ -606,6 +616,119 @@ export default function CalendarTab() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unavailability Details Modal */}
+      {selectedUnavailability && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedUnavailability(null)}
+        >
+          <div
+            className="bg-gray-900 rounded-xl max-w-lg w-full border border-gray-700 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-800">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    Dettagli Indisponibilità
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedUnavailability(null)}
+                  className="text-gray-400 hover:text-white transition-colors text-3xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Vehicle Name */}
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <p className="text-sm text-gray-400 mb-1">Veicolo</p>
+                <p className="text-lg font-semibold text-white">
+                  {selectedUnavailability.display_name}
+                  {selectedUnavailability.plate && (
+                    <span className="text-gray-400 font-normal text-sm ml-2">
+                      ({selectedUnavailability.plate})
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              {/* Reason */}
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4">
+                <p className="text-sm text-orange-400 mb-1">Motivo</p>
+                <p className="text-lg font-medium text-orange-300">
+                  {selectedUnavailability.metadata?.unavailable_reason || 'Non disponibile'}
+                </p>
+              </div>
+
+              {/* Date Range */}
+              {selectedUnavailability.metadata?.unavailable_from && selectedUnavailability.metadata?.unavailable_until && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-400 mb-1">Dal</p>
+                    <p className="text-white font-medium">
+                      {new Date(selectedUnavailability.metadata.unavailable_from).toLocaleDateString('it-IT', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                    {selectedUnavailability.metadata?.unavailable_from_time && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        {selectedUnavailability.metadata.unavailable_from_time}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-400 mb-1">Al</p>
+                    <p className="text-white font-medium">
+                      {new Date(selectedUnavailability.metadata.unavailable_until).toLocaleDateString('it-IT', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
+                    {selectedUnavailability.metadata?.unavailable_until_time && (
+                      <p className="text-sm text-gray-400 mt-1">
+                        {selectedUnavailability.metadata.unavailable_until_time}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Duration */}
+              {selectedUnavailability.metadata?.unavailable_from && selectedUnavailability.metadata?.unavailable_until && (
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <p className="text-sm text-gray-400 mb-1">Durata</p>
+                  <p className="text-white font-medium">
+                    {(() => {
+                      const from = new Date(selectedUnavailability.metadata.unavailable_from)
+                      const until = new Date(selectedUnavailability.metadata.unavailable_until)
+                      const days = Math.ceil((until.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+                      return `${days} ${days === 1 ? 'giorno' : 'giorni'}`
+                    })()}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-800">
+              <button
+                onClick={() => setSelectedUnavailability(null)}
+                className="w-full bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-lg transition-colors font-medium"
+              >
+                Chiudi
+              </button>
             </div>
           </div>
         </div>
